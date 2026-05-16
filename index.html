@@ -1,0 +1,889 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>מערכת ניהול אירועים דינאמית</title>
+  <style>
+    :root { --bg:#f7f7fb; --card:#fff; --text:#172033; --muted:#667085; --brand:#7357ff; --ok:#12b76a; --warn:#f79009; --bad:#f04438; --line:#e4e7ec; }
+    *{box-sizing:border-box} body{margin:0;font-family:Arial,"Noto Sans Hebrew",sans-serif;background:var(--bg);color:var(--text);font-size:20px;line-height:1.5}
+    header{background:linear-gradient(135deg,#7357ff,#9b7cff);color:#fff;padding:34px 26px} header h1{margin:0 0 8px;font-size:40px} header p{margin:0;opacity:.92;font-size:21px}
+    .app-shell{display:grid;grid-template-columns:250px 1fr;gap:0;min-height:calc(100vh - 96px)}.sidebar{background:#fff;border-left:1px solid var(--line);padding:14px;position:sticky;top:0;height:calc(100vh - 0px);overflow:auto}.sidebar-title{font-weight:800;margin:0 0 12px;color:var(--text)}.nav-btn{width:100%;border:1px solid transparent;background:#fff;color:var(--text);border-radius:12px;padding:12px;text-align:right;cursor:pointer;font-weight:700;margin-bottom:6px}.nav-btn:hover{background:#f7f7fb}.nav-btn.active{background:#ede9fe;color:#4c1d95;border-color:#ddd6fe}.page-section{display:none}.page-section.active{display:block}.mobile-menu{display:none;margin-top:10px}main{padding:18px;max-width:1400px;width:100%;margin:0 auto}.grid{display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:12px;margin-bottom:14px}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:0 4px 14px rgba(16,24,40,.04)}
+    .stat{font-size:32px;font-weight:800}.label{color:var(--muted);font-size:15px}.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:14px 0}.toolbar input,.toolbar select,.toolbar button{height:48px;border:1px solid var(--line);border-radius:10px;padding:0 14px;background:#fff;font-size:17px}.toolbar button{cursor:pointer;background:var(--brand);color:#fff;border:0;font-weight:800}.toolbar button.secondary{background:#fff;color:var(--text);border:1px solid var(--line)}.toolbar button.danger{background:var(--bad)} textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:10px;padding:10px;font-family:inherit;resize:vertical}.send-panel{display:grid;grid-template-columns:1fr 1fr;gap:10px}.send-panel .full{grid-column:1/-1}.wa-guest-list{display:grid;gap:8px;max-height:320px;overflow:auto;border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff}.wa-guest-item{border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff;cursor:pointer}.wa-guest-item:hover,.wa-guest-item.active{outline:3px solid #d9d6ff;border-color:var(--brand)}.wa-guest-item .meta{color:var(--muted);font-size:13px;margin-top:4px}.chat-log{border:1px solid var(--line);border-radius:14px;background:#f8fafc;padding:10px;max-height:360px;overflow:auto;display:flex;flex-direction:column;gap:8px}.chat-msg{max-width:82%;border-radius:14px;padding:9px 11px;white-space:pre-wrap;word-break:break-word}.chat-msg.out{align-self:flex-start;background:#ede9fe;color:#312e81}.chat-msg.in{align-self:flex-end;background:#fff;border:1px solid var(--line)}.chat-msg .time{display:block;margin-top:5px;font-size:11px;color:var(--muted)}.status{font-size:13px;margin-top:8px;font-weight:700}.status.ok-text{color:var(--ok)}.status.bad-text{color:var(--bad)}.hall-controls{display:grid;grid-template-columns:repeat(5,minmax(120px,1fr));gap:10px}.hall-controls input,.hall-controls select{height:38px;border:1px solid var(--line);border-radius:10px;padding:0 10px}.hall-map{margin-top:14px;background:#fbfbff;border:2px dashed #d0d5dd;border-radius:18px;padding:14px;display:grid;gap:14px;min-height:260px}.hall-map.venue-map{position:relative;display:block;min-height:680px;background-size:contain;background-position:center;background-repeat:no-repeat;overflow:auto}.hall-map.venue-map:before{content:'גרור שולחנות על גבי מפת האולם';position:absolute;top:10px;right:12px;background:rgba(255,255,255,.9);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:14px;color:var(--muted);z-index:1}.table-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:10px;box-shadow:0 4px 14px rgba(16,24,40,.05);min-height:120px}.venue-map .table-card{position:absolute;width:190px;min-height:108px;cursor:default;background:rgba(255,255,255,.94);backdrop-filter:blur(2px)}.table-move-handle{display:none}.venue-map .table-move-handle{display:inline-flex;align-items:center;justify-content:center;background:#ede9fe;color:#4c1d95;border-radius:999px;padding:3px 8px;font-size:12px;cursor:move;user-select:none}.table-card.over{outline:3px solid #b7a9ff}.table-card.full{border-color:var(--bad)}.table-head{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:8px;font-weight:700}.capacity{font-size:12px;color:var(--muted)}.seat-list{display:flex;flex-wrap:wrap;gap:6px;min-height:48px}.guest-chip{background:#f2f4f7;border:1px solid #e4e7ec;border-radius:999px;padding:5px 9px;font-size:12px;cursor:grab}.guest-chip.unassigned{background:#fff7ed;border-color:#fed7aa}.guest-chip:active{cursor:grabbing}.unassigned-box{max-height:180px;overflow:auto;border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff}.stage-box{background:#111827;color:#fff;border-radius:12px;padding:10px;text-align:center;font-weight:700}.dance-box{background:#eef4ff;border:1px solid #b2ccff;border-radius:12px;padding:18px;text-align:center;color:#3538cd;font-weight:700}.legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.legend span{font-size:12px;color:var(--muted)}.vendor-grid{display:grid;grid-template-columns:380px 1fr;gap:14px}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.form-grid .full{grid-column:1/-1}.form-grid input,.form-grid select,.form-grid textarea{width:100%;border:1px solid var(--line);border-radius:12px;padding:12px;font-family:inherit;font-size:18px}.admin-form .field label{display:block;font-weight:800;margin:0 0 6px;font-size:18px;color:#344054}.admin-form .field small{display:block;color:var(--muted);font-size:14px;margin-top:5px}.admin-form input,.admin-form select{height:52px}.admin-form textarea{min-height:130px}.admin-form .hint-card{background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:12px;color:#344054;font-size:16px}.vendor-list{display:flex;flex-direction:column;gap:8px;max-height:420px;overflow:auto}.vendor-item{border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff;cursor:pointer}.vendor-item.active{outline:3px solid #d9d6ff;border-color:var(--brand)}.money{font-weight:800}.wallet-row{display:flex;justify-content:space-between;border-bottom:1px solid #f2f4f7;padding:6px 0}.contract-box{border:1px dashed #d0d5dd;border-radius:12px;padding:10px;background:#fcfcff;white-space:pre-wrap;max-height:180px;overflow:auto}.admin-landing .sidebar,.admin-landing .mobile-menu{display:none!important}.admin-landing .app-shell{display:block}.admin-landing main{max-width:1180px;margin:0 auto}.admin-landing .page-section{display:none!important}.admin-landing .page-section[data-page='admin']{display:block!important}.admin-locked .app-shell,.admin-locked .mobile-menu{display:none!important}.auth-shell{display:none;max-width:520px;margin:24px auto;padding:0 18px}.admin-locked .auth-shell{display:block}.login-box{background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:0 8px 28px rgba(16,24,40,.08)}.login-box input{width:100%;height:50px;border:1px solid var(--line);border-radius:12px;padding:0 14px;font-size:18px;margin-top:8px}.top-actions{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}.admin-event-card{border:1px solid var(--line);border-radius:14px;padding:14px;background:#fff;margin:10px 0}.link-box{direction:ltr;text-align:left;word-break:break-all;background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:10px;margin-top:8px}.pill{display:inline-block;background:#ede9fe;color:#4c1d95;border-radius:999px;padding:3px 9px;font-size:13px}.client-only{display:none}.client-mode .client-only{display:block}.client-mode .client-hidden,.client-mode .admin-only{display:none!important}.client-auth-locked .sidebar,.client-auth-locked .mobile-menu{display:none!important}.client-auth-locked .app-shell{display:block}.client-auth-locked main{max-width:640px;margin:0 auto}.client-auth-locked .page-section{display:none!important}.client-auth-locked .page-section[data-page='client-login']{display:block!important}.share-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.share-actions button,.share-actions a{height:42px;border-radius:10px;padding:0 14px;border:1px solid var(--line);background:#fff;color:var(--text);text-decoration:none;display:inline-flex;align-items:center;font-weight:700;font-size:16px}.share-actions .primary{background:var(--brand);color:#fff;border:0}.ai-chat{border:1px solid var(--line);border-radius:14px;background:#f8fafc;padding:12px;max-height:420px;overflow:auto;display:flex;flex-direction:column;gap:8px}.ai-msg{border-radius:14px;padding:10px 12px;white-space:pre-wrap;word-break:break-word}.ai-msg.user{align-self:flex-start;background:#ede9fe;color:#312e81}.ai-msg.bot{align-self:flex-end;background:#fff;border:1px solid var(--line)}.quick-questions{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}.quick-questions button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 11px;cursor:pointer;font-weight:700;color:var(--text)}
+    .table-wrap{overflow:auto;background:#fff;border:1px solid var(--line);border-radius:14px;max-height:70vh}table{border-collapse:separate;border-spacing:0;width:100%;min-width:1450px}th,td{border-bottom:1px solid var(--line);border-left:1px solid #f2f4f7;padding:7px;vertical-align:middle}th{position:sticky;top:0;background:#fafafa;z-index:2;font-size:13px;color:#344054}td input,td select{width:100%;border:1px solid transparent;border-radius:8px;padding:7px;background:#fff}td input:focus,td select:focus{outline:2px solid #d9d6ff;border-color:var(--brand)}tr:hover{background:#fcfcff}.small{width:70px}.medium{width:130px}.wide{width:210px}.badge{display:inline-block;border-radius:999px;padding:4px 8px;font-size:12px;font-weight:700}.ok{background:#ecfdf3;color:#027a48}.warn{background:#fffaeb;color:#b54708}.bad{background:#fef3f2;color:#b42318}.note{color:var(--muted);font-size:13px;margin-top:10px}.hidden{display:none!important}@media(max-width:800px){.app-shell{grid-template-columns:1fr}.sidebar{position:relative;height:auto;border-left:0;border-bottom:1px solid var(--line);display:none}.sidebar.open{display:block}.mobile-menu{display:inline-flex;background:var(--brand);color:#fff;border:0;border-radius:10px;padding:9px 12px;margin:10px 18px 0}.grid{grid-template-columns:repeat(2,1fr)}header h1{font-size:22px}.toolbar input,.toolbar select,.toolbar button{width:100%}.send-panel{grid-template-columns:1fr}.hall-controls{grid-template-columns:1fr}.hall-map{grid-template-columns:1fr!important}.vendor-grid{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body class="admin-locked">
+<header>
+  <h1>כניסת אדמין</h1>
+  <p>מערכת מאובטחת לניהול אירועים, לקוחות ודפי אירוע ייחודיים</p>
+</header>
+<section class="auth-shell" id="adminLoginShell">
+  <div class="login-box">
+    <h2 style="margin:0 0 10px;font-size:28px">כניסת אדמין ראשי</h2>
+    <p class="label">רק אדמין מורשה יכול ליצור אירועים, לראות לקוחות ולנהל את המערכת.</p>
+    <input id="adminLoginUser" autocomplete="username" placeholder="משתמש" value="admin" />
+    <input id="adminLoginPass" autocomplete="current-password" type="password" placeholder="סיסמה" onkeydown="if(event.key==='Enter') adminLogin()" />
+    <div class="toolbar"><button onclick="adminLogin()">כניסה למערכת</button></div>
+    <div id="adminLoginStatus" class="status"></div>
+  </div>
+</section>
+<button class="mobile-menu" onclick="toggleMenu()">☰ תפריט</button>
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">תפריט מערכת</div>
+    <button class="nav-btn active" data-target="overview" onclick="showPage('overview')">📊 סקירה כללית</button>
+    <button class="nav-btn admin-only client-hidden" data-target="admin" onclick="showPage('admin')">🛠️ אדמין אירועים</button>
+    <button class="nav-btn admin-only client-hidden" data-target="event" onclick="showPage('event')">⚙️ הגדרת אירוע</button>
+    <button class="nav-btn" data-target="guests" onclick="showPage('guests')">👥 משתתפים</button>
+    <button class="nav-btn" data-target="whatsapp" onclick="showPage('whatsapp')">💬 וואטסאפ</button>
+    <button class="nav-btn" data-target="seating" onclick="showPage('seating')">🪑 שולחנות ומפה</button>
+    <button class="nav-btn" data-target="vendors" onclick="showPage('vendors')">🤝 ספקים וארנק</button>
+  </aside>
+<main>
+  <section class="grid page-section active" data-page="overview">
+    <div class="card"><div class="stat" id="totalGuests">0</div><div class="label">סה״כ משתתפים</div></div>
+    <div class="card"><div class="stat" id="confirmedGuests">0</div><div class="label">אישרו השתתפות</div></div>
+    <div class="card"><div class="stat" id="paidGuests">0</div><div class="label">שילמו</div></div>
+    <div class="card"><div class="stat" id="peopleCount">0</div><div class="label">סה״כ אנשים לפי כמויות</div></div>
+    <div class="card client-only" style="grid-column:1/-1">
+      <h3 style="margin:0 0 8px;font-size:22px">עדכון מספר משתתפים / מוזמנים</h3>
+      <div class="toolbar" style="margin:0">
+        <input id="clientExpectedInput" type="number" min="1" placeholder="מספר משתתפים משוער" />
+        <button onclick="updateClientExpectedCount()">עדכן מספר משתתפים</button>
+      </div>
+      <div class="note">אפשר לשנות רק את מספר המשתתפים. פרטי האירוע כמו תאריך ואולם נשארים נעולים לעריכה ע״י האדמין.</div>
+    </div>
+    <div class="card client-only" style="grid-column:1/-1">
+      <h3 style="margin:0 0 8px;font-size:24px">סוכן אירועים אישי</h3>
+      <div class="note">אפשר לשאול וגם לתת הוראות ביצוע: “מי אישרו הגעה?”, “איפה יושבת משפחת מידר?”, או “תכניס את משפחת ימיני עם 5 משתתפים לשולחן 5”.</div>
+      <div class="quick-questions">
+        <button onclick="askQuickAi('תכניס את משפחת ימיני למערכת')">הוסף משפחה</button>
+        <button onclick="askQuickAi('תכניס את משפחת ימיני עם 5 משתתפים לשולחן 5')">הוסף ושבץ</button>
+        <button onclick="askQuickAi('מי אישרו הגעה?')">מי אישרו הגעה?</button>
+        <button onclick="askQuickAi('איפה יושבת משפחת מידר?')">איפה יושבת משפחת מידר?</button>
+      </div>
+      <div id="aiChatLog" class="ai-chat"><div class="ai-msg bot">היי, אני סוכן האירוע. אפשר לשאול אותי שאלות וגם לבקש ממני לבצע פעולות במערכת, למשל להוסיף משפחה ולשבץ אותה לשולחן.</div></div>
+      <div class="toolbar" style="margin-bottom:0">
+        <input id="aiQuestion" placeholder="כתוב שאלה או הוראה לסוכן..." onkeydown="if(event.key==='Enter') askEventAi()" style="flex:1;min-width:260px" />
+        <button onclick="askEventAi()">שאל</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="card page-section" data-page="admin">
+    <div class="top-actions"><h2 style="margin:0;font-size:34px">הרשמת לקוח ויצירת אירוע חדש</h2><button class="nav-btn" style="width:auto" onclick="adminLogout()">יציאה מאדמין</button></div>
+    <div class="form-grid admin-form">
+      <div class="field"><label for="adminEventName">שם האירוע</label><input id="adminEventName" placeholder="לדוגמה: חתונת עמי ודנה" /></div>
+      <div class="field"><label for="adminEventType">סוג האירוע</label><select id="adminEventType"><option>חתונה</option><option>בר/בת מצווה</option><option>כנס</option><option>אירוע חברה</option><option>יום הולדת</option><option>אחר</option></select></div>
+      <div class="field"><label for="adminOwner">שם הלקוח / המארגן</label><input id="adminOwner" placeholder="שם מלא של הלקוח" /></div>
+      <div class="field"><label for="adminClientEmail">אימייל לקוח לשליחה</label><input id="adminClientEmail" type="email" placeholder="name@example.com" /></div>
+      <div class="field"><label for="adminClientPhone">וואטסאפ לקוח</label><input id="adminClientPhone" placeholder="לדוגמה: 972501234567" /></div>
+      <div class="field"><label for="adminDate">תאריך האירוע</label><input id="adminDate" type="date" /><small>לא ניתן לבחור תאריך שכבר עבר.</small></div>
+      <div class="field"><label for="adminVenue">מקום האירוע</label><input id="adminVenue" placeholder="שם אולם / כתובת / מיקום" /></div>
+      <div class="field"><label for="adminExpected">מספר מוזמנים משוער</label><input id="adminExpected" type="number" min="1" placeholder="לדוגמה: 350" /><small>המספר עוזר לפתוח תכנון ראשוני של אורחים ושולחנות.</small></div>
+      <div class="field"><label for="adminPassword">סיסמת לקוח</label><input id="adminPassword" placeholder="אפשר להשאיר ריק — המערכת תיצור סיסמה" /><small>זו הסיסמה שהלקוח יקבל לדף האירוע שלו.</small></div>
+      <div class="field"><label for="adminModules">מה הלקוח יקבל במערכת?</label><select id="adminModules"><option value="משתתפים, וואטסאפ, שולחנות, ספקים">מערכת מלאה: משתתפים, וואטסאפ, שולחנות וספקים</option><option value="משתתפים, וואטסאפ">רק משתתפים ושליחת וואטסאפ</option><option value="משתתפים, שולחנות">משתתפים וסידור שולחנות</option><option value="משתתפים">רק ניהול משתתפים</option></select><small>בחירה זו מתארת את החבילה/המודולים הפעילים ללקוח.</small></div>
+      <div class="field full"><label for="adminNotes">הערות אדמין / תכולה ללקוח</label><textarea id="adminNotes" placeholder="הערות פנימיות, בקשות מיוחדות, חבילת שירות וכו׳"></textarea></div>
+      <div class="hint-card full">טיפ: לאחר יצירת האירוע תקבל לינק ייחודי, משתמש וסיסמה ללקוח, ואפשרות לשלוח אותם במייל או וואטסאפ.</div>
+    </div>
+    <div class="toolbar">
+      <button onclick="adminCreateEvent()">צור אירוע והפק לינק ללקוח</button>
+      <button class="secondary" onclick="clearAdminForm()">נקה טופס</button>
+      <button class="secondary" onclick="adminExportEvents()">ייצוא רשימת לקוחות/אירועים</button>
+    </div>
+    <div id="adminCreatedBox" class="note"></div>
+    <div id="adminEventsList" class="admin-event-list hidden"></div>
+    <div class="note">זהו דשבורד האדמין הראשי: יוצרים אירוע, מקבלים לינק + משתמש + סיסמה ללקוח, ורואים כאן את כל האירועים שנוצרו.</div>
+  </section>
+
+  <section class="card page-section" data-page="client-login">
+    <div class="login-box">
+      <h2 style="margin:0 0 10px;font-size:28px">כניסה לדף האירוע</h2>
+      <p class="label">הכנס משתמש וסיסמה שקיבלת מהאדמין.</p>
+      <input id="clientUsername" autocomplete="username" placeholder="משתמש לקוח" style="width:100%;height:50px;border:1px solid var(--line);border-radius:10px;padding:0 12px;margin-bottom:8px;font-size:18px" />
+      <input id="clientPassword" autocomplete="current-password" type="password" placeholder="סיסמה" style="width:100%;height:50px;border:1px solid var(--line);border-radius:10px;padding:0 12px;font-size:18px" onkeydown="if(event.key==='Enter') clientLogin()" />
+      <div class="toolbar"><button onclick="clientLogin()">כניסה לדשבורד</button></div>
+      <div id="clientLoginStatus" class="status"></div>
+    </div>
+  </section>
+
+  <section class="card page-section client-hidden" data-page="event">
+    <h2 style="margin:0 0 10px;font-size:20px">הגדרת אירוע</h2>
+    <div class="form-grid">
+      <input id="eventName" placeholder="שם האירוע" oninput="saveEventSettings()" />
+      <select id="eventType" onchange="saveEventSettings()"><option>חתונה</option><option>בר/בת מצווה</option><option>כנס</option><option>אירוע חברה</option><option>יום הולדת</option><option>אחר</option></select>
+      <input id="eventOwner" placeholder="שם מארגן/לקוח" oninput="saveEventSettings()" />
+      <input id="eventDate" type="date" onchange="saveEventSettings()" />
+      <input id="eventVenue" placeholder="מקום האירוע / אולם" oninput="saveEventSettings()" />
+      <input id="eventExpected" type="number" placeholder="כמות משתתפים משוערת" oninput="saveEventSettings()" />
+      <textarea class="full" id="eventNotes" placeholder="הערות כלליות לאירוע" oninput="saveEventSettings()"></textarea>
+    </div>
+    <div class="toolbar">
+      <button onclick="applyEventToDashboard()">שמור ועדכן כותרות</button>
+      <button class="secondary" onclick="exportFullEventJSON()">ייצוא גיבוי אירוע</button>
+      <button class="secondary" onclick="document.getElementById('importEventFile').click()">ייבוא גיבוי אירוע</button>
+      <input id="importEventFile" class="hidden" type="file" accept=".json" onchange="importFullEventJSON(event)" />
+    </div>
+    <div class="note">מסך זה מיועד לאדמין בלבד. לקוחות יכולים לעבוד על משתתפים, הודעות, שולחנות וספקים — ללא עריכת פרטי האירוע.</div>
+  </section>
+
+  <section class="card page-section" data-page="guests">
+    <h2 style="margin:0 0 10px;font-size:20px">משתתפים / מוזמנים</h2>
+    <div class="toolbar">
+      <input id="search" placeholder="חיפוש שם / טלפון / הערות" oninput="render()" />
+      <select id="rsvpFilter" onchange="render()"><option value="">כל סטטוסי ההגעה</option><option>טרם נענה</option><option>אישר</option><option>לא מגיע</option><option>אולי</option></select>
+      <select id="payFilter" onchange="render()"><option value="">כל סטטוסי התשלום</option><option>טרם שולם</option><option>שולם</option><option>פטור/לא נדרש</option></select>
+      <button onclick="addRow()">+ הוסף אורח</button>
+      <button class="secondary" onclick="exportCSV()">ייצוא CSV</button>
+      <button class="secondary" onclick="document.getElementById('importFile').click()">ייבוא CSV</button>
+      <button class="danger" onclick="resetData()">איפוס</button>
+      <input id="importFile" class="hidden" type="file" accept=".csv" onchange="importCSV(event)" />
+    </div>
+    <div class="note">המידע נשמר בדפדפן שלך אוטומטית. כדי לגבות/להעביר — לחץ “ייצוא CSV”.</div>
+  </section>
+
+
+
+  <section class="card page-section" data-page="whatsapp" style="margin-top:14px">
+    <h2 style="margin:0 0 10px;font-size:20px">שליחת וואטסאפ למשתתף / לקוח</h2>
+    <div class="send-panel">
+      <div class="full">
+        <label class="label">בחר משתתף לשליחת הודעה</label>
+        <input id="waGuestSearch" placeholder="חיפוש לפי שם / טלפון / קבוצה" oninput="renderWhatsAppGuests()" style="width:100%;height:44px;border:1px solid var(--line);border-radius:10px;padding:0 12px;margin:6px 0 8px" />
+        <div id="waGuestList" class="wa-guest-list"></div>
+      </div>
+      <div>
+        <label class="label">אורח נבחר</label>
+        <input id="waGuest" placeholder="בחר משתתף מהרשימה למעלה" readonly />
+      </div>
+      <div>
+        <label class="label">טלפון וואטסאפ</label>
+        <input id="waPhone" placeholder="9725... או 05..." />
+      </div>
+      <div class="full">
+        <label class="label">בחר סוג הודעה</label>
+        <select id="waTemplate" onchange="applyTemplate()">
+          <option value="invite">הזמנה / אישור הגעה</option>
+          <option value="rsvpReminder">תזכורת לאישור הגעה</option>
+          <option value="payment">תזכורת תשלום באשראי</option>
+          <option value="table">עדכון שולחן</option>
+          <option value="custom">הודעה חופשית</option>
+        </select>
+      </div>
+      <div class="full">
+        <label class="label">נוסח ההודעה</label>
+        <textarea id="waMessage"></textarea>
+      </div>
+      <div class="toolbar full" style="margin:0">
+        <button onclick="sendWhatsApp()">שלח וואטסאפ</button>
+        <button class="secondary" onclick="previewWhatsApp()">רענן נוסח</button>
+        <button class="secondary" onclick="refreshWhatsAppHistory()">רענן לוג שיחה</button>
+      </div>
+      <div id="waStatus" class="status full"></div>
+      <div class="full">
+        <h3 style="margin:12px 0 8px;font-size:18px">לוג שיחה עם המשתתף</h3>
+        <div id="waChatLog" class="chat-log"><span class="label">בחר משתתף כדי לראות הודעות שנשלחו והודעות שחזרו.</span></div>
+      </div>
+    </div>
+    <div class="note">השליחה מתבצעת דרך Green API בצד השרת, בלי לחשוף את הטוקן בדפדפן.</div>
+  </section>
+
+
+  <section class="card page-section" data-page="seating" style="margin-top:14px">
+    <h2 style="margin:0 0 10px;font-size:20px">סידור שולחנות ומפת מקום האירוע</h2>
+    <div class="hall-controls">
+      <div><label class="label">שם/מבנה אולם</label><input id="hallName" placeholder="לדוגמה: אולם מרכזי" oninput="saveHallFromInputs()" /></div>
+      <div><label class="label">מספר שולחנות</label><input id="tableCount" type="number" min="1" value="35" /></div>
+      <div><label class="label">יושבים בכל שולחן</label><input id="defaultCapacity" type="number" min="1" value="10" /></div>
+      <div><label class="label">עמודות במפה</label><input id="hallColumns" type="number" min="1" value="5" oninput="saveHallFromInputs(); renderHall()" /></div>
+      <div><label class="label">אזור מרכזי</label><select id="hallFeature" onchange="saveHallFromInputs(); renderHall()"><option value="dance">רחבת ריקודים</option><option value="stage">חופה/במה</option><option value="none">ללא</option></select></div>
+    </div>
+    <div class="toolbar">
+      <button onclick="generateTables()">צור/עדכן שולחנות</button>
+      <button class="secondary" onclick="autoAssignGuests()">שיבוץ אוטומטי למי שאישר</button>
+      <button class="secondary" onclick="clearSeating()">נקה שיבוץ</button>
+      <button class="secondary" onclick="document.getElementById('hallMapFile').click()">העלה מפת אולם</button>
+      <button class="secondary" onclick="clearHallMapImage()">הסר מפה</button>
+      <button class="secondary" onclick="exportSeatingCSV()">ייצוא סידור שולחנות</button>
+      <input id="hallMapFile" class="hidden" type="file" accept="image/*" onchange="uploadHallMapImage(event)" />
+    </div>
+    <div class="grid" style="grid-template-columns:repeat(4,minmax(140px,1fr));margin-top:10px">
+      <div class="card"><div class="stat" id="tablesStat">0</div><div class="label">שולחנות</div></div>
+      <div class="card"><div class="stat" id="seatsStat">0</div><div class="label">מקומות ישיבה</div></div>
+      <div class="card"><div class="stat" id="assignedStat">0</div><div class="label">אורחים משובצים</div></div>
+      <div class="card"><div class="stat" id="unassignedStat">0</div><div class="label">משתתפים לא משובצים</div></div>
+    </div>
+    <h3 style="margin:10px 0 6px;font-size:16px">משתתפים לא משובצים</h3>
+    <div id="unassignedGuests" class="unassigned-box"></div>
+    <div class="legend"><span>טיפ: אפשר להעלות תמונת מפת אולם, ואז לגרור כל שולחן למיקום המדויק שלו. גרירת משתתפים לשולחנות עדיין עובדת כרגיל.</span></div>
+    <div id="hallMap" class="hall-map"></div>
+    <div class="note">אפשר לשנות קיבולת לכל שולחן בנפרד. השיבוץ נשמר אוטומטית בדפדפן ומעדכן גם את עמודת “שולחן” בטבלת האורחים.</div>
+  </section>
+
+
+  <section class="card page-section" data-page="vendors" style="margin-top:14px">
+    <h2 style="margin:0 0 10px;font-size:20px">ניהול ספקים, חוזים וארנק אירוע</h2>
+    <section class="grid" style="grid-template-columns:repeat(4,minmax(140px,1fr));margin-bottom:12px">
+      <div class="card"><div class="stat" id="walletBalance">₪0</div><div class="label">יתרת ארנק זמינה</div></div>
+      <div class="card"><div class="stat" id="vendorTotalCommit">₪0</div><div class="label">סה״כ התחייבויות לספקים</div></div>
+      <div class="card"><div class="stat" id="vendorTotalPaid">₪0</div><div class="label">שולם לספקים</div></div>
+      <div class="card"><div class="stat" id="vendorTotalDue">₪0</div><div class="label">נותר לתשלום</div></div>
+    </section>
+    <div class="vendor-grid">
+      <div>
+        <h3 style="margin:0 0 8px;font-size:16px">רשימת ספקים</h3>
+        <div class="toolbar" style="margin-top:0">
+          <button onclick="newVendor()">+ ספק חדש</button>
+          <button class="secondary" onclick="exportVendorsCSV()">ייצוא ספקים</button>
+        </div>
+        <div id="vendorList" class="vendor-list"></div>
+        <h3 style="margin:14px 0 8px;font-size:16px">ארנק ותנועות</h3>
+        <div class="form-grid">
+          <input id="walletAmount" type="number" placeholder="סכום" />
+          <select id="walletType"><option value="income">הכנסה מלקוחות</option><option value="expense">הוצאה לספק</option></select>
+          <input class="full" id="walletNote" placeholder="הערה / מקור התשלום" />
+          <button onclick="addWalletTx()">הוסף תנועה</button>
+        </div>
+        <div id="walletTxList" style="margin-top:10px;max-height:180px;overflow:auto"></div>
+      </div>
+      <div>
+        <h3 style="margin:0 0 8px;font-size:16px">פרטי ספק</h3>
+        <div class="form-grid">
+          <input id="vendorName" placeholder="שם ספק / חברה" oninput="saveVendorForm()" />
+          <select id="vendorCategory" onchange="saveVendorForm()"><option>אולם</option><option>קייטרינג</option><option>צלם</option><option>DJ</option><option>עיצוב</option><option>אלכוהול</option><option>רב / חופה</option><option>אטרקציות</option><option>אחר</option></select>
+          <input id="vendorContact" placeholder="איש קשר" oninput="saveVendorForm()" />
+          <input id="vendorPhone" placeholder="טלפון וואטסאפ" oninput="saveVendorForm()" />
+          <input id="vendorEmail" placeholder="אימייל" oninput="saveVendorForm()" />
+          <input id="vendorContractUrl" placeholder="קישור לחוזה / Google Drive" oninput="saveVendorForm()" />
+          <input id="vendorAgreed" type="number" placeholder="סכום שסוכם" oninput="saveVendorForm()" />
+          <input id="vendorPaid" type="number" placeholder="שולם עד עכשיו" oninput="saveVendorForm()" />
+          <select id="vendorStatus" onchange="saveVendorForm()"><option>פתוח</option><option>חוזה נחתם</option><option>מקדמה שולמה</option><option>שולם מלא</option><option>לבירור</option></select>
+          <input id="vendorDueDate" type="date" onchange="saveVendorForm()" />
+          <textarea class="full" id="vendorContractText" placeholder="תקציר חוזה / תנאי תשלום / מה כלול" oninput="saveVendorForm()"></textarea>
+          <textarea class="full" id="vendorNotes" placeholder="הערות" oninput="saveVendorForm()"></textarea>
+        </div>
+        <div class="toolbar">
+          <button onclick="sendVendorWhatsApp()">שלח וואטסאפ לספק</button>
+          <button class="secondary" onclick="emailVendor()">פתח מייל לספק</button>
+          <button class="secondary" onclick="openVendorContract()">פתח חוזה</button>
+          <button class="secondary" onclick="recordVendorPayment()">רשום תשלום מהארנק</button>
+          <button class="danger" onclick="deleteVendor()">מחק ספק</button>
+        </div>
+        <div class="note">תשלום אמיתי לספקים עדיין לא מבוצע אוטומטית. כרגע המערכת רושמת תשלום ומעדכנת את הארנק; כדי להעביר כסף בפועל נחבר בהמשך ספק סליקה/בנק.</div>
+        <div id="vendorStatusMsg" class="status"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="table-wrap page-section" data-page="guests" style="margin-top:14px">
+    <table>
+      <thead><tr id="head"></tr></thead>
+      <tbody id="body"></tbody>
+    </table>
+  </section>
+</main>
+</div>
+<script>
+const ADMIN_EVENTS_KEY = 'dynamic_event_admin_events_v1';
+const ADMIN_SESSION_KEY = 'dynamic_event_admin_session_v2';
+const CLIENT_SESSION_PREFIX = 'dynamic_event_client_session_v2_';
+const EVENT_KEY = 'dynamic_event_settings_v1';
+const STORAGE_KEY = 'dynamic_event_participants_v1';
+let adminEventsCache = [];
+let currentAdminToken = sessionStorage.getItem(ADMIN_SESSION_KEY) || localStorage.getItem(ADMIN_SESSION_KEY) || '';
+let currentClientToken = '';
+let syncTimer = null;
+let suppressSync = false;
+
+function showPage(page){
+  if(document.body.classList.contains('client-mode') && (page==='event' || page==='admin')) page='overview';
+  document.querySelectorAll('.page-section').forEach(el=>el.classList.toggle('active', el.dataset.page===page));
+  document.querySelectorAll('.nav-btn').forEach(btn=>btn.classList.toggle('active', btn.dataset.target===page));
+  const sidebar=document.getElementById('sidebar'); if(sidebar) sidebar.classList.remove('open');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function toggleMenu(){ document.getElementById('sidebar')?.classList.toggle('open'); }
+function eventSlug(){ return new URLSearchParams(location.search).get('event'); }
+function isClientUrl(){ return location.hash === '#client' || !!eventSlug(); }
+function authHeaders(){ return currentAdminToken ? {authorization:'Bearer '+currentAdminToken} : {}; }
+function clientAuthHeaders(){ return currentClientToken ? {authorization:'Bearer '+currentClientToken} : {}; }
+function currentEventId(){ return eventSlug() || eventSettings?.id || ''; }
+function collectEventState(){ return {eventSettings, participants:guests, hall, vendors, walletTx, savedAt:new Date().toISOString()}; }
+async function syncEventStateNow(){
+  if(suppressSync || !currentClientToken || !currentEventId()) return;
+  try{ await fetch('/api/event-state',{method:'POST',headers:{'content-type':'application/json',...clientAuthHeaders()},body:JSON.stringify({eventId:currentEventId(),state:collectEventState()})}); }catch(e){}
+}
+function scheduleEventStateSync(){ if(suppressSync || !currentClientToken) return; clearTimeout(syncTimer); syncTimer=setTimeout(syncEventStateNow, 800); }
+async function loadRemoteEventState(){
+  if(!currentClientToken || !currentEventId()) return false;
+  try{
+    const res=await fetch('/api/event-state?eventId='+encodeURIComponent(currentEventId()),{headers:clientAuthHeaders()});
+    const data=await res.json();
+    if(res.ok && data.ok && data.state){
+      suppressSync=true;
+      if(data.state.eventSettings){ eventSettings=data.state.eventSettings; localStorage.setItem(EVENT_KEY,JSON.stringify(eventSettings)); }
+      if(Array.isArray(data.state.participants)){ guests=data.state.participants; localStorage.setItem(STORAGE_KEY,JSON.stringify(guests)); }
+      if(data.state.hall){ hall=data.state.hall; localStorage.setItem(HALL_KEY,JSON.stringify(hall)); }
+      if(Array.isArray(data.state.vendors)){ vendors=data.state.vendors; localStorage.setItem(VENDOR_KEY,JSON.stringify(vendors)); }
+      if(Array.isArray(data.state.walletTx)){ walletTx=data.state.walletTx; localStorage.setItem(WALLET_KEY,JSON.stringify(walletTx)); }
+      suppressSync=false;
+      return true;
+    }
+  }catch(e){}
+  suppressSync=false;
+  return false;
+}
+function loadAdminEvents(){
+  if(adminEventsCache.length) return adminEventsCache;
+  try{ return JSON.parse(localStorage.getItem(ADMIN_EVENTS_KEY)||'[]'); }catch(e){ return []; }
+}
+function saveAdminEventsLocal(list){ adminEventsCache=list; localStorage.setItem(ADMIN_EVENTS_KEY, JSON.stringify(list)); renderAdminEvents(); }
+async function fetchAdminEvents(){
+  try{
+    const res=await fetch('/api/events',{headers:authHeaders()});
+    const data=await res.json();
+    if(res.ok && data.ok){ saveAdminEventsLocal(data.events||[]); return true; }
+  }catch(e){}
+  adminEventsCache=loadAdminEvents(); renderAdminEvents(); return false;
+}
+async function adminLogin(){
+  const status=document.getElementById('adminLoginStatus');
+  status.textContent='בודק פרטי כניסה...'; status.className='status';
+  try{
+    const res=await fetch('/api/admin-login',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({username:document.getElementById('adminLoginUser').value.trim(),password:document.getElementById('adminLoginPass').value})});
+    const data=await res.json();
+    if(!res.ok || !data.ok) throw new Error(data.error||'כניסה נכשלה');
+    currentAdminToken=data.token; sessionStorage.setItem(ADMIN_SESSION_KEY,currentAdminToken); localStorage.setItem(ADMIN_SESSION_KEY,currentAdminToken);
+    await enterAdminMode();
+  }catch(e){ status.textContent=e.message; status.className='status bad-text'; }
+}
+function adminLogout(){ sessionStorage.removeItem(ADMIN_SESSION_KEY); localStorage.removeItem(ADMIN_SESSION_KEY); currentAdminToken=''; document.body.className='admin-locked'; document.querySelector('header h1').textContent='כניסת אדמין'; document.querySelector('header p').textContent='מערכת מאובטחת לניהול אירועים, לקוחות ודפי אירוע ייחודיים'; }
+async function enterAdminMode(){
+  document.body.classList.remove('admin-locked','client-mode'); document.body.classList.add('admin-landing');
+  document.querySelector('header h1').textContent='דשבורד אדמין ראשי';
+  document.querySelector('header p').textContent='יצירת אירועים, הפקת משתמש וסיסמה ללקוח, וצפייה בכל הפעילות במקום אחד';
+  await fetchAdminEvents(); showPage('admin');
+}
+async function checkAdminSession(){
+  if(!currentAdminToken) return false;
+  try{ const res=await fetch('/api/auth/me',{headers:authHeaders()}); const data=await res.json(); return !!(res.ok && data.ok && data.session?.role==='admin'); }catch(e){ return false; }
+}
+function makeEventId(name){ return (name||'event').toLowerCase().replace(/[^a-z0-9א-ת]+/g,'-').replace(/^-|-$/g,'').slice(0,40) + '-' + Math.random().toString(36).slice(2,7); }
+function makePassword(len=10){ const chars='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'; return Array.from({length:len},()=>chars[Math.floor(Math.random()*chars.length)]).join(''); }
+function makeClientUsername(owner){ return (owner||'client').toLowerCase().replace(/[^a-z0-9א-ת]+/g,'-').replace(/^-|-$/g,'').slice(0,24) || 'client'; }
+function todayIso(){ return new Date().toISOString().slice(0,10); }
+function setupAdminDateMin(){ const el=document.getElementById('adminDate'); if(el) el.min=todayIso(); }
+async function adminCreateEvent(){
+  const get=id=>document.getElementById(id)?.value||'';
+  const eventDate=get('adminDate');
+  if(eventDate && eventDate < todayIso()){ alert('תאריך האירוע לא יכול להיות תאריך שכבר עבר.'); document.getElementById('adminDate').focus(); return; }
+  const expected=Number(get('adminExpected'));
+  if(!expected || expected < 1){ alert('נא להזין מספר מוזמנים משוער תקין.'); document.getElementById('adminExpected').focus(); return; }
+  const clientPassword=get('adminPassword') || makePassword(10);
+  const ev={id:makeEventId(get('adminEventName')), name:get('adminEventName')||'אירוע חדש', type:get('adminEventType')||'אירוע', owner:get('adminOwner'), clientUsername:makeClientUsername(get('adminOwner')||get('adminEventName')), clientEmail:get('adminClientEmail'), clientPhone:get('adminClientPhone'), date:eventDate, venue:get('adminVenue'), expected, notes:get('adminNotes'), modules:get('adminModules'), clientPassword, createdAt:new Date().toISOString(), updatedAt:new Date().toISOString()};
+  const list=[ev,...loadAdminEvents().filter(x=>x.id!==ev.id)]; saveAdminEventsLocal(list);
+  try{ const res=await fetch('/api/events',{method:'POST',headers:{'content-type':'application/json',...authHeaders()},body:JSON.stringify(ev)}); const data=await res.json(); if(res.ok&&data.ok) saveAdminEventsLocal(data.events||list); }catch(e){}
+  const link=`${location.origin}${location.pathname}?event=${encodeURIComponent(ev.id)}#client`;
+  const shareText=`שלום ${ev.owner||''}, נוצר עבורך דשבורד לניהול האירוע: ${ev.name}. לינק כניסה: ${link} משתמש: ${ev.clientUsername} סיסמה: ${clientPassword}`;
+  const mailto=`mailto:${encodeURIComponent(ev.clientEmail||'')}?subject=${encodeURIComponent('דשבורד ניהול אירוע - '+ev.name)}&body=${encodeURIComponent(shareText)}`;
+  const waPhone=(ev.clientPhone||'').replace(/\D/g,''); const waLink=`https://wa.me/${waPhone}?text=${encodeURIComponent(shareText)}`;
+  document.getElementById('adminCreatedBox').innerHTML=`<b>נוצר דף לקוח ✅</b><br><div class="link-box">${link}</div><br>משתמש לקוח: <b>${escapeHtml(ev.clientUsername)}</b><br>סיסמת לקוח: <b>${escapeHtml(clientPassword)}</b><div class="share-actions"><button class="primary" onclick="copyText('${link}')">העתק לינק</button><a href="${mailto}">שלח במייל</a><a href="${waLink}" target="_blank">שלח בוואטסאפ</a><button onclick="copyText('${shareText.replaceAll("'","\\'") }')">העתק הודעה מלאה</button></div>`;
+}
+function clearAdminForm(){ ['adminEventName','adminOwner','adminClientEmail','adminClientPhone','adminDate','adminVenue','adminExpected','adminPassword','adminNotes'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; }); const m=document.getElementById('adminModules'); if(m) m.value='משתתפים, וואטסאפ, שולחנות, ספקים'; setupAdminDateMin(); document.getElementById('adminCreatedBox').innerHTML=''; }
+function adminLoadCurrentEvent(){ const set=(id,val)=>{ const el=document.getElementById(id); if(el) el.value=val||''; }; set('adminEventName',eventSettings.name); set('adminEventType',eventSettings.type); set('adminOwner',eventSettings.owner); set('adminDate',eventSettings.date); set('adminVenue',eventSettings.venue); set('adminExpected',eventSettings.expected); set('adminNotes',eventSettings.notes); if(!document.getElementById('adminPassword').value) document.getElementById('adminPassword').value=makePassword(10); }
+function renderAdminEvents(){
+  const box=document.getElementById('adminEventsList'); if(!box) return; const list=loadAdminEvents(); box.classList.remove('hidden');
+  box.innerHTML=list.length?list.map(ev=>{
+    const link=`${location.origin}${location.pathname}?event=${encodeURIComponent(ev.id)}#client`;
+    const username=ev.clientUsername||ev.owner||'client';
+    const password=ev.clientPassword||ev.password||'';
+    const shareText=`שלום ${ev.owner||''}, נוצר עבורך דשבורד לניהול האירוע: ${ev.name}. לינק כניסה: ${link} משתמש: ${username} סיסמה: ${password}`;
+    const mailto=`mailto:${encodeURIComponent(ev.clientEmail||'')}?subject=${encodeURIComponent('דשבורד ניהול אירוע - '+ev.name)}&body=${encodeURIComponent(shareText)}`;
+    const waPhone=(ev.clientPhone||'').replace(/\D/g,''); const waLink=`https://wa.me/${waPhone}?text=${encodeURIComponent(shareText)}`;
+    return `<div class="admin-event-card"><b>${escapeHtml(ev.name)}</b> <span class="pill">${escapeHtml(ev.type)}</span><div class="label">לקוח: ${escapeHtml(ev.owner||'')} · משתמש: ${escapeHtml(username)} · ${escapeHtml(ev.clientEmail||'')} · ${escapeHtml(ev.clientPhone||'')}</div><div class="label">${escapeHtml(ev.venue||'')} · ${escapeHtml(ev.date||'')} · צפי ${Number(ev.expected)||0} משתתפים · נוצר: ${new Date(ev.createdAt||Date.now()).toLocaleString('he-IL')}</div><div class="link-box">${link}</div><div class="share-actions"><button class="primary" onclick="copyText('${link}')">העתק לינק</button><button onclick="copyText('${shareText.replaceAll("'","\\'") }')">העתק פרטי כניסה</button><a href="${mailto}">מייל</a><a href="${waLink}" target="_blank">וואטסאפ</a></div><div class="toolbar"><button class="secondary" onclick="adminOpenEvent('${ev.id}')">פתח לצפייה/עריכה</button><button class="secondary" onclick="adminResetClientPassword('${ev.id}')">אפס סיסמת לקוח</button><button class="danger" onclick="adminDeleteEvent('${ev.id}')">מחק</button></div></div>`;
+  }).join(''):'<span class="label">עדיין לא נוצרו אירועים.</span>';
+}
+
+function copyText(text){ navigator.clipboard?.writeText(text); alert('הועתק'); }
+async function adminResetClientPassword(id){
+  const list=loadAdminEvents();
+  const ev=list.find(x=>x.id===id); if(!ev) return;
+  if(!confirm(`לאפס סיסמה ללקוח/מארגן של האירוע "${ev.name}"? הסיסמה הישנה תוחלף.`)) return;
+  const newPassword=makePassword(10);
+  const updated={...ev, clientPassword:newPassword, password:newPassword, passwordResetAt:new Date().toISOString(), updatedAt:new Date().toISOString()};
+  const next=list.map(x=>x.id===id?updated:x);
+  saveAdminEventsLocal(next);
+  try{
+    const res=await fetch('/api/events',{method:'POST',headers:{'content-type':'application/json',...authHeaders()},body:JSON.stringify(updated)});
+    const data=await res.json();
+    if(!res.ok||!data.ok) throw new Error(data.error||'שמירה נכשלה');
+    saveAdminEventsLocal(data.events||next);
+  }catch(e){ alert('הסיסמה עודכנה בדפדפן, אבל לא נשמרה לשרת: '+e.message); }
+  const link=`${location.origin}${location.pathname}?event=${encodeURIComponent(updated.id)}#client`;
+  const username=updated.clientUsername||updated.owner||'client';
+  const shareText=`שלום ${updated.owner||''}, איפסנו עבורך את הסיסמה לדשבורד האירוע: ${updated.name}. לינק כניסה: ${link} משתמש: ${username} סיסמה חדשה: ${newPassword}`;
+  const mailto=`mailto:${encodeURIComponent(updated.clientEmail||'')}?subject=${encodeURIComponent('איפוס סיסמה לדשבורד אירוע - '+updated.name)}&body=${encodeURIComponent(shareText)}`;
+  const waPhone=(updated.clientPhone||'').replace(/\D/g,''); const waLink=`https://wa.me/${waPhone}?text=${encodeURIComponent(shareText)}`;
+  document.getElementById('adminCreatedBox').innerHTML=`<b>סיסמת הלקוח אופסה ✅</b><br>אירוע: <b>${escapeHtml(updated.name)}</b><br>משתמש: <b>${escapeHtml(username)}</b><br>סיסמה חדשה: <b>${escapeHtml(newPassword)}</b><div class="link-box">${link}</div><div class="share-actions"><button class="primary" onclick="copyText('${shareText.replaceAll("'","\\'") }')">העתק הודעה ללקוח</button><a href="${mailto}">שלח במייל</a><a href="${waLink}" target="_blank">שלח בוואטסאפ</a></div>`;
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function adminOpenEvent(id){
+  const ev=loadAdminEvents().find(x=>x.id===id); if(!ev) return;
+  const link=`${location.origin}${location.pathname}?event=${encodeURIComponent(ev.id)}#client`;
+  window.open(link, '_blank', 'noopener');
+}
+function applyAdminEventToWorkspace(ev){
+  eventSettings={name:ev.name,type:ev.type,owner:ev.owner,date:ev.date,venue:ev.venue,expected:Number(ev.expected)||100,notes:ev.notes};
+  localStorage.setItem(EVENT_KEY,JSON.stringify(eventSettings));
+  reconcileGuestsWithExpected(eventSettings.expected);
+  fillEventSettings();
+  render();
+  renderHall();
+}
+async function adminDeleteEvent(id){ if(!confirm('למחוק את האירוע מרשימת האדמין?')) return; const local=loadAdminEvents().filter(ev=>ev.id!==id); saveAdminEventsLocal(local); try{ const res=await fetch('/api/events?id='+encodeURIComponent(id),{method:'DELETE',headers:authHeaders()}); const data=await res.json(); if(res.ok&&data.ok) saveAdminEventsLocal(data.events||local); }catch(e){} }
+function adminExportEvents(){ const blob=new Blob([JSON.stringify(loadAdminEvents(),null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='admin-events.json'; a.click(); URL.revokeObjectURL(a.href); }
+async function clientLogin(){
+  const id=eventSlug(); const status=document.getElementById('clientLoginStatus'); status.textContent='בודק פרטי כניסה...'; status.className='status';
+  const username=document.getElementById('clientUsername')?.value.trim()||''; const password=document.getElementById('clientPassword').value;
+  try{ const res=await fetch('/api/client-login',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({eventId:id,username,password})}); const data=await res.json(); if(!res.ok||!data.ok) throw new Error(data.error||'כניסה נכשלה'); currentClientToken=data.token; sessionStorage.setItem(CLIENT_SESSION_PREFIX+id,data.token); await enterClientMode(data.event); }
+  catch(e){ const ev=loadAdminEvents().find(x=>x.id===id); if(ev && (!username || username===(ev.clientUsername||ev.owner||'client')) && password===(ev.clientPassword||ev.password)){ sessionStorage.setItem('client_event_access_'+id,'1'); await enterClientMode(ev); } else { status.textContent=e.message; status.className='status bad-text'; } }
+}
+async function enterClientMode(ev){ document.body.classList.remove('admin-landing','admin-locked','client-auth-locked'); document.body.classList.add('client-mode'); applyAdminEventToWorkspace(ev); await loadRemoteEventState(); fillEventSettings(); render(); renderHall(); renderVendors(); renderWallet(); updateVendorStats(); renderWhatsAppGuests(); showPage('overview'); document.querySelectorAll('.nav-btn.admin-only').forEach(e=>e.remove()); scheduleEventStateSync(); }
+async function bootMode(){
+  setupAdminDateMin();
+  renderAdminEvents();
+  if(isClientUrl()){
+    document.body.classList.remove('admin-landing','admin-locked');
+    document.body.classList.add('client-mode','client-auth-locked');
+    document.querySelectorAll('.nav-btn.admin-only').forEach(e=>e.remove());
+    const id=eventSlug(); const ev=loadAdminEvents().find(x=>x.id===id); currentClientToken=sessionStorage.getItem(CLIENT_SESSION_PREFIX+id)||'';
+    if(ev && (currentClientToken||sessionStorage.getItem('client_event_access_'+id)==='1')) await enterClientMode(ev); else showPage('client-login');
+    return;
+  }
+  if(await checkAdminSession()) await enterAdminMode(); else adminLogout();
+}
+
+function defaultEventSettings(){ return {name:'אירוע חדש', type:'חתונה', owner:'', date:'', venue:'', expected:100, notes:''}; }
+function loadEventSettings(){ try{ const v=localStorage.getItem(EVENT_KEY); if(v) return JSON.parse(v); }catch(e){} return defaultEventSettings(); }
+let eventSettings = loadEventSettings();
+function fillEventSettings(){
+  const set=(id,val)=>{ const el=document.getElementById(id); if(el) el.value=val??''; };
+  set('eventName',eventSettings.name); set('eventType',eventSettings.type); set('eventOwner',eventSettings.owner); set('eventDate',eventSettings.date); set('eventVenue',eventSettings.venue); set('eventExpected',eventSettings.expected); set('eventNotes',eventSettings.notes); set('clientExpectedInput',eventSettings.expected);
+  applyEventToDashboard(false);
+}
+function saveEventSettings(){
+  const get=id=>document.getElementById(id)?.value||'';
+  eventSettings={name:get('eventName')||'אירוע חדש',type:get('eventType')||'אירוע',owner:get('eventOwner'),date:get('eventDate'),venue:get('eventVenue'),expected:Number(get('eventExpected'))||0,notes:get('eventNotes')};
+  localStorage.setItem(EVENT_KEY, JSON.stringify(eventSettings));
+  applyEventToDashboard(false);
+  scheduleEventStateSync();
+}
+function formatEventDate(){ if(!eventSettings.date) return 'לא הוגדר תאריך'; try{return new Date(eventSettings.date+'T00:00:00').toLocaleDateString('he-IL')}catch{return eventSettings.date} }
+function applyEventToDashboard(showToast=true){
+  const title = eventSettings.name || 'מערכת ניהול אירועים דינאמית';
+  document.querySelector('header h1').textContent = title;
+  document.querySelector('header p').textContent = `${eventSettings.type||'אירוע'} · ${formatEventDate()} · ${eventSettings.venue||'מקום לא הוגדר'} · צפי ${Number(eventSettings.expected)||0} משתתפים · מערכת דינאמית לניהול משתתפים, הודעות, שולחנות וספקים`;
+  const clientExpected=document.getElementById('clientExpectedInput'); if(clientExpected) clientExpected.value=Number(eventSettings.expected)||'';
+  if(showToast) alert('הגדרת האירוע נשמרה');
+}
+function updateClientExpectedCount(){
+  const input=document.getElementById('clientExpectedInput');
+  const expected=Number(input?.value)||0;
+  if(expected < 1){ alert('נא להזין מספר משתתפים תקין'); input?.focus(); return; }
+  eventSettings.expected=expected;
+  localStorage.setItem(EVENT_KEY, JSON.stringify(eventSettings));
+  reconcileGuestsWithExpected(expected);
+  applyEventToDashboard(false);
+  render();
+  renderHall();
+  scheduleEventStateSync();
+  alert('מספר המשתתפים עודכן ✅');
+}
+function exportFullEventJSON(){
+  const data={eventSettings, participants:guests, hall, vendors, walletTx, exportedAt:new Date().toISOString()};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}); const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download='event-management-backup.json'; a.click(); URL.revokeObjectURL(a.href);
+}
+function importFullEventJSON(ev){
+  const file=ev.target.files[0]; if(!file) return; const r=new FileReader();
+  r.onload=()=>{ try{ const data=JSON.parse(r.result); if(data.eventSettings) localStorage.setItem(EVENT_KEY,JSON.stringify(data.eventSettings)); if(data.participants) localStorage.setItem(STORAGE_KEY,JSON.stringify(data.participants)); if(data.hall) localStorage.setItem(HALL_KEY,JSON.stringify(data.hall)); if(data.vendors) localStorage.setItem(VENDOR_KEY,JSON.stringify(data.vendors)); if(data.walletTx) localStorage.setItem(WALLET_KEY,JSON.stringify(data.walletTx)); location.reload(); }catch(e){ alert('קובץ גיבוי לא תקין'); } };
+  r.readAsText(file,'utf-8');
+}
+
+const headers = ['מספר','שם מלא / שם לקוח','טלפון וואטסאפ','קבוצה','כמות מוזמנים','סטטוס אישור השתתפות','סכום לתשלום','סטטוס תשלום','לינק תשלום/אסמכתא','שולחן / אזור','מיקום/אזור באולם','העדפות/רגישויות מזון','לא להושיב ליד','הערות'];
+const selectOptions = {
+  'סטטוס אישור השתתפות':['טרם נענה','אישר','לא מגיע','אולי'],
+  'סטטוס תשלום':['טרם שולם','שולם','פטור/לא נדרש'],
+  'קבוצה':['','משפחה','חברים','עבודה','צד חתן','צד כלה','ילדים','ספקים','אחר']
+};
+let guests = loadData();
+function emptyRow(i){ return {'מספר':i,'שם מלא / שם לקוח':'','טלפון וואטסאפ':'','קבוצה':'','כמות מוזמנים':'1','סטטוס אישור השתתפות':'טרם נענה','סכום לתשלום':'','סטטוס תשלום':'טרם שולם','לינק תשלום/אסמכתא':'','שולחן / אזור':'','מיקום/אזור באולם':'','העדפות/רגישויות מזון':'','לא להושיב ליד':'','הערות':''}; }
+function rowHasRealData(row){ return !!(row?.['שם מלא / שם לקוח'] || row?.['טלפון וואטסאפ'] || row?.['הערות'] || row?.['שולחן / אזור'] || row?.['לינק תשלום/אסמכתא']); }
+function reconcileGuestsWithExpected(expected){
+  expected = Number(expected) || 100;
+  if(!Array.isArray(guests)) guests=[];
+  const hasRealData = guests.some(rowHasRealData);
+  if(!hasRealData){ guests = Array.from({length:expected},(_,i)=>emptyRow(i+1)); save(); return; }
+  while(guests.length < expected) guests.push(emptyRow(guests.length+1));
+  while(guests.length > expected && !rowHasRealData(guests[guests.length-1])) guests.pop();
+  guests.forEach((g,i)=>g['מספר']=i+1);
+  save();
+}
+function loadData(){ try{ const saved=localStorage.getItem(STORAGE_KEY); if(saved) return JSON.parse(saved); }catch(e){} return Array.from({length:(Number(eventSettings?.expected)||100)},(_,i)=>emptyRow(i+1)); }
+function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(guests)); updateStats(); scheduleEventStateSync(); }
+function render(){
+  document.getElementById('head').innerHTML = headers.map(h=>`<th>${h}</th>`).join('') + '<th>פעולות</th>';
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  const rf = document.getElementById('rsvpFilter').value, pf = document.getElementById('payFilter').value;
+  const rows = guests.filter(g => (!rf || g['סטטוס אישור השתתפות']===rf) && (!pf || g['סטטוס תשלום']===pf) && (!q || Object.values(g).join(' ').toLowerCase().includes(q)) );
+  document.getElementById('body').innerHTML = rows.map((g)=>{
+    const idx = guests.indexOf(g);
+    return `<tr>${headers.map(h=>cell(idx,h,g[h]??'')).join('')}<td><button onclick="selectForWhatsApp(${idx})">וואטסאפ</button> <button class="danger" onclick="deleteRow(${idx})">מחק</button></td></tr>`;
+  }).join('');
+  updateStats();
+}
+function cell(idx,h,v){
+  const cls = h==='מספר'||h==='כמות מוזמנים'||h==='שולחן / אזור'?'small':(h.includes('הערות')||h.includes('רגישויות')||h.includes('לינק')?'wide':'medium');
+  if(selectOptions[h]) return `<td class="${cls}"><select onchange="setVal(${idx},'${h}',this.value)">${selectOptions[h].map(o=>`<option ${o===v?'selected':''}>${o}</option>`).join('')}</select></td>`;
+  const type = h==='סכום לתשלום'||h==='כמות מוזמנים'||h==='מספר'?'number':'text';
+  return `<td class="${cls}"><input type="${type}" value="${escapeHtml(v)}" oninput="setVal(${idx},'${h}',this.value)" /></td>`;
+}
+function setVal(idx,h,v){ guests[idx][h]=v; save(); if(['כמות מוזמנים','שם מלא / שם לקוח','טלפון וואטסאפ','סטטוס אישור השתתפות','שולחן / אזור'].includes(h)){ renderHall(); renderWhatsAppGuests(); } }
+function guestPartySize(i){ const g=typeof i==='number'?guests[i]:i; return Math.max(1, parseInt(g?.['כמות מוזמנים']) || 1); }
+function tableOccupancy(t){ return (t.guestIndexes||[]).reduce((sum,i)=>sum+guestPartySize(i),0); }
+function addRow(){ guests.push(emptyRow(guests.length+1)); save(); render(); renderHall(); renderWhatsAppGuests(); }
+function deleteRow(idx){ if(confirm('למחוק את הרשומה?')){ hall.tables?.forEach(t=>t.guestIndexes=(t.guestIndexes||[]).filter(i=>i!==idx).map(i=>i>idx?i-1:i)); guests.splice(idx,1); if(selectedWhatsAppIndex===idx) selectedWhatsAppIndex=null; save(); saveHall(); render(); renderHall(); renderWhatsAppGuests(); } }
+function resetData(){ const count=Number(eventSettings.expected)||100; if(confirm(`לאפס את כל הנתונים ל-${count} שורות ריקות לפי מספר המשתתפים שהוגדר?`)){ guests = Array.from({length:count},(_,i)=>emptyRow(i+1)); hall.tables?.forEach(t=>t.guestIndexes=[]); selectedWhatsAppIndex=null; save(); saveHall(); render(); renderHall(); renderWhatsAppGuests(); } }
+function updateStats(){
+  document.getElementById('totalGuests').textContent = guests.filter(g=>g['שם מלא / שם לקוח']).length || guests.length;
+  document.getElementById('confirmedGuests').textContent = guests.filter(g=>g['סטטוס אישור השתתפות']==='אישר').reduce((s,g)=>s+guestPartySize(g),0);
+  document.getElementById('paidGuests').textContent = guests.filter(g=>g['סטטוס תשלום']==='שולם').reduce((s,g)=>s+guestPartySize(g),0);
+  document.getElementById('peopleCount').textContent = guests.reduce((s,g)=>s+(g['שם מלא / שם לקוח'] ? guestPartySize(g) : 0),0);
+}
+function exportCSV(){
+  const csv = [headers.join(','), ...guests.map(g=>headers.map(h=>`"${String(g[h]??'').replaceAll('"','""')}"`).join(','))].join('\n');
+  const blob = new Blob(['\ufeff'+csv], {type:'text/csv;charset=utf-8'}); const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download='event_participants.csv'; a.click(); URL.revokeObjectURL(a.href);
+}
+function parseCSVLine(line){ const out=[]; let cur='',q=false; for(let i=0;i<line.length;i++){ const c=line[i]; if(c==='"'&&line[i+1]==='"'){cur+='"';i++;} else if(c==='"'){q=!q;} else if(c===','&&!q){out.push(cur);cur='';} else cur+=c; } out.push(cur); return out; }
+function importCSV(ev){ const file=ev.target.files[0]; if(!file)return; const r=new FileReader(); r.onload=()=>{ const lines=r.result.replace(/^\ufeff/,'').split(/\r?\n/).filter(Boolean); const hh=parseCSVLine(lines.shift()); guests=lines.map((line,i)=>{ const vals=parseCSVLine(line); const row=emptyRow(i+1); hh.forEach((h,j)=>{ if(headers.includes(h)) row[h]=vals[j]??''; }); return row; }); hall.tables?.forEach(t=>t.guestIndexes=[]); save(); saveHall(); render(); renderHall(); renderWhatsAppGuests(); }; r.readAsText(file,'utf-8'); }
+const WA_LOG_KEY = 'dynamic_event_whatsapp_log_v1';
+let selectedWhatsAppIndex = null;
+function loadWaLocalLog(){ try{return JSON.parse(localStorage.getItem(WA_LOG_KEY)||'{}');}catch(e){return {};}}
+function saveWaLocalLog(log){ localStorage.setItem(WA_LOG_KEY, JSON.stringify(log)); }
+function waLogKey(phone){ return String(phone||'').replace(/\D/g,'') || 'unknown'; }
+function addLocalWaLog(phone, direction, message){ const key=waLogKey(phone); const log=loadWaLocalLog(); log[key]=log[key]||[]; log[key].unshift({direction,message,date:new Date().toISOString(),source:'local'}); log[key]=log[key].slice(0,100); saveWaLocalLog(log); renderWhatsAppLog(); }
+function renderWhatsAppGuests(){
+  const box=document.getElementById('waGuestList'); if(!box) return;
+  const q=(document.getElementById('waGuestSearch')?.value||'').trim().toLowerCase();
+  const list=guests.map((g,i)=>({g,i})).filter(({g})=>g['שם מלא / שם לקוח'] || g['טלפון וואטסאפ']).filter(({g})=>!q || Object.values(g).join(' ').toLowerCase().includes(q));
+  box.innerHTML=list.length ? list.map(({g,i})=>`<div class="wa-guest-item ${i===selectedWhatsAppIndex?'active':''}" onclick="selectForWhatsApp(${i})"><b>${escapeHtml(guestName(g))}</b> <span class="pill">${guestPartySize(g)} מגיעים</span><div class="meta">${escapeHtml(g['טלפון וואטסאפ']||'אין טלפון')} · ${escapeHtml(g['סטטוס אישור השתתפות']||'')} · ${escapeHtml(g['שולחן / אזור']||'לא שובץ לשולחן')}</div></div>`).join('') : '<span class="label">לא נמצאו משתתפים עם שם או טלפון. הוסף משתתפים במסך “משתתפים”.</span>';
+}
+const messageTemplates = {
+  invite: g => `היי ${guestName(g)}, כאן צוות האירוע 😊
+נשמח לאישור השתתפות ב${eventSettings.name || 'אירוע'}${eventSettings.date ? ' בתאריך ' + formatEventDate() : ''}.
+כרגע רשום אצלנו: ${guestPartySize(g)} מגיעים.
+אפשר להשיב כאן אם צריך לעדכן את הכמות. תודה רבה!`,
+  rsvpReminder: g => `היי ${guestName(g)}, תזכורת קצרה לגבי ${eventSettings.name || 'האירוע'} 😊
+עדיין לא קיבלנו אישור השתתפות, נשמח לעדכון בהקדם כולל כמה מגיעים.`,
+  payment: g => `היי ${guestName(g)}, תזכורת לתשלום עבור ${eventSettings.name || 'האירוע'} 😊
+${g['לינק תשלום/אסמכתא'] ? 'קישור לתשלום: ' + g['לינק תשלום/אסמכתא'] : 'נשלח אליך קישור תשלום בהמשך.'}
+תודה רבה!`,
+  table: g => `היי ${guestName(g)}, עדכון לגבי ${eventSettings.name || 'האירוע'} 😊
+${g['שולחן / אזור'] ? 'השולחן/אזור שלך: ' + g['שולחן / אזור'] : 'פרטי השולחן/אזור יעודכנו בהמשך.'}
+רשום אצלנו ${guestPartySize(g)} מגיעים בקבוצה שלך.
+נשמח לראותך!`,
+  custom: g => document.getElementById('waMessage').value || `היי ${guestName(g)}, `
+};
+function guestName(g){ return (g && g['שם מלא / שם לקוח'] && g['שם מלא / שם לקוח'].trim()) || 'אורח/ת יקר/ה'; }
+function selectForWhatsApp(idx){
+  showPage('whatsapp');
+  selectedWhatsAppIndex = idx;
+  const g = guests[idx];
+  document.getElementById('waGuest').value = `${guestName(g)} · ${guestPartySize(g)} מגיעים`;
+  document.getElementById('waPhone').value = g['טלפון וואטסאפ'] || '';
+  renderWhatsAppGuests();
+  applyTemplate();
+  renderWhatsAppLog();
+  refreshWhatsAppHistory();
+  document.getElementById('waStatus').textContent = '';
+  document.getElementById('waGuest').scrollIntoView({behavior:'smooth', block:'center'});
+}
+function currentWhatsAppGuest(){ return selectedWhatsAppIndex === null ? {} : guests[selectedWhatsAppIndex]; }
+function normalizeHistoryMessage(m){
+  const text=m?.textMessage || m?.text || m?.message || m?.extendedTextMessage?.text || m?.quotedMessage?.textMessage || m?.caption || '';
+  const outgoing=!!(m?.type === 'outgoing' || m?.statusMessage || m?.fromMe || m?.senderId === 'me');
+  const ts=m?.timestamp ? (String(m.timestamp).length<11 ? Number(m.timestamp)*1000 : Number(m.timestamp)) : Date.now();
+  return {direction:outgoing?'out':'in',message:String(text||'[הודעה ללא טקסט]'),date:new Date(ts).toISOString(),source:'greenapi'};
+}
+function renderWhatsAppLog(remoteMessages=null){
+  const box=document.getElementById('waChatLog'); if(!box) return;
+  const phone=document.getElementById('waPhone')?.value||currentWhatsAppGuest()?.['טלפון וואטסאפ']||'';
+  if(!phone){ box.innerHTML='<span class="label">בחר משתתף כדי לראות לוג שיחה.</span>'; return; }
+  const local=(loadWaLocalLog()[waLogKey(phone)]||[]).map(x=>({...x,direction:x.direction||'out'}));
+  const remote=Array.isArray(remoteMessages)?remoteMessages.map(normalizeHistoryMessage):[];
+  const all=[...remote,...local].filter(x=>x.message).sort((a,b)=>new Date(a.date)-new Date(b.date));
+  if(!all.length){ box.innerHTML='<span class="label">אין עדיין הודעות בלוג. אחרי שליחה או רענון היסטוריה הן יופיעו כאן.</span>'; return; }
+  box.innerHTML=all.slice(-80).map(x=>`<div class="chat-msg ${x.direction==='out'?'out':'in'}"><b>${x.direction==='out'?'נשלח מהמערכת':'התקבל מהלקוח'}</b><br>${escapeHtml(x.message)}<span class="time">${new Date(x.date).toLocaleString('he-IL')}</span></div>`).join('');
+  box.scrollTop=box.scrollHeight;
+}
+async function refreshWhatsAppHistory(){
+  const status=document.getElementById('waStatus');
+  const phone=document.getElementById('waPhone').value.trim();
+  if(!phone){ status.textContent='בחר משתתף או הזן טלפון כדי לרענן לוג'; status.className='status full bad-text'; return; }
+  status.textContent='מרענן לוג שיחה...'; status.className='status full';
+  try{
+    const res=await fetch('/api/whatsapp-history',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({phone,count:50})});
+    const data=await res.json();
+    if(!res.ok||!data.ok) throw new Error(data.error || data.result?.message || 'לא ניתן לקבל היסטוריה');
+    renderWhatsAppLog(data.messages||[]);
+    status.textContent='לוג השיחה עודכן ✅'; status.classList.add('ok-text');
+  }catch(e){ status.textContent='לא ניתן לרענן לוג: '+e.message; status.classList.add('bad-text'); renderWhatsAppLog(); }
+}
+function applyTemplate(){
+  const kind = document.getElementById('waTemplate').value;
+  if(kind === 'custom') return;
+  document.getElementById('waMessage').value = messageTemplates[kind](currentWhatsAppGuest());
+}
+function previewWhatsApp(){ applyTemplate(); }
+async function sendWhatsApp(){
+  const status = document.getElementById('waStatus');
+  status.className = 'status full';
+  const phone = document.getElementById('waPhone').value.trim();
+  const message = document.getElementById('waMessage').value.trim();
+  if(!phone || !message){ status.textContent = 'חסר טלפון או נוסח הודעה'; status.classList.add('bad-text'); return; }
+  if(!confirm('לשלוח עכשיו וואטסאפ למספר ' + phone + '?')) return;
+  status.textContent = 'שולח...';
+  try{
+    const res = await fetch('/api/send-whatsapp', {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({phone, message})});
+    const data = await res.json();
+    if(!res.ok || !data.ok) throw new Error(data.error || data.result?.message || 'שליחה נכשלה');
+    addLocalWaLog(phone, 'out', message);
+    status.textContent = 'ההודעה נשלחה בהצלחה ✅';
+    status.classList.add('ok-text');
+  }catch(e){
+    status.textContent = 'שגיאה בשליחה: ' + e.message;
+    status.classList.add('bad-text');
+  }
+}
+
+
+const VENDOR_KEY = 'dynamic_event_vendors_v1';
+const WALLET_KEY = 'dynamic_event_wallet_v1';
+let vendors = loadVendors();
+let selectedVendorIndex = vendors.length ? 0 : null;
+let walletTx = loadWalletTx();
+function nis(n){ return '₪' + (Number(n)||0).toLocaleString('he-IL'); }
+function loadVendors(){ try{ const v=localStorage.getItem(VENDOR_KEY); if(v) return JSON.parse(v); }catch(e){} return []; }
+function saveVendors(){ localStorage.setItem(VENDOR_KEY, JSON.stringify(vendors)); renderVendors(); updateVendorStats(); scheduleEventStateSync(); }
+function loadWalletTx(){ try{ const v=localStorage.getItem(WALLET_KEY); if(v) return JSON.parse(v); }catch(e){} return []; }
+function saveWallet(){ localStorage.setItem(WALLET_KEY, JSON.stringify(walletTx)); renderWallet(); updateVendorStats(); scheduleEventStateSync(); }
+function walletBalance(){ return walletTx.reduce((s,t)=>s+(t.type==='income'?1:-1)*(Number(t.amount)||0),0); }
+function newVendor(){ vendors.push({name:'ספק חדש',category:'אחר',contact:'',phone:'',email:'',contractUrl:'',agreed:0,paid:0,status:'פתוח',dueDate:'',contractText:'',notes:''}); selectedVendorIndex=vendors.length-1; saveVendors(); fillVendorForm(); }
+function currentVendor(){ return selectedVendorIndex===null ? null : vendors[selectedVendorIndex]; }
+function renderVendors(){
+  const box=document.getElementById('vendorList'); if(!box) return;
+  box.innerHTML = vendors.length ? vendors.map((v,i)=>`<div class="vendor-item ${i===selectedVendorIndex?'active':''}" onclick="selectVendor(${i})"><b>${escapeHtml(v.name||'ללא שם')}</b><div class="label">${escapeHtml(v.category||'')} · ${escapeHtml(v.status||'פתוח')}</div><div class="label">סוכם: ${nis(v.agreed)} · שולם: ${nis(v.paid)}</div></div>`).join('') : '<span class="label">עדיין אין ספקים. לחץ “ספק חדש”.</span>';
+}
+function selectVendor(i){ selectedVendorIndex=i; renderVendors(); fillVendorForm(); }
+function fillVendorForm(){ const v=currentVendor()||{}; const set=(id,val)=>{ const el=document.getElementById(id); if(el) el.value=val??''; }; set('vendorName',v.name);set('vendorCategory',v.category||'אחר');set('vendorContact',v.contact);set('vendorPhone',v.phone);set('vendorEmail',v.email);set('vendorContractUrl',v.contractUrl);set('vendorAgreed',v.agreed);set('vendorPaid',v.paid);set('vendorStatus',v.status||'פתוח');set('vendorDueDate',v.dueDate);set('vendorContractText',v.contractText);set('vendorNotes',v.notes); }
+function saveVendorForm(){ const v=currentVendor(); if(!v) return; const get=id=>document.getElementById(id)?.value||''; Object.assign(v,{name:get('vendorName'),category:get('vendorCategory'),contact:get('vendorContact'),phone:get('vendorPhone'),email:get('vendorEmail'),contractUrl:get('vendorContractUrl'),agreed:Number(get('vendorAgreed'))||0,paid:Number(get('vendorPaid'))||0,status:get('vendorStatus'),dueDate:get('vendorDueDate'),contractText:get('vendorContractText'),notes:get('vendorNotes')}); saveVendors(); }
+function deleteVendor(){ if(selectedVendorIndex===null) return; if(!confirm('למחוק את הספק?')) return; vendors.splice(selectedVendorIndex,1); selectedVendorIndex=vendors.length?0:null; saveVendors(); fillVendorForm(); }
+function updateVendorStats(){ const agreed=vendors.reduce((s,v)=>s+(Number(v.agreed)||0),0), paid=vendors.reduce((s,v)=>s+(Number(v.paid)||0),0); const set=(id,val)=>{ const el=document.getElementById(id); if(el) el.textContent=nis(val); }; set('walletBalance',walletBalance()); set('vendorTotalCommit',agreed); set('vendorTotalPaid',paid); set('vendorTotalDue',agreed-paid); }
+function addWalletTx(){ const amount=Number(document.getElementById('walletAmount').value)||0; if(!amount) return alert('נא להזין סכום'); walletTx.unshift({date:new Date().toISOString(),amount,type:document.getElementById('walletType').value,note:document.getElementById('walletNote').value||''}); document.getElementById('walletAmount').value=''; document.getElementById('walletNote').value=''; saveWallet(); }
+function renderWallet(){ const box=document.getElementById('walletTxList'); if(!box) return; box.innerHTML=walletTx.length?walletTx.slice(0,30).map(t=>`<div class="wallet-row"><span>${new Date(t.date).toLocaleDateString('he-IL')} · ${escapeHtml(t.note||'')}</span><span class="money" style="color:${t.type==='income'?'var(--ok)':'var(--bad)'}">${t.type==='income'?'+':'-'}${nis(t.amount)}</span></div>`).join(''):'<span class="label">אין תנועות בארנק.</span>'; }
+async function sendVendorWhatsApp(){ const v=currentVendor(); if(!v) return; const msg=`היי ${v.contact||v.name}, כאן מארגן האירוע לגבי האירוע ב-תאריך האירוע. רציתי לעדכן/לתאם איתך לגבי השירות שסגרנו. תודה!`; document.getElementById('waPhone').value=v.phone||''; document.getElementById('waMessage').value=msg; await sendWhatsApp(); }
+function emailVendor(){ const v=currentVendor(); if(!v?.email) return alert('אין אימייל לספק'); location.href=`mailto:${encodeURIComponent(v.email)}?subject=${encodeURIComponent('אירוע תאריך האירוע - תיאום')}&body=${encodeURIComponent('היי,\nרציתי לתאם איתך לגבי האירוע.\nתודה, מארגן האירוע')}`; }
+function openVendorContract(){ const v=currentVendor(); if(v?.contractUrl) window.open(v.contractUrl,'_blank'); else alert('לא הוזן קישור לחוזה. אפשר להדביק קישור Google Drive/Dropbox בשדה החוזה.'); }
+function recordVendorPayment(){ const v=currentVendor(); if(!v) return; const due=(Number(v.agreed)||0)-(Number(v.paid)||0); const amount=Number(prompt(`כמה לשלם/לרשום לספק? יתרה לפי חוזה: ${nis(due)}`, due>0?due:'')); if(!amount) return; if(amount>walletBalance() && !confirm('הסכום גבוה מיתרת הארנק. לרשום בכל זאת?')) return; v.paid=(Number(v.paid)||0)+amount; walletTx.unshift({date:new Date().toISOString(),amount,type:'expense',note:`תשלום לספק: ${v.name}`}); if(v.paid>=v.agreed) v.status='שולם מלא'; saveVendors(); saveWallet(); fillVendorForm(); document.getElementById('vendorStatusMsg').textContent='התשלום נרשם והארנק עודכן ✅'; document.getElementById('vendorStatusMsg').className='status ok-text'; }
+function exportVendorsCSV(){ const rows=[['שם ספק','קטגוריה','איש קשר','טלפון','אימייל','סכום שסוכם','שולם','יתרה','סטטוס','תאריך יעד','קישור חוזה','תקציר חוזה','הערות'],...vendors.map(v=>[v.name,v.category,v.contact,v.phone,v.email,v.agreed,v.paid,(Number(v.agreed)||0)-(Number(v.paid)||0),v.status,v.dueDate,v.contractUrl,v.contractText,v.notes])]; const csv=rows.map(r=>r.map(x=>`"${String(x??'').replaceAll('"','""')}"`).join(',')).join('\n'); const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='event_vendors.csv'; a.click(); URL.revokeObjectURL(a.href); }
+
+const HALL_KEY = 'dynamic_event_hall_v1';
+let hall = loadHall();
+let draggedGuestIndex = null;
+let movingTable = null;
+function defaultHall(){ return {name:'אולם מרכזי', columns:5, feature:'dance', mapImage:'', tables:Array.from({length:35},(_,i)=>({id:i+1,name:`שולחן ${i+1}`,capacity:10,x:5+(i%5)*18,y:8+Math.floor(i/5)*14,guestIndexes:[]}))}; }
+function loadHall(){ try{ const saved=localStorage.getItem(HALL_KEY); if(saved) return JSON.parse(saved); }catch(e){} return defaultHall(); }
+function saveHall(){ localStorage.setItem(HALL_KEY, JSON.stringify(hall)); updateSeatingStats(); scheduleEventStateSync(); }
+function initHallInputs(){
+  document.getElementById('hallName').value = hall.name || '';
+  document.getElementById('tableCount').value = hall.tables?.length || 35;
+  document.getElementById('defaultCapacity').value = hall.tables?.[0]?.capacity || 10;
+  document.getElementById('hallColumns').value = hall.columns || 5;
+  document.getElementById('hallFeature').value = hall.feature || 'dance';
+}
+function saveHallFromInputs(){ hall.name=document.getElementById('hallName').value || 'אולם'; hall.columns=parseInt(document.getElementById('hallColumns').value)||5; hall.feature=document.getElementById('hallFeature').value || 'none'; saveHall(); }
+function generateTables(){
+  const count=parseInt(document.getElementById('tableCount').value)||1;
+  const cap=parseInt(document.getElementById('defaultCapacity').value)||10;
+  saveHallFromInputs();
+  const old=hall.tables||[];
+  hall.tables=Array.from({length:count},(_,i)=> old[i] ? {...old[i], id:i+1, name:old[i].name||`שולחן ${i+1}`, capacity:parseInt(old[i].capacity)||cap, x:Number(old[i].x) || (5+(i%5)*18), y:Number(old[i].y) || (8+Math.floor(i/5)*14), guestIndexes:old[i].guestIndexes||[]} : {id:i+1,name:`שולחן ${i+1}`,capacity:cap,x:5+(i%5)*18,y:8+Math.floor(i/5)*14,guestIndexes:[]});
+  syncGuestTableFields(); saveHall(); renderHall();
+renderVendors(); fillVendorForm(); renderWallet(); updateVendorStats();
+}
+function confirmedGuestIndexes(){ return guests.map((g,i)=>({g,i})).filter(x=>x.g['שם מלא / שם לקוח'] && x.g['סטטוס אישור השתתפות']!=='לא מגיע').map(x=>x.i); }
+function assignedSet(){ return new Set((hall.tables||[]).flatMap(t=>t.guestIndexes||[])); }
+function unassignedIndexes(){ const a=assignedSet(); return confirmedGuestIndexes().filter(i=>!a.has(i)); }
+function renderHall(){
+  initHallInputs();
+  const ua=unassignedIndexes();
+  document.getElementById('unassignedGuests').innerHTML = ua.length ? ua.map(i=>guestChip(i,true)).join('') : '<span class="label">כל המשתתפים משובצים ✅</span>';
+  const map=document.getElementById('hallMap');
+  map.classList.toggle('venue-map', !!hall.mapImage);
+  map.style.backgroundImage = hall.mapImage ? `url(${hall.mapImage})` : '';
+  map.style.gridTemplateColumns=`repeat(${hall.columns||5}, minmax(160px, 1fr))`;
+  const feature = !hall.mapImage && hall.feature==='dance' ? '<div class="dance-box">רחבת ריקודים</div>' : !hall.mapImage && hall.feature==='stage' ? '<div class="stage-box">חופה / במה</div>' : '';
+  map.innerHTML = feature + (hall.tables||[]).map(t=>tableCard(t)).join('');
+  updateSeatingStats();
+}
+function guestChip(i, unassigned=false){ const qty=guestPartySize(i); return `<span class="guest-chip ${unassigned?'unassigned':''}" draggable="true" ondragstart="dragGuest(${i})">${escapeHtml(guests[i]?.['שם מלא / שם לקוח']||'ללא שם')}${qty>1?` · ${qty} מגיעים`:''}</span>`; }
+function tableCard(t){
+  const count=tableOccupancy(t);
+  const full=count >= (parseInt(t.capacity)||0);
+  const pos = hall.mapImage ? `style="left:${Math.max(0,Math.min(88,Number(t.x)||5))}%;top:${Math.max(0,Math.min(88,Number(t.y)||8))}%;"` : '';
+  return `<div class="table-card ${full?'full':''}" data-table-id="${t.id}" ${pos} ondragover="allowDrop(event)" ondrop="dropOnTable(event,${t.id})">\n    <div class="table-head"><span class="table-move-handle" onpointerdown="startTableMove(event,${t.id})">↔ גרור</span><input value="${escapeHtml(t.name)}" onchange="renameTable(${t.id},this.value)" style="font-weight:700;border:0;background:transparent;width:110px"/><span class="capacity">${count}/<input type="number" min="1" value="${t.capacity}" onchange="setTableCapacity(${t.id},this.value)" style="width:46px;border:1px solid var(--line);border-radius:6px"/></span></div>\n    <div class="seat-list">${(t.guestIndexes||[]).map(i=>guestChip(i)).join('')}</div>\n  </div>`;
+}
+function uploadHallMapImage(ev){
+  const file=ev.target.files?.[0]; if(!file) return;
+  if(file.size > 4*1024*1024){ alert('קובץ המפה גדול מדי. מומלץ להעלות תמונה עד 4MB.'); ev.target.value=''; return; }
+  const r=new FileReader();
+  r.onload=()=>{ hall.mapImage=r.result; saveHall(); renderHall(); alert('מפת האולם עלתה ✅ עכשיו אפשר לגרור את השולחנות למיקום המדויק.'); };
+  r.readAsDataURL(file);
+}
+function clearHallMapImage(){ if(!hall.mapImage) return; if(!confirm('להסיר את תמונת מפת האולם? מיקומי השולחנות יישמרו.')) return; hall.mapImage=''; saveHall(); renderHall(); }
+function startTableMove(ev,id){
+  ev.preventDefault(); ev.stopPropagation();
+  const map=document.getElementById('hallMap'); const rect=map.getBoundingClientRect();
+  movingTable={id, rect};
+  window.addEventListener('pointermove', moveTableOnMap);
+  window.addEventListener('pointerup', stopTableMoveOnMap, {once:true});
+}
+function moveTableOnMap(ev){
+  if(!movingTable) return;
+  const map=document.getElementById('hallMap'); const rect=map.getBoundingClientRect();
+  const t=hall.tables.find(x=>x.id===movingTable.id); if(!t) return;
+  t.x=Math.max(0,Math.min(88,((ev.clientX-rect.left)/rect.width)*100));
+  t.y=Math.max(0,Math.min(88,((ev.clientY-rect.top)/rect.height)*100));
+  const card=map.querySelector(`.table-card[data-table-id="${t.id}"]`);
+  if(card){ card.style.left=t.x+'%'; card.style.top=t.y+'%'; }
+}
+function stopTableMoveOnMap(){ if(movingTable){ saveHall(); movingTable=null; } window.removeEventListener('pointermove', moveTableOnMap); }
+function dragGuest(i){ draggedGuestIndex=i; }
+function allowDrop(ev){ ev.preventDefault(); ev.currentTarget.classList.add('over'); }
+function dropOnTable(ev, tableId){ ev.preventDefault(); document.querySelectorAll('.table-card.over').forEach(e=>e.classList.remove('over')); if(draggedGuestIndex===null) return; assignGuestToTable(draggedGuestIndex, tableId); draggedGuestIndex=null; }
+function assignGuestToTable(guestIndex, tableId){
+  hall.tables.forEach(t=>{ t.guestIndexes=(t.guestIndexes||[]).filter(i=>i!==guestIndex); });
+  const table=hall.tables.find(t=>t.id===tableId);
+  if(!table) return;
+  const nextOccupancy=tableOccupancy(table)+guestPartySize(guestIndex);
+  if(nextOccupancy > (parseInt(table.capacity)||0) && !confirm(`השולחן יעבור את הקיבולת (${nextOccupancy}/${table.capacity}). להוסיף בכל זאת?`)) { renderHall(); return; }
+  table.guestIndexes.push(guestIndex);
+  guests[guestIndex]['שולחן / אזור']=table.name;
+  save(); saveHall(); render(); renderHall();
+}
+function renameTable(id, name){ const t=hall.tables.find(t=>t.id===id); if(t){ const old=t.name; t.name=name||old; t.guestIndexes.forEach(i=>{ if(guests[i]['שולחן / אזור']===old) guests[i]['שולחן / אזור']=t.name; }); save(); saveHall(); render(); renderHall(); } }
+function setTableCapacity(id, cap){ const t=hall.tables.find(t=>t.id===id); if(t){ t.capacity=parseInt(cap)||1; saveHall(); renderHall(); } }
+function syncGuestTableFields(){ hall.tables.forEach(t=>(t.guestIndexes||[]).forEach(i=>{ if(guests[i]) guests[i]['שולחן / אזור']=t.name; })); save(); }
+function autoAssignGuests(){
+  if(!hall.tables?.length) generateTables();
+  const ua=unassignedIndexes(); let ti=0;
+  for(const gi of ua){
+    const qty=guestPartySize(gi);
+    while(ti<hall.tables.length && tableOccupancy(hall.tables[ti]) + qty > (parseInt(hall.tables[ti].capacity)||0)) ti++;
+    if(ti>=hall.tables.length) break;
+    hall.tables[ti].guestIndexes.push(gi); guests[gi]['שולחן / אזור']=hall.tables[ti].name;
+  }
+  save(); saveHall(); render(); renderHall();
+}
+function clearSeating(){ if(!confirm('לנקות את כל סידור השולחנות?')) return; hall.tables.forEach(t=>t.guestIndexes=[]); guests.forEach(g=>g['שולחן / אזור']=''); save(); saveHall(); render(); renderHall(); }
+function updateSeatingStats(){
+  const tables=hall.tables||[]; const seats=tables.reduce((s,t)=>s+(parseInt(t.capacity)||0),0); const assigned=tables.reduce((s,t)=>s+tableOccupancy(t),0); const unassigned=unassignedIndexes().reduce((s,i)=>s+guestPartySize(i),0);
+  ['tablesStat','seatsStat','assignedStat','unassignedStat'].forEach(id=>{ if(!document.getElementById(id)) return; });
+  document.getElementById('tablesStat').textContent=tables.length; document.getElementById('seatsStat').textContent=seats; document.getElementById('assignedStat').textContent=assigned; document.getElementById('unassignedStat').textContent=unassigned;
+}
+function exportSeatingCSV(){
+  const rows=[['שולחן / אזור','קיבולת','מקומות תפוסים','שם אורח/קבוצה','כמות מגיעים','טלפון','קבוצה','הערות']];
+  (hall.tables||[]).forEach(t=>{ if(!t.guestIndexes?.length) rows.push([t.name,t.capacity,0,'','','','','']); else t.guestIndexes.forEach(i=>{ const g=guests[i]||{}; rows.push([t.name,t.capacity,tableOccupancy(t),g['שם מלא / שם לקוח']||'',guestPartySize(g),g['טלפון וואטסאפ']||'',g['קבוצה']||'',g['הערות']||'']); }); });
+  const csv=rows.map(r=>r.map(v=>`"${String(v).replaceAll('"','""')}"`).join(',')).join('\n');
+  const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='event_seating_plan.csv'; a.click(); URL.revokeObjectURL(a.href);
+}
+
+const AGENT_PENDING_KEY_PREFIX='dynamic_event_agent_pending_v1_';
+function agentPendingKey(){ return AGENT_PENDING_KEY_PREFIX + (currentEventId()||'local'); }
+function getAgentPending(){ try{return JSON.parse(sessionStorage.getItem(agentPendingKey())||'null');}catch(e){return null;} }
+function setAgentPending(value){ if(value) sessionStorage.setItem(agentPendingKey(), JSON.stringify(value)); else sessionStorage.removeItem(agentPendingKey()); }
+function isNewAgentInstruction(text){ return /(שלח|תשלח|שלחי|לשלוח|הוסף|תוסיף|תכניס|הכנס|עדכן|תעדכן|שבץ|תשבץ|תמקם|מחק|תמחק|צור|תיצור)/.test(String(text||'')); }
+function aiAddMessage(role, text){ const box=document.getElementById('aiChatLog'); if(!box) return; box.innerHTML += `<div class="ai-msg ${role}">${escapeHtml(text)}</div>`; box.scrollTop=box.scrollHeight; }
+function askQuickAi(q){ const input=document.getElementById('aiQuestion'); if(input) input.value=q; askEventAi(); }
+async function askEventAi(){
+  const input=document.getElementById('aiQuestion'); const q=(input?.value||'').trim(); if(!q) return;
+  let pending=getAgentPending();
+  if(pending && isNewAgentInstruction(q)){ setAgentPending(null); pending=null; }
+  const commandForAgent=pending ? `הוראה קודמת: ${pending.command}\nהסוכן שאל: ${pending.question}\nתשובת המשתמש עכשיו: ${q}` : q;
+  aiAddMessage('user', q); if(input) input.value='';
+  aiAddMessage('bot', 'אני בודק את הנתונים ומטפל בזה...');
+  await syncEventStateNow();
+  try{
+    const res=await fetch('/api/event-agent',{method:'POST',headers:{'content-type':'application/json',...clientAuthHeaders()},body:JSON.stringify({eventId:currentEventId(),command:commandForAgent,state:collectEventState()})});
+    const data=await res.json();
+    const box=document.getElementById('aiChatLog'); const last=box?.lastElementChild;
+    if(res.ok && data.ok){
+      if(data.state){
+        suppressSync=true;
+        if(data.state.eventSettings){ eventSettings=data.state.eventSettings; localStorage.setItem(EVENT_KEY,JSON.stringify(eventSettings)); }
+        if(Array.isArray(data.state.participants)){ guests=data.state.participants; localStorage.setItem(STORAGE_KEY,JSON.stringify(guests)); }
+        if(data.state.hall){ hall=data.state.hall; localStorage.setItem(HALL_KEY,JSON.stringify(hall)); }
+        if(Array.isArray(data.state.vendors)){ vendors=data.state.vendors; localStorage.setItem(VENDOR_KEY,JSON.stringify(vendors)); }
+        if(Array.isArray(data.state.walletTx)){ walletTx=data.state.walletTx; localStorage.setItem(WALLET_KEY,JSON.stringify(walletTx)); }
+        suppressSync=false;
+        fillEventSettings(); render(); renderHall(); renderVendors(); renderWallet(); updateVendorStats(); renderWhatsAppGuests();
+      }
+      if(data.needsFollowup) setAgentPending({command:commandForAgent, question:data.answer||''}); else setAgentPending(null);
+      if(last) last.textContent=data.answer || 'בוצע'; else aiAddMessage('bot',data.answer||'בוצע');
+      return;
+    }
+    if(last) last.textContent='לא הצלחתי לבצע כרגע: '+(data.error||'שגיאה לא ידועה'); else aiAddMessage('bot','לא הצלחתי לבצע כרגע: '+(data.error||'שגיאה לא ידועה'));
+  }catch(e){ aiAddMessage('bot','שגיאה בחיבור לסוכן/DB: '+e.message); }
+}
+function guestLine(g){ return `${guestName(g)} · ${guestPartySize(g)} מגיעים · ${g['סטטוס אישור השתתפות']||'ללא סטטוס'}${g['שולחן / אזור']?' · '+g['שולחן / אזור']:''}`; }
+function listAnswer(title, list, limit=30){ if(!list.length) return `${title}\nלא מצאתי נתונים מתאימים כרגע.`; const shown=list.slice(0,limit).map((g,i)=>`${i+1}. ${guestLine(g)}`).join('\n'); return `${title} (${list.length})\n${shown}${list.length>limit?`\nועוד ${list.length-limit} נוספים...`:''}`; }
+function findKeywordAfterFamily(q){ const m=q.match(/משפחת\s+([^?.,!\s]+)/); if(m) return m[1]; const clean=q.replace(/[?.,!]/g,' '); return clean.split(/\s+/).filter(w=>w.length>2 && !['איפה','יושבת','יושבים','שולחן','משפחה','משפחת','אצל','של'].includes(w)).pop()||''; }
+function answerEventQuestion(question){
+  const q=question.toLowerCase();
+  const realGuests=guests.filter(g=>g['שם מלא / שם לקוח']);
+  const people=realGuests.reduce((s,g)=>s+guestPartySize(g),0);
+  const confirmed=realGuests.filter(g=>g['סטטוס אישור השתתפות']==='אישר');
+  const notAnswered=realGuests.filter(g=>!g['סטטוס אישור השתתפות'] || g['סטטוס אישור השתתפות']==='טרם נענה');
+  const notComing=realGuests.filter(g=>g['סטטוס אישור השתתפות']==='לא מגיע');
+  const paid=realGuests.filter(g=>g['סטטוס תשלום']==='שולם');
+  const assigned=realGuests.filter(g=>g['שולחן / אזור']);
+  if(q.includes('אישרו') || q.includes('אישר') || q.includes('מגיעים')) return listAnswer('אלו המשתתפים שאישרו הגעה:', confirmed);
+  if(q.includes('לא ענה') || q.includes('טרם') || q.includes('לא אישרו')) return listAnswer('אלו המשתתפים שעדיין לא ענו:', notAnswered);
+  if(q.includes('לא מגיע')) return listAnswer('אלו שסימנו שלא מגיעים:', notComing);
+  if(q.includes('שילמו') || q.includes('תשלום') || q.includes('כסף')) return `סטטוס תשלומים:\nשילמו: ${paid.reduce((s,g)=>s+guestPartySize(g),0)} אנשים מתוך ${people}.\n${listAnswer('רשימת משלמים:', paid, 20)}`;
+  if(q.includes('כמה') && (q.includes('משובצ') || q.includes('שולח'))) return `שיבוץ שולחנות:\nמשובצים: ${assigned.reduce((s,g)=>s+guestPartySize(g),0)} אנשים.\nלא משובצים: ${realGuests.filter(g=>!g['שולחן / אזור']).reduce((s,g)=>s+guestPartySize(g),0)} אנשים.\nשולחנות קיימים: ${(hall.tables||[]).length}.`;
+  if(q.includes('ספק') || q.includes('ספקים')) return vendors.length ? `ספקים באירוע (${vendors.length}):\n` + vendors.map((v,i)=>`${i+1}. ${v.name||'ללא שם'} · ${v.category||''} · ${v.status||'פתוח'} · סוכם ${nis(v.agreed)}`).join('\n') : 'עדיין לא הוזנו ספקים.';
+  if(q.includes('איפה') || q.includes('יושב') || q.includes('שולחן') || q.includes('משפחת')){
+    const key=findKeywordAfterFamily(q);
+    const matches=realGuests.filter(g=>Object.values(g).join(' ').toLowerCase().includes(key.toLowerCase()));
+    if(matches.length) return listAnswer(`מצאתי התאמות עבור “${key}”:`, matches);
+    return `לא מצאתי משתתפים שמתאימים ל-“${key}”. אפשר לבדוק שהשם/משפחה מופיעים בטבלת המשתתפים.`;
+  }
+  if(q.includes('סיכום') || q.includes('מצב') || q.includes('סטטוס')) return `סיכום אירוע:\nמשתתפים רשומים: ${realGuests.length}\nסה״כ אנשים לפי כמות: ${people}\nאישרו הגעה: ${confirmed.reduce((s,g)=>s+guestPartySize(g),0)}\nטרם ענו: ${notAnswered.reduce((s,g)=>s+guestPartySize(g),0)}\nלא מגיעים: ${notComing.reduce((s,g)=>s+guestPartySize(g),0)}\nמשובצים לשולחנות: ${assigned.reduce((s,g)=>s+guestPartySize(g),0)}\nספקים: ${vendors.length}`;
+  return `אני יכול לענות לפי הנתונים שמופיעים במערכת. נסה לשאול למשל:\n• מי אישרו הגעה?\n• מי עדיין לא ענה?\n• איפה יושבת משפחת מידר?\n• כמה אנשים משובצים לשולחנות?\n• מה מצב התשלומים?`;
+}
+
+function escapeHtml(s){ return String(s).replace(/[&<>\"]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[m])); }
+fillEventSettings();
+render();
+renderWhatsAppGuests();
+applyTemplate();
+initHallInputs();
+renderHall();
+renderAdminEvents();
+bootMode();
+</script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+# Local/dev artifacts
+.wrangler/
+.dev.vars
+.env
+.env.*
+node_modules/
+dist/
+.DS_Store
+*.log
+
+# OpenClaw / local workspace state
+.openclaw/
