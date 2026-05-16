@@ -362,43 +362,22 @@ function eventAssistantAiState(state) {
   }).slice(0, 60000);
 }
 
-const EVENT_ASSISTANT_AI_SYSTEM = `אתה מוח הבנה חכם לעוזר אירוע בעברית. אתה לא מבצע פעולה בעצמך אלא מחזיר JSON בלבד.
-המטרה: להבין שפה חופשית של לקוח אירוע ולהחזיר פעולה מובנית בטוחה.
-
-החזר JSON בלבד בפורמט:
-{"intent":"query|action|clarify","action":"answer|update_guest|add_guest|assign_table|prepare_whatsapp|rename_assistant|task_board","name":"","count":null,"rsvp":"","table":"","phone":"","message":"","assistantName":"","answer":"","note":"","confidence":0.0}
-
-כללים:
-- שאלות כמו כמה אישרו/מי לא ענה/מה מצב האירוע הן query/action=answer. ענה מתוך הנתונים בלבד.
-- הוראות שינוי כמו תעדכן/שנה/סמן/הוסף/שבץ הן action.
-- אם מבקשים לעדכן אדם קיים ל-3 מוזמנים ושהם יגיעו: action=update_guest, count=3, rsvp=אישר.
-- אם מוזכר ילד/ילדה/ילדים, שים note="כולל ילד/ים".
-- אם חסר פרט קריטי, intent=clarify ו-answer שאלה קצרה.
-- וואטסאפ הוא רק prepare_whatsapp, לא שליחה.
-- אל תמציא מספרים או שמות. אם שם לא ברור, בקש הבהרה.
-- אם יש ספק מסוכן, intent=clarify.`;
-
-async function planEventAssistantWithAi(env, state, command) {
-  if (!env.OPENAI_API_KEY) return null;
+async function planEventAssistantWithOpenClaw(env, state, command, eventId) {
+  const token = env.OPAL_EMBEDDED_ASSISTANT_TOKEN || env.AMI_EMBEDDED_ASSISTANT_TOKEN;
+  if (!token) return null;
+  const endpoint = env.OPAL_EMBEDDED_ASSISTANT_URL || 'https://opal.hai.tech/api/embedded/ami/event-assistant';
   try {
-    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    const res = await fetch(endpoint, {
       method: 'POST',
-      headers: { 'content-type': 'application/json', authorization: `Bearer ${env.OPENAI_API_KEY}` },
-      body: JSON.stringify({
-        model: env.OPENAI_MODEL || 'gpt-4.1-mini',
-        temperature: 0,
-        response_format: { type: 'json_object' },
-        messages: [
-          { role: 'system', content: EVENT_ASSISTANT_AI_SYSTEM },
-          { role: 'user', content: `נתוני האירוע:\n${eventAssistantAiState(state)}\n\nבקשת המשתמש:\n${command}` }
-        ]
-      })
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+      body: JSON.stringify({ eventId, command, state, agentId: 'agent-mp6tgr93', timeoutSeconds: 90 }),
     });
-    const txt = await res.text();
-    let parsed; try { parsed = JSON.parse(txt); } catch { return null; }
-    if (!res.ok) return null;
-    try { return JSON.parse(parsed.choices?.[0]?.message?.content || '{}'); } catch { return null; }
-  } catch { return null; }
+    const data = await res.json().catch(() => null);
+    if (!res.ok || !data?.ok) return null;
+    return data.plan || null;
+  } catch {
+    return null;
+  }
 }
 
 function applyEventAssistantAiPlan(state, plan) {
@@ -476,12 +455,12 @@ async function eventAssistantApi(request, env) {
   const queryAnswer = answerEventAssistantQuery(state, command);
   let result = queryAnswer ? { changed:false, intent:'query', answer:queryAnswer } : { intent:'action', ...handleEventAssistantAction(state, command) };
   const isFallback = String(result.answer || '').includes('אני לא רוצה לנחש פעולה');
-  if (isFallback || (env.EVENT_ASSISTANT_AI_MODE === 'always' && !queryAnswer)) {
-    const aiPlan = await planEventAssistantWithAi(env, state, command);
-    const aiResult = applyEventAssistantAiPlan(state, aiPlan);
-    if (aiResult) result = aiResult;
+  if (isFallback || (env.EVENT_ASSISTANT_BRAIN_MODE === 'always' && !queryAnswer)) {
+    const brainPlan = await planEventAssistantWithOpenClaw(env, state, command, eventId);
+    const brainResult = applyEventAssistantAiPlan(state, brainPlan);
+    if (brainResult) result = { ...brainResult, brain: 'openclaw' };
   }
-  result.aiEnabled = !!env.OPENAI_API_KEY;
+  result.openClawBrainEnabled = !!(env.OPAL_EMBEDDED_ASSISTANT_TOKEN || env.AMI_EMBEDDED_ASSISTANT_TOKEN);
   if (result.changed) await env.EVENTS_KV.put(key, JSON.stringify({ ...state, eventId, updatedAt: new Date().toISOString() }));
   return jsonResponse({ ok: true, eventId, ...result, state });
 }

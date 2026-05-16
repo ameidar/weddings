@@ -44,7 +44,8 @@
     "noExternalSend": true,
     "noDeploy": true,
     "noFilesystemOrShell": true,
-    "llmExecutesDirectly": false
+    "llmExecutesDirectly": false,
+    "noLlmKeyInClient": true
   },
   "qaPrompts": [
     "כמה אישרו הגעה?",
@@ -53,5 +54,15 @@
     "תוסיף את משפחת ימיני עם 5 משתתפים לשולחן 5 טלפון 0528746137",
     "הוסף את משפחת כהן"
   ],
-  "brain": "OpenAI JSON intent planner when OPENAI_API_KEY is configured, with deterministic safe fallback"
+  "brain": "Opal/OpenClaw-backed intent planner via OPAL_EMBEDDED_ASSISTANT_URL; no LLM key is stored in Ami Cloudflare or client browser",
+  "bridge": {
+    "workerEnv": [
+      "OPAL_EMBEDDED_ASSISTANT_URL",
+      "OPAL_EMBEDDED_ASSISTANT_TOKEN",
+      "EVENT_ASSISTANT_BRAIN_MODE"
+    ],
+    "opalEndpoint": "/api/embedded/ami/event-assistant",
+    "llmKeysInClientOrAmiCloudflare": false,
+    "executesDirectly": false
+  }
 }
