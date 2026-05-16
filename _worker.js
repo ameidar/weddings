@@ -302,6 +302,110 @@ function extractAssistantRecipientName(text) {
 }
 function extractAssistantCount(text) { const m = String(text || '').match(/(\d+)\s*(?:משתתפים|מוזמנים|אנשים|מגיעים|אורחים|נפשות)/); return m ? Number(m[1]) : 0; }
 function extractAssistantPhone(text) { const m = String(text || '').match(/(\+?\d[\d\-\s]{8,}\d)/); return m ? m[1].replace(/[\s-]/g,'') : ''; }
+function normalizeEventAction(action) {
+  return String(action || '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+}
+
+function normalizeRsvp(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  if (/לא\s*(מגיע|יגיע|מאשר|אישר)|declin|no/i.test(raw)) return 'לא מגיע';
+  if (/טרם|ממתין|pending|unknown/i.test(raw)) return 'טרם נענה';
+  if (/אישר|מאשר|מגיע|יגיע|כן|confirmed|yes/i.test(raw)) return 'אישר';
+  return raw;
+}
+
+function normalizeTable(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  return /^שולחן\s+/i.test(raw) ? raw : `שולחן ${raw.replace(/^table\s*/i, '').trim()}`;
+}
+
+function appendGuestNote(guest, note) {
+  note = String(note || '').trim();
+  if (!note) return;
+  const existing = String(guest['הערות'] || '').trim();
+  if (existing.includes(note)) return;
+  guest['הערות'] = existing ? `${existing} | ${note}` : note;
+}
+
+function nextParticipantNumber(state) {
+  const participants = Array.isArray(state.participants) ? state.participants : [];
+  return participants.reduce((max, g) => Math.max(max, Number(g?.['מספר']) || 0), 0) + 1;
+}
+
+function executeEventAction(state, action, payload = {}) {
+  state.participants = Array.isArray(state.participants) ? state.participants : [];
+  state.eventSettings = state.eventSettings || {};
+  const type = normalizeEventAction(action || payload.action);
+  const name = cleanEventAssistantName(payload.name || payload.guestName || payload.participantName || '');
+  const count = Number(payload.count || payload.guestCount || payload.quantity || 0);
+  const table = payload.table || payload.tableNumber || payload.seating || '';
+  const rsvp = normalizeRsvp(payload.rsvp || payload.status || '');
+  const phone = String(payload.phone || payload.whatsapp || '').trim();
+  const note = String(payload.note || payload.notes || '').trim();
+
+  if (type === 'get_summary') {
+    return { ok:true, changed:false, intent:'query', answer: answerEventAssistantQuery(state, 'מצב האירוע') };
+  }
+  if (type === 'list_pending_rsvp') {
+    return { ok:true, changed:false, intent:'query', answer: answerEventAssistantQuery(state, 'מי טרם אישר') };
+  }
+  if (type === 'rename_assistant') {
+    const assistantName = cleanEventAssistantName(payload.assistantName || name);
+    if (!assistantName) return { ok:false, changed:false, intent:'clarify', error:'missing_assistant_name', answer:'איזה שם לתת לעוזר?' };
+    state.eventSettings.assistantName = assistantName;
+    return { ok:true, changed:true, intent:'action', answer:`מעולה, מעכשיו אפשר לקרוא לי ${assistantName}.` };
+  }
+  if (type === 'add_guest') {
+    if (!name) return { ok:false, changed:false, intent:'clarify', error:'missing_name', answer:'את מי להוסיף?' };
+    if (!count) return { ok:false, changed:false, intent:'clarify', error:'missing_count', answer:`כמה מוזמנים לרשום עבור ${name}?` };
+    const existing = findGuestByName(state, name);
+    if (existing.guest && !payload.allowUpdateExisting) {
+      return { ok:false, changed:false, intent:'clarify', error:'guest_exists', answer:`${existing.guest['שם מלא / שם לקוח']} כבר קיים/ת ברשימת המשתתפים. האם לעדכן את הרשומה הקיימת?` };
+    }
+    const guest = existing.guest || { 'מספר': nextParticipantNumber(state), 'שם מלא / שם לקוח': name, 'סטטוס אישור השתתפות':'טרם נענה', 'סטטוס תשלום':'טרם שולם' };
+    guest['שם מלא / שם לקוח'] = name;
+    guest['כמות מוזמנים'] = String(count);
+    if (phone) guest['טלפון וואטסאפ'] = phone;
+    if (rsvp) guest['סטטוס אישור השתתפות'] = rsvp;
+    if (table) guest['שולחן / אזור'] = normalizeTable(table);
+    appendGuestNote(guest, note);
+    if (!existing.guest) state.participants.push(guest);
+    state.participants.forEach((g,i)=>g['מספר']=i+1);
+    return { ok:true, changed:true, intent:'action', action:type, answer:`הוספתי את ${name} עם ${count} מוזמנים${rsvp ? `, סטטוס ${rsvp}` : ''}${table ? ` ושיבוץ ל${normalizeTable(table)}` : ''}.`, guest };
+  }
+  if (type === 'update_guest') {
+    if (!name) return { ok:false, changed:false, intent:'clarify', error:'missing_name', answer:'את מי לעדכן?' };
+    const found = findGuestByName(state, name);
+    if (!found.guest) return { ok:false, changed:false, intent:'clarify', error:'guest_not_found', answer:`לא מצאתי את ${name} ברשימת המשתתפים. אם זה משתתף חדש, כתבו “הוסף את ${name}”.` };
+    const updates = [];
+    if (count > 0) { found.guest['כמות מוזמנים'] = String(count); updates.push(`${count} מוזמנים`); }
+    if (phone) { found.guest['טלפון וואטסאפ'] = phone; updates.push('טלפון'); }
+    if (rsvp) { found.guest['סטטוס אישור השתתפות'] = rsvp; updates.push(`סטטוס ${rsvp}`); }
+    if (table) { found.guest['שולחן / אזור'] = normalizeTable(table); updates.push(found.guest['שולחן / אזור']); }
+    if (note) { appendGuestNote(found.guest, note); updates.push(note); }
+    if (!updates.length) return { ok:false, changed:false, intent:'clarify', error:'missing_updates', answer:`מה לעדכן עבור ${found.guest['שם מלא / שם לקוח']}?` };
+    return { ok:true, changed:true, intent:'action', action:type, answer:`עדכנתי את ${found.guest['שם מלא / שם לקוח']}: ${updates.join(', ')}.`, guest: found.guest };
+  }
+  if (type === 'assign_table') {
+    if (!name) return { ok:false, changed:false, intent:'clarify', error:'missing_name', answer:'את מי לשבץ?' };
+    if (!table) return { ok:false, changed:false, intent:'clarify', error:'missing_table', answer:'לאיזה שולחן לשבץ?' };
+    const found = findGuestByName(state, name);
+    if (!found.guest) return { ok:false, changed:false, intent:'clarify', error:'guest_not_found', answer:`לא מצאתי את ${name} ברשימת המשתתפים. אם זה משתתף חדש, צריך קודם להוסיף אותו.` };
+    found.guest['שולחן / אזור'] = normalizeTable(table);
+    return { ok:true, changed:true, intent:'action', action:type, answer:`שיבצתי את ${found.guest['שם מלא / שם לקוח']} ל${found.guest['שולחן / אזור']}.`, guest: found.guest };
+  }
+  if (type === 'prepare_whatsapp') {
+    const found = findGuestByName(state, name);
+    const targetName = found.guest?.['שם מלא / שם לקוח'] || name;
+    const targetPhone = phone || found.guest?.['טלפון וואטסאפ'] || '';
+    const message = String(payload.message || '').trim() || `היי ${targetName || 'אורח/ת יקר/ה'}, רציתי לעדכן אותך לגבי האירוע.`;
+    return { ok:true, changed:false, intent:'action', action:type, needsConfirmation:true, draft:{ type:'whatsapp', name:targetName, phone:targetPhone, message }, answer:`הכנתי טיוטת וואטסאפ לאישור לפני שליחה:\nאל: ${targetName || targetPhone || 'לא נבחר'}${targetPhone ? ' ('+targetPhone+')' : ''}\nהודעה: ${message}\n\nלא שלחתי בפועל.` };
+  }
+  return { ok:false, changed:false, intent:'unsupported', error:'unsupported_action', answer:`הפעולה ${type || 'הזו'} עדיין לא נתמכת במערכת.` };
+}
+
 function answerEventAssistantQuery(state, command) {
   const text = String(command || '');
   const snap = eventAssistantStateSnapshot(state);
@@ -419,6 +523,10 @@ function applyEventAssistantAiPlan(state, plan) {
   if (intent === 'clarify') return { changed:false, intent:'clarify', answer: plan.answer || 'אפשר לחדד מה תרצה שאעשה?' };
   if (action === 'answer') return { changed:false, intent:'query-ai', answer: plan.answer || 'אין לי מספיק נתונים כדי לענות.' };
   if (action === 'task_board') return { changed:false, intent:'query-ai', answer: eventAssistantTasks(state) };
+  if (['get_summary', 'list_pending_rsvp', 'rename_assistant', 'add_guest', 'update_guest', 'assign_table', 'prepare_whatsapp'].includes(action)) {
+    const executed = executeEventAction(state, action, plan);
+    return { ...executed, intent: executed.intent === 'query' ? 'query-ai' : executed.intent === 'clarify' ? 'clarify' : 'action-ai' };
+  }
   if (action === 'rename_assistant') {
     const name = cleanEventAssistantName(plan.assistantName || plan.name || '');
     if (!name) return { changed:false, intent:'clarify', answer:'איזה שם לתת לעוזר?' };
@@ -545,6 +653,26 @@ async function eventAssistantApi(request, env) {
   return jsonResponse({ ok: true, eventId, ...result, state });
 }
 
+async function eventActionsApi(request, env) {
+  if (!env.EVENTS_KV) return jsonResponse({ ok: false, error: 'Cloudflare KV binding EVENTS_KV is not configured' }, 501);
+  if (request.method !== 'POST') return jsonResponse({ ok:false, error:'Method not allowed' }, 405);
+  const body = await request.json().catch(() => ({}));
+  const eventId = String(body.eventId || '').trim();
+  const action = normalizeEventAction(body.action || body.type || body?.payload?.action || '');
+  const payload = body.payload && typeof body.payload === 'object' ? body.payload : body;
+  if (!eventId || !action) return jsonResponse({ ok:false, error:'Missing eventId or action' }, 400);
+  const session = await requireEventAccess(request, env, eventId);
+  if (!session) return jsonResponse({ ok:false, error:'Unauthorized' }, 401);
+  const key = EVENT_STATE_PREFIX + eventId;
+  const raw = await env.EVENTS_KV.get(key);
+  let state;
+  try { state = raw ? JSON.parse(raw) : (body.state || {}); } catch { state = body.state || {}; }
+  if (!state || typeof state !== 'object') state = {};
+  const result = executeEventAction(state, action, payload);
+  if (result.changed) await env.EVENTS_KV.put(key, JSON.stringify({ ...state, eventId, updatedAt: new Date().toISOString() }));
+  return jsonResponse({ ok: !!result.ok, eventId, action, ...result, state });
+}
+
 function eventClientUsers(ev) {
   const primary = { username: ev.clientUsername || ev.owner || 'client', password: ev.clientPassword || ev.password || '', name: ev.owner || 'לקוח ראשי' };
   const extra = Array.isArray(ev.clientUsers) ? ev.clientUsers : [];
@@ -643,6 +771,7 @@ export default {
     if (url.pathname === '/api/events') return eventsApi(request, env);
     if (url.pathname === '/api/client-login' && request.method === 'POST') return clientLogin(request, env);
     if (url.pathname === '/api/event-assistant' && request.method === 'POST') return eventAssistantApi(request, env);
+    if (url.pathname === '/api/event-actions') return eventActionsApi(request, env);
     if (url.pathname === '/api/event-state') return eventStateApi(request, env);
     if (url.pathname === '/api/pending-participants' && request.method === 'GET') return pendingParticipantsApi(request, env);
     if (url.pathname === '/api/rsvp-link' && request.method === 'POST') return rsvpLinkApi(request, env);

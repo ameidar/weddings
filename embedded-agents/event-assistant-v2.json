@@ -2,11 +2,11 @@
   "id": "event-assistant-v2",
   "name": "עוזר אירוע אישי — גרסה בטוחה",
   "type": "embedded-app-component",
-  "runtime": "cloudflare-worker-intent-engine",
+  "runtime": "cloudflare-worker-action-api-plus-opal-openclaw-brain",
   "endpoint": "/api/event-assistant",
   "scope": "current-client-event-only",
-  "status": "implemented-on-feature-branch-ready-for-qa",
-  "branch": "feature/event-assistant-v2",
+  "status": "implemented-on-feature/event-action-api-ready-for-qa",
+  "branch": "feature/event-action-api",
   "principles": [
     "One embedded assistant component serves all clients; context is isolated by eventId and client session.",
     "Questions are answered directly from event state before any action flow starts.",
@@ -28,8 +28,11 @@
     "actions": [
       "rename_assistant",
       "add_guest",
+      "update_guest",
       "assign_table",
-      "prepare_whatsapp_draft"
+      "prepare_whatsapp_draft",
+      "get_summary",
+      "list_pending_rsvp"
     ],
     "aiEnhancedActions": [
       "free_form_update_guest",
@@ -45,14 +48,16 @@
     "noDeploy": true,
     "noFilesystemOrShell": true,
     "llmExecutesDirectly": false,
-    "noLlmKeyInClient": true
+    "noLlmKeyInClient": true,
+    "dbWrites": "Only Cloudflare Worker /api/event-actions writes to EVENTS_KV after requireEventAccess validation; Opal/OpenClaw never writes DB directly."
   },
   "qaPrompts": [
     "כמה אישרו הגעה?",
     "מי עדיין לא אישר הגעה?",
     "מה מצב האירוע?",
     "תוסיף את משפחת ימיני עם 5 משתתפים לשולחן 5 טלפון 0528746137",
-    "הוסף את משפחת כהן"
+    "הוסף את משפחת כהן",
+    "תוסיף את איתי מיידר, אישר הגעה, מוזמן 1, לשולחן 2 עם עמי מיידר"
   ],
   "brain": "Opal/OpenClaw-backed intent planner via OPAL_EMBEDDED_ASSISTANT_URL; no LLM key is stored in Ami Cloudflare or client browser",
   "bridge": {
@@ -63,6 +68,8 @@
     ],
     "opalEndpoint": "/api/embedded/ami/event-assistant",
     "llmKeysInClientOrAmiCloudflare": false,
-    "executesDirectly": false
-  }
+    "executesDirectly": false,
+    "workerActionEndpoint": "/api/event-actions"
+  },
+  "actionEndpoint": "/api/event-actions"
 }
