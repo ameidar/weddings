@@ -39,6 +39,7 @@
     <button class="nav-btn" data-target="whatsapp" onclick="showPage('whatsapp')">💬 וואטסאפ</button>
     <button class="nav-btn" data-target="seating" onclick="showPage('seating')">🪑 שולחנות ומפה</button>
     <button class="nav-btn" data-target="vendors" onclick="showPage('vendors')">🤝 ספקים וארנק</button>
+    <button class="nav-btn client-only" onclick="clientLogout()">🚪 יציאה</button>
   </aside>
 <main>
   <section class="grid page-section active" data-page="overview">
@@ -67,7 +68,8 @@
       <div class="field"><label for="adminDate">תאריך האירוע</label><input id="adminDate" type="date" /><small>לא ניתן לבחור תאריך שכבר עבר.</small></div>
       <div class="field"><label for="adminVenue">מקום האירוע</label><input id="adminVenue" placeholder="שם אולם / כתובת / מיקום" /></div>
       <div class="field"><label for="adminExpected">מספר מוזמנים משוער</label><input id="adminExpected" type="number" min="1" placeholder="לדוגמה: 350" /><small>המספר עוזר לפתוח תכנון ראשוני של אורחים ושולחנות.</small></div>
-      <div class="field"><label for="adminPassword">סיסמת לקוח</label><input id="adminPassword" placeholder="אפשר להשאיר ריק — המערכת תיצור סיסמה" /><small>זו הסיסמה שהלקוח יקבל לדף האירוע שלו.</small></div>
+      <div class="field"><label for="adminPassword">סיסמת לקוח</label><input id="adminPassword" placeholder="אפשר להשאיר ריק — המערכת תיצור סיסמה" /><small>זו הסיסמה שהלקוח הראשי יקבל לדף האירוע שלו.</small></div>
+      <div class="field full"><label for="adminExtraUsers">מנהלי אירוע נוספים</label><textarea id="adminExtraUsers" placeholder="כל שורה: משתמש, סיסמה, שם\nלדוגמה:\nabba, 123456, אבא של חתן הבר מצווה\nimma, 123456, אמא"></textarea><small>כל משתמש כאן יוכל להיכנס לאותו דף לקוח ולנהל את האירוע.</small></div>
       <div class="field"><label for="adminModules">מה הלקוח יקבל במערכת?</label><select id="adminModules"><option value="משתתפים, וואטסאפ, שולחנות, ספקים">מערכת מלאה: משתתפים, וואטסאפ, שולחנות וספקים</option><option value="משתתפים, וואטסאפ">רק משתתפים ושליחת וואטסאפ</option><option value="משתתפים, שולחנות">משתתפים וסידור שולחנות</option><option value="משתתפים">רק ניהול משתתפים</option></select><small>בחירה זו מתארת את החבילה/המודולים הפעילים ללקוח.</small></div>
       <div class="field full"><label for="adminNotes">הערות אדמין / תכולה ללקוח</label><textarea id="adminNotes" placeholder="הערות פנימיות, בקשות מיוחדות, חבילת שירות וכו׳"></textarea></div>
       <div class="hint-card full">טיפ: לאחר יצירת האירוע תקבל לינק ייחודי, משתמש וסיסמה ללקוח, ואפשרות לשלוח אותם במייל או וואטסאפ.</div>
@@ -79,7 +81,7 @@
     </div>
     <div id="adminCreatedBox" class="note"></div>
     <div id="adminEventsList" class="admin-event-list hidden"></div>
-    <div class="note">זהו דשבורד האדמין הראשי: יוצרים אירוע, מקבלים לינק + משתמש + סיסמה ללקוח, ורואים כאן את כל האירועים שנוצרו.</div>
+    <div class="note">זהו דשבורד האדמין הראשי: יוצרים אירוע, מקבלים לינק + משתמש + סיסמה ללקוח, ורואים כאן את כל האירועים שנוצרו. אפשר להוסיף כמה מנהלי אירוע לאותו לקוח.</div>
   </section>
 
   <section class="card page-section" data-page="client-login">
@@ -362,6 +364,24 @@ async function checkAdminSession(){
 function makeEventId(name){ return (name||'event').toLowerCase().replace(/[^a-z0-9א-ת]+/g,'-').replace(/^-|-$/g,'').slice(0,40) + '-' + Math.random().toString(36).slice(2,7); }
 function makePassword(len=10){ const chars='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'; return Array.from({length:len},()=>chars[Math.floor(Math.random()*chars.length)]).join(''); }
 function makeClientUsername(owner){ return (owner||'client').toLowerCase().replace(/[^a-z0-9א-ת]+/g,'-').replace(/^-|-$/g,'').slice(0,24) || 'client'; }
+function parseExtraClientUsers(text){
+  return String(text||'').split(/\r?\n/).map(line=>line.trim()).filter(Boolean).map(line=>{
+    const parts=line.split(',').map(x=>x.trim());
+    const username=parts[0]||'', password=parts[1]||'', name=parts.slice(2).join(', ')||username;
+    return username && password ? {username,password,name} : null;
+  }).filter(Boolean);
+}
+function eventLoginUsers(ev){
+  const primary={username:ev.clientUsername||ev.owner||'client',password:ev.clientPassword||ev.password||'',name:ev.owner||'לקוח ראשי'};
+  const users=[primary,...(Array.isArray(ev.clientUsers)?ev.clientUsers:[])].filter(u=>u.username&&u.password);
+  const seen=new Set();
+  return users.filter(u=>{ const k=String(u.username).toLowerCase(); if(seen.has(k)) return false; seen.add(k); return true; });
+}
+function formatCredentials(ev){
+  const link=`${location.origin}${location.pathname}?event=${encodeURIComponent(ev.id)}#client`;
+  return eventLoginUsers(ev).map((u,i)=>`${i+1}. משתמש: ${u.username} | סיסמה: ${u.password}${u.name?' | '+u.name:''}`).join('\n') + `\nלינק: ${link}`;
+}
+function jsArg(text){ return String(text||'').replaceAll('\\','\\\\').replaceAll("'","\\'").replaceAll('\n','\\n').replaceAll('\r',''); }
 function todayIso(){ return new Date().toISOString().slice(0,10); }
 function setupAdminDateMin(){ const el=document.getElementById('adminDate'); if(el) el.min=todayIso(); }
 async function adminCreateEvent(){
@@ -371,31 +391,56 @@ async function adminCreateEvent(){
   const expected=Number(get('adminExpected'));
   if(!expected || expected < 1){ alert('נא להזין מספר מוזמנים משוער תקין.'); document.getElementById('adminExpected').focus(); return; }
   const clientPassword=get('adminPassword') || makePassword(10);
-  const ev={id:makeEventId(get('adminEventName')), name:get('adminEventName')||'אירוע חדש', type:get('adminEventType')||'אירוע', owner:get('adminOwner'), clientUsername:makeClientUsername(get('adminOwner')||get('adminEventName')), clientEmail:get('adminClientEmail'), clientPhone:get('adminClientPhone'), date:eventDate, venue:get('adminVenue'), expected, notes:get('adminNotes'), modules:get('adminModules'), clientPassword, createdAt:new Date().toISOString(), updatedAt:new Date().toISOString()};
+  const primaryUsername=makeClientUsername(get('adminOwner')||get('adminEventName'));
+  const extraUsers=parseExtraClientUsers(get('adminExtraUsers')).filter(u=>u.username!==primaryUsername);
+  const ev={id:makeEventId(get('adminEventName')), name:get('adminEventName')||'אירוע חדש', type:get('adminEventType')||'אירוע', owner:get('adminOwner'), clientUsername:primaryUsername, clientEmail:get('adminClientEmail'), clientPhone:get('adminClientPhone'), date:eventDate, venue:get('adminVenue'), expected, notes:get('adminNotes'), modules:get('adminModules'), clientPassword, clientUsers:extraUsers, createdAt:new Date().toISOString(), updatedAt:new Date().toISOString()};
   const list=[ev,...loadAdminEvents().filter(x=>x.id!==ev.id)]; saveAdminEventsLocal(list);
   try{ const res=await fetch('/api/events',{method:'POST',headers:{'content-type':'application/json',...authHeaders()},body:JSON.stringify(ev)}); const data=await res.json(); if(res.ok&&data.ok) saveAdminEventsLocal(data.events||list); }catch(e){}
   const link=`${location.origin}${location.pathname}?event=${encodeURIComponent(ev.id)}#client`;
-  const shareText=`שלום ${ev.owner||''}, נוצר עבורך דשבורד לניהול האירוע: ${ev.name}. לינק כניסה: ${link} משתמש: ${ev.clientUsername} סיסמה: ${clientPassword}`;
+  const shareText=`שלום ${ev.owner||''}, נוצר עבורך דשבורד לניהול האירוע: ${ev.name}.\n${formatCredentials(ev)}`;
   const mailto=`mailto:${encodeURIComponent(ev.clientEmail||'')}?subject=${encodeURIComponent('דשבורד ניהול אירוע - '+ev.name)}&body=${encodeURIComponent(shareText)}`;
   const waPhone=(ev.clientPhone||'').replace(/\D/g,''); const waLink=`https://wa.me/${waPhone}?text=${encodeURIComponent(shareText)}`;
-  document.getElementById('adminCreatedBox').innerHTML=`<b>נוצר דף לקוח ✅</b><br><div class="link-box">${link}</div><br>משתמש לקוח: <b>${escapeHtml(ev.clientUsername)}</b><br>סיסמת לקוח: <b>${escapeHtml(clientPassword)}</b><div class="share-actions"><button class="primary" onclick="copyText('${link}')">העתק לינק</button><a href="${mailto}">שלח במייל</a><a href="${waLink}" target="_blank">שלח בוואטסאפ</a><button onclick="copyText('${shareText.replaceAll("'","\\'") }')">העתק הודעה מלאה</button></div>`;
+  document.getElementById('adminCreatedBox').innerHTML=`<b>נוצר דף לקוח ✅</b><br><div class="link-box">${link}</div><br><b>משתמשים מורשים:</b><pre style="white-space:pre-wrap;background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:10px">${escapeHtml(formatCredentials(ev))}</pre><div class="share-actions"><button class="primary" onclick="copyText('${link}')">העתק לינק</button><a href="${mailto}">שלח במייל</a><a href="${waLink}" target="_blank">שלח בוואטסאפ</a><button onclick="copyText('${jsArg(shareText)}')">העתק הודעה מלאה</button></div>`;
 }
-function clearAdminForm(){ ['adminEventName','adminOwner','adminClientEmail','adminClientPhone','adminDate','adminVenue','adminExpected','adminPassword','adminNotes'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; }); const m=document.getElementById('adminModules'); if(m) m.value='משתתפים, וואטסאפ, שולחנות, ספקים'; setupAdminDateMin(); document.getElementById('adminCreatedBox').innerHTML=''; }
+function clearAdminForm(){ ['adminEventName','adminOwner','adminClientEmail','adminClientPhone','adminDate','adminVenue','adminExpected','adminPassword','adminExtraUsers','adminNotes'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; }); const m=document.getElementById('adminModules'); if(m) m.value='משתתפים, וואטסאפ, שולחנות, ספקים'; setupAdminDateMin(); document.getElementById('adminCreatedBox').innerHTML=''; }
 function adminLoadCurrentEvent(){ const set=(id,val)=>{ const el=document.getElementById(id); if(el) el.value=val||''; }; set('adminEventName',eventSettings.name); set('adminEventType',eventSettings.type); set('adminOwner',eventSettings.owner); set('adminDate',eventSettings.date); set('adminVenue',eventSettings.venue); set('adminExpected',eventSettings.expected); set('adminNotes',eventSettings.notes); if(!document.getElementById('adminPassword').value) document.getElementById('adminPassword').value=makePassword(10); }
 function renderAdminEvents(){
   const box=document.getElementById('adminEventsList'); if(!box) return; const list=loadAdminEvents(); box.classList.remove('hidden');
   box.innerHTML=list.length?list.map(ev=>{
     const link=`${location.origin}${location.pathname}?event=${encodeURIComponent(ev.id)}#client`;
     const username=ev.clientUsername||ev.owner||'client';
-    const password=ev.clientPassword||ev.password||'';
-    const shareText=`שלום ${ev.owner||''}, נוצר עבורך דשבורד לניהול האירוע: ${ev.name}. לינק כניסה: ${link} משתמש: ${username} סיסמה: ${password}`;
+    const users=eventLoginUsers(ev);
+    const shareText=`שלום ${ev.owner||''}, נוצר עבורך דשבורד לניהול האירוע: ${ev.name}.
+${formatCredentials(ev)}`;
     const mailto=`mailto:${encodeURIComponent(ev.clientEmail||'')}?subject=${encodeURIComponent('דשבורד ניהול אירוע - '+ev.name)}&body=${encodeURIComponent(shareText)}`;
     const waPhone=(ev.clientPhone||'').replace(/\D/g,''); const waLink=`https://wa.me/${waPhone}?text=${encodeURIComponent(shareText)}`;
-    return `<div class="admin-event-card"><b>${escapeHtml(ev.name)}</b> <span class="pill">${escapeHtml(ev.type)}</span><div class="label">לקוח: ${escapeHtml(ev.owner||'')} · משתמש: ${escapeHtml(username)} · ${escapeHtml(ev.clientEmail||'')} · ${escapeHtml(ev.clientPhone||'')}</div><div class="label">${escapeHtml(ev.venue||'')} · ${escapeHtml(ev.date||'')} · צפי ${Number(ev.expected)||0} משתתפים · נוצר: ${new Date(ev.createdAt||Date.now()).toLocaleString('he-IL')}</div><div class="link-box">${link}</div><div class="share-actions"><button class="primary" onclick="copyText('${link}')">העתק לינק</button><button onclick="copyText('${shareText.replaceAll("'","\\'") }')">העתק פרטי כניסה</button><a href="${mailto}">מייל</a><a href="${waLink}" target="_blank">וואטסאפ</a></div><div class="toolbar"><button class="secondary" onclick="adminOpenEvent('${ev.id}')">פתח לצפייה/עריכה</button><button class="secondary" onclick="adminResetClientPassword('${ev.id}')">אפס סיסמת לקוח</button><button class="danger" onclick="adminDeleteEvent('${ev.id}')">מחק</button></div></div>`;
+    const usersHtml=users.map(u=>`<span class="pill">${escapeHtml(u.username)}</span>`).join(' ');
+    return `<div class="admin-event-card"><b>${escapeHtml(ev.name)}</b> <span class="pill">${escapeHtml(ev.type)}</span><div class="label">לקוח: ${escapeHtml(ev.owner||'')} · משתמש ראשי: ${escapeHtml(username)} · ${escapeHtml(ev.clientEmail||'')} · ${escapeHtml(ev.clientPhone||'')}</div><div class="label">מנהלי אירוע מורשים: ${usersHtml}</div><div class="label">${escapeHtml(ev.venue||'')} · ${escapeHtml(ev.date||'')} · צפי ${Number(ev.expected)||0} משתתפים · נוצר: ${new Date(ev.createdAt||Date.now()).toLocaleString('he-IL')}</div><div class="link-box">${link}</div><div class="share-actions"><button class="primary" onclick="copyText('${link}')">העתק לינק</button><button onclick="copyText('${jsArg(shareText)}')">העתק כל פרטי הכניסה</button><a href="${mailto}">מייל</a><a href="${waLink}" target="_blank">וואטסאפ</a></div><div class="toolbar"><button class="secondary" onclick="adminOpenEvent('${ev.id}')">פתח לצפייה/עריכה</button><button class="secondary" onclick="adminAddClientUser('${ev.id}')">הוסף מנהל אירוע</button><button class="secondary" onclick="adminResetClientPassword('${ev.id}')">אפס סיסמת לקוח ראשי</button><button class="danger" onclick="adminDeleteEvent('${ev.id}')">מחק</button></div></div>`;
   }).join(''):'<span class="label">עדיין לא נוצרו אירועים.</span>';
 }
 
 function copyText(text){ navigator.clipboard?.writeText(text); alert('הועתק'); }
+async function adminAddClientUser(id){
+  const list=loadAdminEvents();
+  const ev=list.find(x=>x.id===id); if(!ev) return;
+  const username=(prompt('שם משתמש למנהל האירוע הנוסף:')||'').trim(); if(!username) return;
+  const password=(prompt('סיסמה למנהל האירוע הנוסף (אפשר להשאיר ריק ליצירה אוטומטית):')||'').trim() || makePassword(10);
+  const name=(prompt('שם/תיאור המשתמש, אופציונלי:')||username).trim();
+  if(eventLoginUsers(ev).some(u=>String(u.username).toLowerCase()===username.toLowerCase())) return alert('שם המשתמש כבר קיים באירוע הזה');
+  const updated={...ev, clientUsers:[...(Array.isArray(ev.clientUsers)?ev.clientUsers:[]),{username,password,name}], updatedAt:new Date().toISOString()};
+  const next=list.map(x=>x.id===id?updated:x);
+  saveAdminEventsLocal(next);
+  try{
+    const res=await fetch('/api/events',{method:'POST',headers:{'content-type':'application/json',...authHeaders()},body:JSON.stringify(updated)});
+    const data=await res.json();
+    if(!res.ok||!data.ok) throw new Error(data.error||'שמירה נכשלה');
+    saveAdminEventsLocal(data.events||next);
+  }catch(e){ alert('המשתמש נוסף בדפדפן, אבל לא נשמר לשרת: '+e.message); }
+  const link=`${location.origin}${location.pathname}?event=${encodeURIComponent(updated.id)}#client`;
+  const shareText=`שלום, נוסף עבורך משתמש לניהול האירוע ${updated.name}. לינק: ${link} משתמש: ${username} סיסמה: ${password}`;
+  document.getElementById('adminCreatedBox').innerHTML=`<b>נוסף מנהל אירוע ✅</b><br>אירוע: <b>${escapeHtml(updated.name)}</b><br>משתמש: <b>${escapeHtml(username)}</b><br>סיסמה: <b>${escapeHtml(password)}</b><div class="link-box">${link}</div><div class="share-actions"><button class="primary" onclick="copyText('${jsArg(shareText)}')">העתק הודעה למשתמש</button></div>`;
+  window.scrollTo({top:0, behavior:'smooth'});
+}
 async function adminResetClientPassword(id){
   const list=loadAdminEvents();
   const ev=list.find(x=>x.id===id); if(!ev) return;
@@ -415,7 +460,7 @@ async function adminResetClientPassword(id){
   const shareText=`שלום ${updated.owner||''}, איפסנו עבורך את הסיסמה לדשבורד האירוע: ${updated.name}. לינק כניסה: ${link} משתמש: ${username} סיסמה חדשה: ${newPassword}`;
   const mailto=`mailto:${encodeURIComponent(updated.clientEmail||'')}?subject=${encodeURIComponent('איפוס סיסמה לדשבורד אירוע - '+updated.name)}&body=${encodeURIComponent(shareText)}`;
   const waPhone=(updated.clientPhone||'').replace(/\D/g,''); const waLink=`https://wa.me/${waPhone}?text=${encodeURIComponent(shareText)}`;
-  document.getElementById('adminCreatedBox').innerHTML=`<b>סיסמת הלקוח אופסה ✅</b><br>אירוע: <b>${escapeHtml(updated.name)}</b><br>משתמש: <b>${escapeHtml(username)}</b><br>סיסמה חדשה: <b>${escapeHtml(newPassword)}</b><div class="link-box">${link}</div><div class="share-actions"><button class="primary" onclick="copyText('${shareText.replaceAll("'","\\'") }')">העתק הודעה ללקוח</button><a href="${mailto}">שלח במייל</a><a href="${waLink}" target="_blank">שלח בוואטסאפ</a></div>`;
+  document.getElementById('adminCreatedBox').innerHTML=`<b>סיסמת הלקוח אופסה ✅</b><br>אירוע: <b>${escapeHtml(updated.name)}</b><br>משתמש: <b>${escapeHtml(username)}</b><br>סיסמה חדשה: <b>${escapeHtml(newPassword)}</b><div class="link-box">${link}</div><div class="share-actions"><button class="primary" onclick="copyText('${jsArg(shareText)}')">העתק הודעה ללקוח</button><a href="${mailto}">שלח במייל</a><a href="${waLink}" target="_blank">שלח בוואטסאפ</a></div>`;
   window.scrollTo({top:0, behavior:'smooth'});
 }
 function adminOpenEvent(id){
@@ -448,8 +493,9 @@ async function clientLogin(){
   const id=eventSlug(); const status=document.getElementById('clientLoginStatus'); status.textContent='בודק פרטי כניסה...'; status.className='status';
   const username=document.getElementById('clientUsername')?.value.trim()||''; const password=document.getElementById('clientPassword').value;
   try{ const res=await fetch('/api/client-login',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({eventId:id,username,password})}); const data=await res.json(); if(!res.ok||!data.ok) throw new Error(data.error||'כניסה נכשלה'); currentClientToken=data.token; sessionStorage.setItem(CLIENT_SESSION_PREFIX+id,data.token); await enterClientMode(data.event); }
-  catch(e){ const ev=loadAdminEvents().find(x=>x.id===id); if(ev && (!username || username===(ev.clientUsername||ev.owner||'client')) && password===(ev.clientPassword||ev.password)){ sessionStorage.setItem('client_event_access_'+id,'1'); await enterClientMode(ev); } else { status.textContent=e.message; status.className='status bad-text'; } }
+  catch(e){ const ev=loadAdminEvents().find(x=>x.id===id); const localUser=ev ? eventLoginUsers(ev).find(u=>u.username===username && u.password===password) : null; if(ev && localUser){ sessionStorage.setItem('client_event_access_'+id,'1'); await enterClientMode(ev); } else { status.textContent=e.message; status.className='status bad-text'; } }
 }
+function clientLogout(){ const id=currentEventId()||eventSlug(); if(id){ sessionStorage.removeItem(CLIENT_SESSION_PREFIX+id); sessionStorage.removeItem('client_event_access_'+id); } currentClientToken=''; document.body.classList.remove('client-mode'); document.body.classList.add('client-auth-locked'); const pass=document.getElementById('clientPassword'); if(pass) pass.value=''; showPage('client-login'); }
 async function enterClientMode(ev){ document.body.classList.remove('admin-landing','admin-locked','client-auth-locked'); document.body.classList.add('client-mode'); applyAdminEventToWorkspace(ev); await loadRemoteEventState(); fillEventSettings(); render(); renderHall(); renderVendors(); renderWallet(); updateVendorStats(); renderWhatsAppGuests(); showPage('overview'); document.querySelectorAll('.nav-btn.admin-only').forEach(e=>e.remove()); scheduleEventStateSync(); }
 async function bootMode(){
   setupAdminDateMin();

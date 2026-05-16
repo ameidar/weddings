@@ -227,6 +227,16 @@ async function eventStateApi(request, env) {
   return jsonResponse({ ok: false, error: 'Method not allowed' }, 405);
 }
 
+function eventClientUsers(ev) {
+  const primary = { username: ev.clientUsername || ev.owner || 'client', password: ev.clientPassword || ev.password || '', name: ev.owner || 'לקוח ראשי' };
+  const extra = Array.isArray(ev.clientUsers) ? ev.clientUsers : [];
+  const users = [primary, ...extra]
+    .map(u => ({ username: String(u.username || '').trim(), password: String(u.password || ''), name: String(u.name || u.label || '').trim(), email: String(u.email || '').trim(), phone: String(u.phone || '').trim() }))
+    .filter(u => u.username && u.password);
+  const seen = new Set();
+  return users.filter(u => { const key = u.username.toLowerCase(); if (seen.has(key)) return false; seen.add(key); return true; });
+}
+
 async function clientLogin(request, env) {
   const body = await request.json().catch(() => ({}));
   const id = String(body.eventId || '').trim();
@@ -236,11 +246,9 @@ async function clientLogin(request, env) {
   if (!events) return jsonResponse({ ok: false, error: 'Cloudflare KV binding EVENTS_KV is not configured' }, 501);
   const ev = events.find(x => x.id === id);
   if (!ev) return jsonResponse({ ok: false, error: 'האירוע לא נמצא' }, 404);
-  const expectedUser = ev.clientUsername || ev.owner || 'client';
-  if ((username && username !== expectedUser) || password !== ev.clientPassword) {
-    return jsonResponse({ ok: false, error: 'שם משתמש או סיסמה שגויים' }, 401);
-  }
-  return jsonResponse({ ok: true, event: ev, token: await signSession(env, { role: 'client', eventId: id, username: expectedUser }) });
+  const matchedUser = eventClientUsers(ev).find(u => u.username === username && u.password === password);
+  if (!matchedUser) return jsonResponse({ ok: false, error: 'שם משתמש או סיסמה שגויים' }, 401);
+  return jsonResponse({ ok: true, event: ev, user: { username: matchedUser.username, name: matchedUser.name }, token: await signSession(env, { role: 'client', eventId: id, username: matchedUser.username, name: matchedUser.name }) });
 }
 
 function normalizeChatId(value) {
