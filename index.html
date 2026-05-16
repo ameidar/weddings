@@ -1054,7 +1054,7 @@ function eventAssistantAdd(role, text){ const box=document.getElementById('event
 function updateEventAssistantUi(){
   const title=document.getElementById('eventAssistantTitle'); if(title) title.textContent=eventSettings.assistantName||'עוזר אירוע אישי';
   const welcome=document.getElementById('eventAssistantWelcome');
-  if(welcome) welcome.textContent=`היי, אני ${eventSettings.assistantName||'עוזר האירוע האישי'} של ${eventSettings.name||'האירוע שלך'}. אפשר לשאול אותי כמה אישרו הגעה, מי לא ענה, מה המשימות, או לבקש פעולה ברורה כמו הוספת משתתף.`;
+  if(welcome) welcome.textContent=`היי, אני ${eventSettings.assistantName||'עוזר האירוע האישי'} של ${eventSettings.name||'האירוע שלך'}. אפשר לשאול אותי כמה אישרו הגעה, מי לא ענה, מה המשימות, להוסיף משתתף, או לשלוח וואטסאפ כמו “תשלח בקשה לאישור הגעה לעמי מידר”.`;
 }
 function askEventAssistantQuick(text){ const input=document.getElementById('eventAssistantInput'); if(input) input.value=text; askEventAssistant(); }
 async function askEventAssistant(){
@@ -1083,6 +1083,7 @@ async function askEventAssistant(){
       suppressSync=false;
       fillEventSettings(); render(); renderHall(); renderVendors(); renderWallet(); updateVendorStats(); renderWhatsAppGuests(); updateEventAssistantUi();
     }
+    if(data.whatsappSent && data.draft?.phone && data.draft?.message){ addLocalWaLog(data.draft.phone, 'out', data.draft.message); }
     if(last) last.textContent=data.answer||'בוצע'; else eventAssistantAdd('bot', data.answer||'בוצע');
   }catch(e){ const box=document.getElementById('eventAssistantChat'); const last=box?.lastElementChild; if(last) last.textContent='לא הצלחתי לענות כרגע: '+e.message; else eventAssistantAdd('bot','לא הצלחתי לענות כרגע: '+e.message); }
 }

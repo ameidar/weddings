@@ -279,6 +279,27 @@ function findGuestByName(state, rawName) {
   return { index, guest: index >= 0 ? participants[index] : null };
 }
 function cleanEventAssistantName(value) { return String(value || '').replace(/^(את|אל|ל|של)\s+/, '').replace(/\s+(למערכת|לרשימה|באירוע|לאירוע)$/,'').trim(); }
+function cleanAssistantRecipient(value) {
+  return cleanEventAssistantName(String(value || '')
+    .replace(/^(?:את|אל)\s+/, '')
+    .replace(/^ל(?=[א-ת]{2,}\s+[א-ת]{2,})/, '')
+    .replace(/\s+(?:בבקשה|עכשיו|היום|מחר|והוא.*|והיא.*)$/,'')
+    .trim());
+}
+function extractAssistantRecipientName(text) {
+  const raw = String(text || '');
+  const patterns = [
+    /(?:אישור הגעה|בקשת אישור|בקשה לאישור הגעה|rsvp)\s+(?:ל|אל)\s*([^,.!?：:\n]+)/i,
+    /(?:וואטסאפ|הודעה|תזכורת)\s+(?:ל|אל)\s*([^,.!?：:\n]+)/i,
+    /(?:שלח|תשלח|שלחי|שלחו)\s+.*?(?:ל|אל)\s*([^,.!?：:\n]+)/i,
+  ];
+  for (const pattern of patterns) {
+    const match = raw.match(pattern);
+    const name = cleanAssistantRecipient(match?.[1] || '');
+    if (name) return name;
+  }
+  return '';
+}
 function extractAssistantCount(text) { const m = String(text || '').match(/(\d+)\s*(?:משתתפים|מוזמנים|אנשים|מגיעים|אורחים|נפשות)/); return m ? Number(m[1]) : 0; }
 function extractAssistantPhone(text) { const m = String(text || '').match(/(\+?\d[\d\-\s]{8,}\d)/); return m ? m[1].replace(/[\s-]/g,'') : ''; }
 function answerEventAssistantQuery(state, command) {
@@ -449,6 +470,53 @@ function applyEventAssistantAiPlan(state, plan) {
   return null;
 }
 
+
+async function buildAssistantRsvpLink(env, request, eventId, guestIndex, guest) {
+  const token = await signRsvpToken(env, {
+    eventId,
+    guestIndex,
+    phone: String(guest?.['טלפון וואטסאפ'] || ''),
+    name: String(guest?.['שם מלא / שם לקוח'] || ''),
+    exp: Date.now() + 1000 * 60 * 60 * 24 * 45,
+  });
+  return `${new URL(request.url).origin}/rsvp?t=${encodeURIComponent(token)}`;
+}
+
+async function handleEventAssistantWhatsApp(env, request, state, command, eventId) {
+  const text = String(command || '');
+  const isWhatsAppRequest = /(וואטסאפ|הודעה|תזכורת|בקשה\s+לאישור\s+הגעה|אישור\s+הגעה)/.test(text);
+  const explicitSend = /(?:^|\s)(?:שלח|תשלח|שלחי|שלחו)(?:\s|$)/.test(text);
+  const prepareOnly = /(?:הכן|תכין|טיוטה|נוסח|רק\s+תכין)/.test(text) && !explicitSend;
+  if (!isWhatsAppRequest || (!explicitSend && !prepareOnly)) return null;
+
+  const name = extractAssistantRecipientName(text);
+  const found = findGuestByName(state, name);
+  if (!found.guest) return { changed:false, intent:'clarify', answer: name ? `לא מצאתי את ${name} ברשימת המשתתפים. אפשר לכתוב את השם בדיוק כפי שמופיע בטבלה?` : 'למי לשלוח את הודעת הוואטסאפ?' };
+
+  const targetName = found.guest['שם מלא / שם לקוח'] || name;
+  const phone = extractAssistantPhone(text) || found.guest['טלפון וואטסאפ'] || '';
+  if (!phone) return { changed:false, intent:'clarify', answer:`מצאתי את ${targetName}, אבל אין לו/לה מספר וואטסאפ ברשימת המשתתפים.` };
+
+  const isRsvp = /אישור|הגעה|מאשר|RSVP/i.test(text);
+  let message = '';
+  if (isRsvp) {
+    const link = await buildAssistantRsvpLink(env, request, eventId, found.index, found.guest);
+    message = `היי ${targetName}, נשמח לדעת האם אתם מאשרים הגעה ל${state.eventSettings?.name || 'אירוע'}.
+אפשר לעדכן כאן: ${link}
+תודה רבה!`;
+  } else {
+    const custom = text.match(/(?:הודעה|וואטסאפ)\s+(?:ל|אל)?\s*[^:：]*[:：]\s*([\s\S]+)/)?.[1];
+    message = String(custom || `היי ${targetName}, רציתי לעדכן אותך לגבי ${state.eventSettings?.name || 'האירוע'}. תודה רבה!`).trim();
+  }
+
+  if (prepareOnly) return { changed:false, intent:'action', action:'prepare_whatsapp', needsConfirmation:true, draft:{ type:'whatsapp', name:targetName, phone, message }, answer:`הכנתי טיוטת וואטסאפ:\nאל: ${targetName} (${phone})\nהודעה: ${message}\n\nלא שלחתי בפועל.` };
+
+  const sent = await sendGreenApiMessage(env, phone, message);
+  if (!sent.ok) return { changed:false, intent:'action', action:'send_whatsapp', answer:`לא הצלחתי לשלוח וואטסאפ ל${targetName}: ${sent.error || sent.result?.message || 'שגיאת שליחה'}` };
+  appendGuestNote(found.guest, `נשלחה הודעת וואטסאפ${isRsvp ? ' לאישור הגעה' : ''} בתאריך ${new Date().toLocaleString('he-IL')}`);
+  return { changed:true, intent:'action', action:'send_whatsapp', whatsappSent:true, draft:{ type:'whatsapp', name:targetName, phone, message }, answer:`שלחתי וואטסאפ ל${targetName} ✅\n${isRsvp ? 'צירפתי קישור אישי לאישור הגעה.' : ''}` };
+}
+
 async function eventAssistantApi(request, env) {
   if (!env.EVENTS_KV) return jsonResponse({ ok: false, error: 'Cloudflare KV binding EVENTS_KV is not configured' }, 501);
   const body = await request.json().catch(() => ({}));
@@ -463,8 +531,9 @@ async function eventAssistantApi(request, env) {
   try { state = raw ? JSON.parse(raw) : (body.state || {}); } catch { state = body.state || {}; }
   if (!state || typeof state !== 'object') state = {};
   state.eventSettings = state.eventSettings || {};
-  const queryAnswer = answerEventAssistantQuery(state, command);
-  let result = queryAnswer ? { changed:false, intent:'query', answer:queryAnswer } : { intent:'action', ...handleEventAssistantAction(state, command) };
+  const whatsappResult = await handleEventAssistantWhatsApp(env, request, state, command, eventId);
+  const queryAnswer = whatsappResult ? '' : answerEventAssistantQuery(state, command);
+  let result = whatsappResult || (queryAnswer ? { changed:false, intent:'query', answer:queryAnswer } : { intent:'action', ...handleEventAssistantAction(state, command) });
   const isFallback = String(result.answer || '').includes('אני לא רוצה לנחש פעולה');
   if (isFallback || (env.EVENT_ASSISTANT_BRAIN_MODE === 'always' && !queryAnswer)) {
     const brainPlan = await planEventAssistantWithOpenClaw(env, state, command, eventId);
@@ -511,6 +580,23 @@ function normalizeChatId(value) {
   return `${phone}@c.us`;
 }
 
+async function sendGreenApiMessage(env, phoneOrChatId, message) {
+  const idInstance = env.GREENAPI_ID_INSTANCE;
+  const apiToken = env.GREENAPI_API_TOKEN_INSTANCE;
+  if (!idInstance || !apiToken) return { ok: false, status: 500, error: 'Green API is not configured' };
+  const chatId = normalizeChatId(phoneOrChatId);
+  const text = String(message || '').trim();
+  if (!chatId || !text) return { ok: false, status: 400, error: 'Missing phone/chatId or message' };
+  if (text.length > 3500) return { ok: false, status: 400, error: 'Message is too long' };
+  const url = `https://api.green-api.com/waInstance${idInstance}/sendMessage/${apiToken}`;
+  const upstream = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ chatId, message: text }) });
+  const responseText = await upstream.text();
+  let result;
+  try { result = responseText ? JSON.parse(responseText) : {}; } catch { result = { raw: responseText }; }
+  if (!upstream.ok) return { ok: false, status: upstream.status, chatId, result };
+  return { ok: true, chatId, result };
+}
+
 async function getWhatsAppHistory(request, env) {
   try {
     const idInstance = env.GREENAPI_ID_INSTANCE;
@@ -538,21 +624,12 @@ async function getWhatsAppHistory(request, env) {
 
 async function sendWhatsApp(request, env) {
   try {
-    const idInstance = env.GREENAPI_ID_INSTANCE;
-    const apiToken = env.GREENAPI_API_TOKEN_INSTANCE;
-    if (!idInstance || !apiToken) return jsonResponse({ ok: false, error: 'Green API is not configured' }, 500);
     const body = await request.json();
-    const chatId = normalizeChatId(body.chatId || body.phone);
-    const message = String(body.message || '').trim();
-    if (!chatId || !message) return jsonResponse({ ok: false, error: 'Missing phone/chatId or message' }, 400);
-    if (message.length > 3500) return jsonResponse({ ok: false, error: 'Message is too long' }, 400);
-    const url = `https://api.green-api.com/waInstance${idInstance}/sendMessage/${apiToken}`;
-    const upstream = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ chatId, message }) });
-    const text = await upstream.text();
-    let result;
-    try { result = text ? JSON.parse(text) : {}; } catch { result = { raw: text }; }
-    if (!upstream.ok) return jsonResponse({ ok: false, status: upstream.status, result }, 502);
-    return jsonResponse({ ok: true, chatId, result });
+    const eventId = String(body.eventId || '').trim();
+    if (eventId && !(await requireEventAccess(request, env, eventId))) return jsonResponse({ ok: false, error: 'Unauthorized' }, 401);
+    const sent = await sendGreenApiMessage(env, body.chatId || body.phone, body.message);
+    if (!sent.ok) return jsonResponse({ ok: false, error: sent.error, status: sent.status, result: sent.result }, sent.status && sent.status < 500 ? sent.status : 502);
+    return jsonResponse({ ok: true, chatId: sent.chatId, result: sent.result });
   } catch (err) {
     return jsonResponse({ ok: false, error: err.message || 'Unknown error' }, 500);
   }
