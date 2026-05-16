@@ -124,6 +124,79 @@ async function eventsApi(request, env) {
   return jsonResponse({ ok: false, error: 'Method not allowed' }, 405);
 }
 
+
+async function signRsvpToken(env, payload) {
+  const body = base64url(enc.encode(JSON.stringify(payload)));
+  const sig = await hmac(sessionSecret(env), body);
+  return `${body}.${sig}`;
+}
+async function verifyRsvpToken(env, token) {
+  if (!token || !String(token).includes('.')) return null;
+  const [body, sig] = String(token).split('.');
+  const expected = await hmac(sessionSecret(env), body);
+  if (!safeEqual(sig, expected)) return null;
+  try {
+    const json = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(body.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0))));
+    if (json.exp && json.exp < Date.now()) return null;
+    return json;
+  } catch { return null; }
+}
+function htmlResponse(html, status=200) {
+  return new Response(html, { status, headers: { 'content-type':'text/html; charset=utf-8', 'cache-control':'no-store' } });
+}
+function escapeHtmlServer(value) {
+  return String(value ?? '').replace(/[&<>\"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[m]));
+}
+async function rsvpLinkApi(request, env) {
+  if (!env.EVENTS_KV) return jsonResponse({ ok:false, error:'Cloudflare KV binding EVENTS_KV is not configured' }, 501);
+  const body = await request.json().catch(() => ({}));
+  const eventId = String(body.eventId || '').trim();
+  const guestIndex = Number(body.guestIndex);
+  if (!eventId || !Number.isFinite(guestIndex)) return jsonResponse({ ok:false, error:'Missing eventId or guestIndex' }, 400);
+  const session = await requireEventAccess(request, env, eventId);
+  if (!session) return jsonResponse({ ok:false, error:'Unauthorized' }, 401);
+  const raw = await env.EVENTS_KV.get(EVENT_STATE_PREFIX + eventId);
+  let state; try { state = raw ? JSON.parse(raw) : null; } catch { state = null; }
+  const guest = state?.participants?.[guestIndex];
+  if (!guest) return jsonResponse({ ok:false, error:'Guest not found' }, 404);
+  const token = await signRsvpToken(env, { eventId, guestIndex, phone: String(guest['טלפון וואטסאפ'] || ''), name: String(guest['שם מלא / שם לקוח'] || ''), exp: Date.now() + 1000*60*60*24*45 });
+  const url = new URL(request.url);
+  const link = `${url.origin}/rsvp?t=${encodeURIComponent(token)}`;
+  return jsonResponse({ ok:true, link });
+}
+async function rsvpPage(request, env) {
+  const url = new URL(request.url);
+  const token = url.searchParams.get('t') || '';
+  const claims = await verifyRsvpToken(env, token);
+  if (!claims?.eventId) return htmlResponse('<!doctype html><meta charset="utf-8"><body dir="rtl" style="font-family:Arial;padding:24px"><h2>קישור אישור הגעה לא תקין או שפג תוקפו</h2></body>', 400);
+  const raw = await env.EVENTS_KV?.get(EVENT_STATE_PREFIX + claims.eventId);
+  let state; try { state = raw ? JSON.parse(raw) : {}; } catch { state = {}; }
+  const guest = state?.participants?.[Number(claims.guestIndex)] || {};
+  const name = escapeHtmlServer(guest['שם מלא / שם לקוח'] || claims.name || 'אורח/ת יקר/ה');
+  const eventName = escapeHtmlServer(state?.eventSettings?.name || 'האירוע');
+  const qty = Math.max(1, Number(guest['כמות מוזמנים']) || 1);
+  return htmlResponse(`<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>אישור הגעה</title><style>body{font-family:Arial,sans-serif;background:#f6f7fb;margin:0;color:#101828}.box{max-width:520px;margin:28px auto;background:#fff;border:1px solid #e4e7ec;border-radius:20px;padding:24px;box-shadow:0 8px 28px #0001}.btn{width:100%;height:52px;border:0;border-radius:14px;font-size:18px;font-weight:800;margin:8px 0;cursor:pointer}.yes{background:#12b76a;color:#fff}.no{background:#f04438;color:#fff}.secondary{background:#fff;border:1px solid #d0d5dd;color:#344054}input{width:100%;height:48px;border:1px solid #d0d5dd;border-radius:12px;font-size:18px;padding:0 12px;box-sizing:border-box}.hidden{display:none}.status{font-weight:800;margin-top:12px;white-space:pre-wrap}</style></head><body><main class="box"><h1>אישור הגעה</h1><p>שלום ${name}, נשמח לדעת האם אתם מגיעים ל${eventName}.</p><button class="btn yes" onclick="showQty()">כן, אנחנו מגיעים ✅</button><button class="btn no" onclick="submitRsvp('לא מגיע')">לא נוכל להגיע</button><section id="qtyBox" class="hidden"><label>כמה מגיעים?</label><input id="qty" type="number" min="1" max="99" value="${qty}"><button class="btn yes" onclick="submitRsvp('אישר')">שליחת אישור</button><button class="btn secondary" onclick="document.getElementById('qtyBox').classList.add('hidden')">ביטול</button></section><div id="status" class="status"></div></main><script>const token=${JSON.stringify(token)};function showQty(){document.getElementById('qtyBox').classList.remove('hidden');document.getElementById('qty').focus()}async function submitRsvp(status){const el=document.getElementById('status');el.textContent='שומר תשובה...';try{const body={token,status,count:status==='אישר'?document.getElementById('qty').value:0};const r=await fetch('/api/rsvp',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});const d=await r.json();if(!r.ok||!d.ok)throw new Error(d.error||'שמירה נכשלה');el.textContent=d.message||'התשובה נשמרה, תודה רבה!';document.querySelectorAll('button,input').forEach(x=>x.disabled=true)}catch(e){el.textContent='לא הצלחנו לשמור: '+e.message}}</script></body></html>`);
+}
+async function rsvpSubmitApi(request, env) {
+  if (!env.EVENTS_KV) return jsonResponse({ ok:false, error:'Cloudflare KV binding EVENTS_KV is not configured' }, 501);
+  const body = await request.json().catch(() => ({}));
+  const claims = await verifyRsvpToken(env, body.token || '');
+  if (!claims?.eventId) return jsonResponse({ ok:false, error:'קישור אישור הגעה לא תקין או שפג תוקפו' }, 400);
+  const key = EVENT_STATE_PREFIX + claims.eventId;
+  const raw = await env.EVENTS_KV.get(key);
+  let state; try { state = raw ? JSON.parse(raw) : {}; } catch { state = {}; }
+  const idx = Number(claims.guestIndex);
+  const guest = state?.participants?.[idx];
+  if (!guest) return jsonResponse({ ok:false, error:'המשתתף לא נמצא במערכת' }, 404);
+  const status = String(body.status || '').includes('לא') ? 'לא מגיע' : 'אישר';
+  guest['סטטוס אישור השתתפות'] = status;
+  if (status === 'אישר') guest['כמות מוזמנים'] = String(Math.max(1, Math.min(99, Number(body.count) || 1)));
+  guest['הערות'] = `${guest['הערות'] ? guest['הערות'] + ' | ' : ''}עודכן דרך קישור RSVP בתאריך ${new Date().toLocaleString('he-IL')}`;
+  state.updatedAt = new Date().toISOString();
+  await env.EVENTS_KV.put(key, JSON.stringify(state));
+  return jsonResponse({ ok:true, eventId:claims.eventId, guestIndex:idx, status, count:guest['כמות מוזמנים'], message: status === 'אישר' ? `תודה! אישרנו הגעה עבור ${guest['כמות מוזמנים']} משתתפים.` : 'תודה על העדכון. סימנו שלא תוכלו להגיע.' });
+}
+
 async function eventStateApi(request, env) {
   if (!env.EVENTS_KV) return jsonResponse({ ok: false, error: 'Cloudflare KV binding EVENTS_KV is not configured' }, 501);
   const url = new URL(request.url);
@@ -667,6 +740,9 @@ export default {
     if (url.pathname === '/api/events') return eventsApi(request, env);
     if (url.pathname === '/api/client-login' && request.method === 'POST') return clientLogin(request, env);
     if (url.pathname === '/api/event-state') return eventStateApi(request, env);
+    if (url.pathname === '/api/rsvp-link' && request.method === 'POST') return rsvpLinkApi(request, env);
+    if (url.pathname === '/api/rsvp' && request.method === 'POST') return rsvpSubmitApi(request, env);
+    if (url.pathname === '/rsvp' && request.method === 'GET') return rsvpPage(request, env);
     if (url.pathname === '/api/event-ai' && request.method === 'POST') return eventAiApi(request, env);
     if (url.pathname === '/api/event-agent' && request.method === 'POST') return eventAgentApi(request, env);
     if (url.pathname === '/api/send-whatsapp') {

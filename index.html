@@ -55,18 +55,23 @@
       <div class="note">אפשר לשנות רק את מספר המשתתפים. פרטי האירוע כמו תאריך ואולם נשארים נעולים לעריכה ע״י האדמין.</div>
     </div>
     <div class="card client-only" style="grid-column:1/-1">
-      <h3 style="margin:0 0 8px;font-size:24px">סוכן אירועים אישי</h3>
-      <div class="note">אפשר לשאול וגם לתת הוראות ביצוע: “מי אישרו הגעה?”, “איפה יושבת משפחת מידר?”, או “תכניס את משפחת ימיני עם 5 משתתפים לשולחן 5”.</div>
-      <div class="quick-questions">
-        <button onclick="askQuickAi('תכניס את משפחת ימיני למערכת')">הוסף משפחה</button>
-        <button onclick="askQuickAi('תכניס את משפחת ימיני עם 5 משתתפים לשולחן 5')">הוסף ושבץ</button>
-        <button onclick="askQuickAi('מי אישרו הגעה?')">מי אישרו הגעה?</button>
-        <button onclick="askQuickAi('איפה יושבת משפחת מידר?')">איפה יושבת משפחת מידר?</button>
+      <h3 id="aiAssistantTitle" style="margin:0 0 8px;font-size:24px">עוזר אירוע אישי</h3>
+      <div id="aiAssistantIntro" class="note">העוזר מותאם לאירוע הספציפי שלך: סוג האירוע, הדף, המשתתפים, השולחנות, הספקים והארנק.</div>
+      <div class="toolbar" style="margin:8px 0">
+        <input id="assistantNameInput" placeholder="תן שם לעוזר שלך, למשל ליאו" style="flex:1;min-width:240px" />
+        <button class="secondary" onclick="saveAssistantName()">שמור שם לעוזר</button>
       </div>
-      <div id="aiChatLog" class="ai-chat"><div class="ai-msg bot">היי, אני סוכן האירוע. אפשר לשאול אותי שאלות וגם לבקש ממני לבצע פעולות במערכת, למשל להוסיף משפחה ולשבץ אותה לשולחן.</div></div>
+      <div class="quick-questions">
+        <button onclick="askQuickAi('מה מצב האירוע שלי עכשיו?')">סיכום מצב</button>
+        <button onclick="askQuickAi('מה המשימות שנשארו לי עד האירוע?')">משימות עד האירוע</button>
+        <button onclick="askQuickAi('תכין הודעת תזכורת למי שלא אישר הגעה')">הכן תזכורת</button>
+        <button onclick="askQuickAi('מי אישרו הגעה?')">מי אישרו הגעה?</button>
+        <button onclick="askQuickAi('תכניס את משפחת ימיני עם 5 משתתפים לשולחן 5')">הוסף ושבץ</button>
+      </div>
+      <div id="aiChatLog" class="ai-chat"><div class="ai-msg bot" id="aiWelcomeMsg">היי, אני העוזר האישי של האירוע שלך. המטרה שלי היא להקל עליך, לעשות סדר, ולעזור להביא את האירוע להצלחה מכל הבחינות.</div></div>
       <div class="toolbar" style="margin-bottom:0">
-        <input id="aiQuestion" placeholder="כתוב שאלה או הוראה לסוכן..." onkeydown="if(event.key==='Enter') askEventAi()" style="flex:1;min-width:260px" />
-        <button onclick="askEventAi()">שאל</button>
+        <input id="aiQuestion" placeholder="כתוב שאלה או הוראה לעוזר..." onkeydown="if(event.key==='Enter') askEventAi()" style="flex:1;min-width:260px" />
+        <button onclick="askEventAi()">שלח לעוזר</button>
       </div>
     </div>
   </section>
@@ -464,17 +469,18 @@ async function bootMode(){
   if(await checkAdminSession()) await enterAdminMode(); else adminLogout();
 }
 
-function defaultEventSettings(){ return {name:'אירוע חדש', type:'חתונה', owner:'', date:'', venue:'', expected:100, notes:''}; }
+function defaultEventSettings(){ return {name:'אירוע חדש', type:'חתונה', owner:'', date:'', venue:'', expected:100, notes:'', assistantName:''}; }
 function loadEventSettings(){ try{ const v=localStorage.getItem(EVENT_KEY); if(v) return JSON.parse(v); }catch(e){} return defaultEventSettings(); }
 let eventSettings = loadEventSettings();
 function fillEventSettings(){
   const set=(id,val)=>{ const el=document.getElementById(id); if(el) el.value=val??''; };
-  set('eventName',eventSettings.name); set('eventType',eventSettings.type); set('eventOwner',eventSettings.owner); set('eventDate',eventSettings.date); set('eventVenue',eventSettings.venue); set('eventExpected',eventSettings.expected); set('eventNotes',eventSettings.notes); set('clientExpectedInput',eventSettings.expected);
+  set('eventName',eventSettings.name); set('eventType',eventSettings.type); set('eventOwner',eventSettings.owner); set('eventDate',eventSettings.date); set('eventVenue',eventSettings.venue); set('eventExpected',eventSettings.expected); set('eventNotes',eventSettings.notes); set('clientExpectedInput',eventSettings.expected); set('assistantNameInput',eventSettings.assistantName);
   applyEventToDashboard(false);
+  updateAssistantUi();
 }
 function saveEventSettings(){
   const get=id=>document.getElementById(id)?.value||'';
-  eventSettings={name:get('eventName')||'אירוע חדש',type:get('eventType')||'אירוע',owner:get('eventOwner'),date:get('eventDate'),venue:get('eventVenue'),expected:Number(get('eventExpected'))||0,notes:get('eventNotes')};
+  eventSettings={...eventSettings,name:get('eventName')||'אירוע חדש',type:get('eventType')||'אירוע',owner:get('eventOwner'),date:get('eventDate'),venue:get('eventVenue'),expected:Number(get('eventExpected'))||0,notes:get('eventNotes')};
   localStorage.setItem(EVENT_KEY, JSON.stringify(eventSettings));
   applyEventToDashboard(false);
   scheduleEventStateSync();
@@ -486,6 +492,30 @@ function applyEventToDashboard(showToast=true){
   document.querySelector('header p').textContent = `${eventSettings.type||'אירוע'} · ${formatEventDate()} · ${eventSettings.venue||'מקום לא הוגדר'} · צפי ${Number(eventSettings.expected)||0} משתתפים · מערכת דינאמית לניהול משתתפים, הודעות, שולחנות וספקים`;
   const clientExpected=document.getElementById('clientExpectedInput'); if(clientExpected) clientExpected.value=Number(eventSettings.expected)||'';
   if(showToast) alert('הגדרת האירוע נשמרה');
+}
+function assistantDisplayName(){ return (eventSettings.assistantName || 'עוזר האירוע האישי').trim(); }
+function assistantWelcomeText(){
+  const name=assistantDisplayName();
+  const eventType=eventSettings.type||'האירוע';
+  const eventName=eventSettings.name||'האירוע שלך';
+  const owner=eventSettings.owner ? ` עבור ${eventSettings.owner}` : '';
+  return `היי, אני ${name}, העוזר האישי של ${eventName}${owner}.\nאני מותאם ל${eventType} הספציפי שלך — המשתתפים, אישורי ההגעה, השולחנות, הספקים, הארנק וההודעות.\nהמטרה שלי היא להקל עליך, לעשות סדר, לבנות משימות עד האירוע ולעזור להביא את האירוע להצלחה מכל הבחינות. אפשר לתת לי שם, לשאול שאלות, לבקש שאכין הודעות ותזכורות, ולהכניס או לעדכן נתונים במערכת.`;
+}
+function updateAssistantUi(){
+  const title=document.getElementById('aiAssistantTitle'); if(title) title.textContent = assistantDisplayName();
+  const intro=document.getElementById('aiAssistantIntro'); if(intro) intro.textContent = `מותאם ל${eventSettings.type||'אירוע'} שלך: ${eventSettings.name||'אירוע חדש'} · ${formatEventDate()} · ${eventSettings.venue||'מקום לא הוגדר'}.`;
+  const input=document.getElementById('assistantNameInput'); if(input && document.activeElement!==input) input.value=eventSettings.assistantName||'';
+  const welcome=document.getElementById('aiWelcomeMsg'); if(welcome) welcome.textContent=assistantWelcomeText();
+}
+function saveAssistantName(){
+  const input=document.getElementById('assistantNameInput');
+  const name=(input?.value||'').trim();
+  if(!name){ alert('אפשר להזין שם קצר לעוזר, למשל ליאו'); input?.focus(); return; }
+  eventSettings.assistantName=name;
+  localStorage.setItem(EVENT_KEY, JSON.stringify(eventSettings));
+  updateAssistantUi();
+  scheduleEventStateSync();
+  aiAddMessage('bot', `מעולה, מעכשיו אפשר לקרוא לי ${name}. אני כאן כדי לעזור לך לנהל את האירוע בצורה הכי מסודרת ונוחה.`);
 }
 function updateClientExpectedCount(){
   const input=document.getElementById('clientExpectedInput');
@@ -584,7 +614,9 @@ const messageTemplates = {
   invite: g => `היי ${guestName(g)}, כאן צוות האירוע 😊
 נשמח לאישור השתתפות ב${eventSettings.name || 'אירוע'}${eventSettings.date ? ' בתאריך ' + formatEventDate() : ''}.
 כרגע רשום אצלנו: ${guestPartySize(g)} מגיעים.
-אפשר להשיב כאן אם צריך לעדכן את הכמות. תודה רבה!`,
+לאישור הגעה ועדכון כמות לחצו כאן:
+{{RSVP_LINK}}
+תודה רבה!`,
   rsvpReminder: g => `היי ${guestName(g)}, תזכורת קצרה לגבי ${eventSettings.name || 'האירוע'} 😊
 עדיין לא קיבלנו אישור השתתפות, נשמח לעדכון בהקדם כולל כמה מגיעים.`,
   payment: g => `היי ${guestName(g)}, תזכורת לתשלום עבור ${eventSettings.name || 'האירוע'} 😊
@@ -641,10 +673,25 @@ async function refreshWhatsAppHistory(){
     status.textContent='לוג השיחה עודכן ✅'; status.classList.add('ok-text');
   }catch(e){ status.textContent='לא ניתן לרענן לוג: '+e.message; status.classList.add('bad-text'); renderWhatsAppLog(); }
 }
-function applyTemplate(){
+async function buildRsvpLink(){
+  if(selectedWhatsAppIndex === null || !currentEventId()) return '';
+  try{
+    await syncEventStateNow();
+    const res=await fetch('/api/rsvp-link',{method:'POST',headers:{'content-type':'application/json',...clientAuthHeaders()},body:JSON.stringify({eventId:currentEventId(),guestIndex:selectedWhatsAppIndex})});
+    const data=await res.json();
+    return res.ok && data.ok ? data.link : '';
+  }catch(e){ return ''; }
+}
+async function applyTemplate(){
   const kind = document.getElementById('waTemplate').value;
   if(kind === 'custom') return;
-  document.getElementById('waMessage').value = messageTemplates[kind](currentWhatsAppGuest());
+  let msg = messageTemplates[kind](currentWhatsAppGuest());
+  if(msg.includes('{{RSVP_LINK}}')){
+    document.getElementById('waMessage').value = msg.replace('{{RSVP_LINK}}','מכין קישור אישי...');
+    const link = await buildRsvpLink();
+    msg = msg.replace('{{RSVP_LINK}}', link || '[לא ניתן ליצור קישור כרגע — ודאו שהאירוע שמור ושבחרתם משתתף]');
+  }
+  document.getElementById('waMessage').value = msg;
 }
 function previewWhatsApp(){ applyTemplate(); }
 async function sendWhatsApp(){
@@ -656,7 +703,7 @@ async function sendWhatsApp(){
   if(!confirm('לשלוח עכשיו וואטסאפ למספר ' + phone + '?')) return;
   status.textContent = 'שולח...';
   try{
-    const res = await fetch('/api/send-whatsapp', {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({phone, message})});
+    const res = await fetch('/api/send-whatsapp', {method:'POST', headers:{'content-type':'application/json',...clientAuthHeaders()}, body:JSON.stringify({phone, message, eventId:currentEventId(), guestIndex:selectedWhatsAppIndex})});
     const data = await res.json();
     if(!res.ok || !data.ok) throw new Error(data.error || data.result?.message || 'שליחה נכשלה');
     addLocalWaLog(phone, 'out', message);
@@ -826,7 +873,7 @@ async function askEventAi(){
   aiAddMessage('bot', 'אני בודק את הנתונים ומטפל בזה...');
   await syncEventStateNow();
   try{
-    const res=await fetch('/api/event-agent',{method:'POST',headers:{'content-type':'application/json',...clientAuthHeaders()},body:JSON.stringify({eventId:currentEventId(),command:commandForAgent,state:collectEventState()})});
+    const res=await fetch('/api/event-agent',{method:'POST',headers:{'content-type':'application/json',...clientAuthHeaders()},body:JSON.stringify({eventId:currentEventId(),command:commandForAgent,state:collectEventState(),assistantName:assistantDisplayName()})});
     const data=await res.json();
     const box=document.getElementById('aiChatLog'); const last=box?.lastElementChild;
     if(res.ok && data.ok){
