@@ -301,6 +301,27 @@ function handleEventAssistantAction(state, command) {
     const message = /אישור|הגעה|מאשר/.test(text) ? `היי ${guest?.['שם מלא / שם לקוח'] || name || 'אורח/ת יקר/ה'}, נשמח לדעת האם אתם מאשרים הגעה לאירוע. תודה רבה!` : `היי ${guest?.['שם מלא / שם לקוח'] || name || 'אורח/ת יקר/ה'}, רציתי לעדכן אותך לגבי האירוע.`;
     return { changed: false, needsConfirmation: true, draft: { type:'whatsapp', name: guest?.['שם מלא / שם לקוח'] || name, phone, message }, answer: `הכנתי טיוטת וואטסאפ לאישור לפני שליחה:\nאל: ${guest?.['שם מלא / שם לקוח'] || name || phone || 'לא נבחר'}${phone ? ' ('+phone+')' : ''}\nהודעה: ${message}\n\nלא שלחתי בפועל. שליחה מתבצעת רק ממודול הוואטסאפ אחרי אישור.` };
   }
+  const updateCount = text.match(/(?:תעדכן|עדכן|תשנה|שנה)\s+(?:את\s+)?(.+?)\s+(?:ל|עם)\s*[־-]?\s*(\d+)\s*(?:משתתפים|מוזמנים|אנשים|מגיעים|אורחים|נפשות)/);
+  if (updateCount) {
+    const name = cleanEventAssistantName(updateCount[1]);
+    const count = Number(updateCount[2]);
+    const found = findGuestByName(state, name);
+    if (!found.guest) return { changed:false, answer:`לא מצאתי את ${name} ברשימת המשתתפים. בדוק את השם או בקש להוסיף אותו כמשתתף חדש.` };
+    found.guest['כמות מוזמנים'] = String(count);
+    if (/יגיעו|מגיעים|יאשר|אישר|אישור|הגעה/.test(text)) found.guest['סטטוס אישור השתתפות'] = 'אישר';
+    const note = /ילד|ילדה|ילדים/.test(text) ? 'כולל ילד/ים' : '';
+    if (note) found.guest['הערות'] = `${found.guest['הערות'] ? found.guest['הערות'] + ' | ' : ''}${note}`;
+    return { changed:true, answer:`עדכנתי את ${found.guest['שם מלא / שם לקוח']} ל-${count} מוזמנים${/יגיעו|מגיעים|יאשר|אישר|אישור|הגעה/.test(text) ? ' וסימנתי שאישרו הגעה' : ''}${note ? ' ('+note+')' : ''}.` };
+  }
+  const updateRsvp = text.match(/(?:תעדכן|עדכן|סמן|תסמן)\s+(?:את\s+)?(.+?)\s+(?:כ|שהם\s+)?(מגיעים|יגיעו|אישרו|לא מגיעים|לא יגיעו|טרם ענו|לא ענו)/);
+  if (updateRsvp) {
+    const name = cleanEventAssistantName(updateRsvp[1]);
+    const found = findGuestByName(state, name);
+    if (!found.guest) return { changed:false, answer:`לא מצאתי את ${name} ברשימת המשתתפים.` };
+    const raw = updateRsvp[2];
+    found.guest['סטטוס אישור השתתפות'] = /לא מגיעים|לא יגיעו/.test(raw) ? 'לא מגיע' : /טרם|לא ענו/.test(raw) ? 'טרם נענה' : 'אישר';
+    return { changed:true, answer:`עדכנתי את סטטוס ההגעה של ${found.guest['שם מלא / שם לקוח']} ל־${found.guest['סטטוס אישור השתתפות']}.` };
+  }
   const table = (text.match(/(?:שולחן|לשולחן|בשולחן)\s*(\d+)/) || [])[1];
   if (/(שבץ|תשבץ|מקם|תמקם|להושיב|הושב)/.test(text)) {
     const name = cleanEventAssistantName((text.match(/(?:שבץ|תשבץ|מקם|תמקם|להושיב|הושב)\s+(?:את\s+)?([^,.]+?)\s+(?:לשולחן|בשולחן)/) || [])[1] || '');
