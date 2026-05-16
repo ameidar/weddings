@@ -40,6 +40,11 @@
       "free_form_assign_table",
       "free_form_whatsapp_draft",
       "free_form_clarify"
+    ],
+    "conversation": [
+      "follow_up_answers",
+      "clarifications",
+      "corrections_based_on_recent_context"
     ]
   },
   "safety": {
@@ -71,5 +76,11 @@
     "executesDirectly": false,
     "workerActionEndpoint": "/api/event-actions"
   },
-  "actionEndpoint": "/api/event-actions"
+  "actionEndpoint": "/api/event-actions",
+  "chatHistory": {
+    "workerEndpoint": "/api/event-assistant-history",
+    "storage": "EVENTS_KV key event_assistant_chat_v1:<eventId>:<client>",
+    "sentToBrain": "last 20 messages are sent to Opal/OpenClaw for follow-up context",
+    "retained": "last 60 messages per event/client"
+  }
 }
