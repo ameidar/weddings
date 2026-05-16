@@ -371,6 +371,22 @@ async function syncEventStateNow(){
   try{ await fetch('/api/event-state',{method:'POST',headers:{'content-type':'application/json',...clientAuthHeaders()},body:JSON.stringify({eventId:currentEventId(),state:collectEventState()})}); }catch(e){}
 }
 function scheduleEventStateSync(){ if(suppressSync || !currentClientToken) return; clearTimeout(syncTimer); syncTimer=setTimeout(syncEventStateNow, 800); }
+function mergePendingParticipants(pending){
+  if(!Array.isArray(pending)) return 0;
+  const existingNames=new Set(guests.map(g=>String(g['שם מלא / שם לקוח']||'').trim().toLowerCase()).filter(Boolean));
+  const additions=pending.filter(g=>g && !existingNames.has(String(g['שם מלא / שם לקוח']||'').trim().toLowerCase()));
+  if(additions.length){ guests=[...guests,...additions]; eventStorageSet(STORAGE_KEY,JSON.stringify(guests)); }
+  return additions.length;
+}
+async function loadPendingParticipants(){
+  if(!currentEventId()) return 0;
+  try{
+    const res=await fetch('/api/pending-participants?eventId='+encodeURIComponent(currentEventId()));
+    const data=await res.json();
+    if(res.ok && data.ok) return mergePendingParticipants(data.pendingParticipants);
+  }catch(e){}
+  return 0;
+}
 async function loadRemoteEventState(){
   if(!currentClientToken || !currentEventId()) return false;
   try{
@@ -380,11 +396,7 @@ async function loadRemoteEventState(){
       suppressSync=true;
       if(data.state.eventSettings){ const adminBrandColor=eventSettings?.brandColor; eventSettings={...data.state.eventSettings,id:currentEventId(),brandColor:normalizeBrandColor(adminBrandColor || data.state.eventSettings.brandColor)}; applyEventTheme(); eventStorageSet(EVENT_KEY,JSON.stringify(eventSettings)); }
       if(Array.isArray(data.state.participants)){ guests=data.state.participants; eventStorageSet(STORAGE_KEY,JSON.stringify(guests)); }
-      if(Array.isArray(data.state.pendingParticipants)){
-        const existingNames=new Set(guests.map(g=>String(g['שם מלא / שם לקוח']||'').trim().toLowerCase()).filter(Boolean));
-        const additions=data.state.pendingParticipants.filter(g=>g && !existingNames.has(String(g['שם מלא / שם לקוח']||'').trim().toLowerCase()));
-        if(additions.length){ guests=[...guests,...additions]; eventStorageSet(STORAGE_KEY,JSON.stringify(guests)); }
-      }
+      mergePendingParticipants(data.state.pendingParticipants);
       if(data.state.hall){ hall=data.state.hall; eventStorageSet(HALL_KEY,JSON.stringify(hall)); }
       if(Array.isArray(data.state.vendors)){ vendors=data.state.vendors; eventStorageSet(VENDOR_KEY,JSON.stringify(vendors)); }
       if(Array.isArray(data.state.walletTx)){ walletTx=data.state.walletTx; eventStorageSet(WALLET_KEY,JSON.stringify(walletTx)); }
@@ -657,7 +669,7 @@ async function clientLogin(){
   catch(e){ const ev=loadAdminEvents().find(x=>x.id===id); const localUser=ev ? eventLoginUsers(ev).find(u=>u.username===username && u.password===password) : null; if(ev && localUser){ sessionStorage.setItem('client_event_access_'+id,'1'); await enterClientMode(ev); } else { status.textContent=e.message; status.className='status bad-text'; } }
 }
 function clientLogout(){ const id=currentEventId()||eventSlug(); if(id){ sessionStorage.removeItem(CLIENT_SESSION_PREFIX+id); sessionStorage.removeItem('client_event_access_'+id); } currentClientToken=''; document.body.classList.remove('client-mode'); document.body.classList.add('client-auth-locked'); const pass=document.getElementById('clientPassword'); if(pass) pass.value=''; showPage('client-login'); }
-async function enterClientMode(ev){ document.body.classList.remove('admin-landing','admin-locked','client-auth-locked'); document.body.classList.add('client-mode'); applyAdminEventToWorkspace(ev); await loadRemoteEventState(); fillEventSettings(); render(); renderHall(); renderVendors(); renderWallet(); updateVendorStats(); renderWhatsAppGuests(); updateEventAssistantUi(); showPage('overview'); document.querySelectorAll('.nav-btn.admin-only').forEach(e=>e.remove()); scheduleEventStateSync(); }
+async function enterClientMode(ev){ document.body.classList.remove('admin-landing','admin-locked','client-auth-locked'); document.body.classList.add('client-mode'); applyAdminEventToWorkspace(ev); await loadRemoteEventState(); await loadPendingParticipants(); fillEventSettings(); render(); renderHall(); renderVendors(); renderWallet(); updateVendorStats(); renderWhatsAppGuests(); updateEventAssistantUi(); showPage('overview'); document.querySelectorAll('.nav-btn.admin-only').forEach(e=>e.remove()); scheduleEventStateSync(); }
 async function bootMode(){
   setupAdminDateMin();
   renderCreateColorPalette();

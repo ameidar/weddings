@@ -197,6 +197,17 @@ async function rsvpSubmitApi(request, env) {
   return jsonResponse({ ok:true, eventId:claims.eventId, guestIndex:idx, status, count:guest['כמות מוזמנים'], message: status === 'אישר' ? `תודה! אישרנו הגעה עבור ${guest['כמות מוזמנים']} משתתפים.` : 'תודה על העדכון. סימנו שלא תוכלו להגיע.' });
 }
 
+
+async function pendingParticipantsApi(request, env) {
+  if (!env.EVENTS_KV) return jsonResponse({ ok: false, error: 'Cloudflare KV binding EVENTS_KV is not configured' }, 501);
+  const eventId = String(new URL(request.url).searchParams.get('eventId') || '').trim();
+  if (!eventId) return jsonResponse({ ok: false, error: 'Missing eventId' }, 400);
+  const raw = await env.EVENTS_KV.get(EVENT_STATE_PREFIX + eventId);
+  let state = null;
+  try { state = raw ? JSON.parse(raw) : null; } catch { state = null; }
+  return jsonResponse({ ok: true, eventId, pendingParticipants: Array.isArray(state?.pendingParticipants) ? state.pendingParticipants : [] });
+}
+
 async function eventStateApi(request, env) {
   if (!env.EVENTS_KV) return jsonResponse({ ok: false, error: 'Cloudflare KV binding EVENTS_KV is not configured' }, 501);
   const url = new URL(request.url);
@@ -556,6 +567,7 @@ export default {
     if (url.pathname === '/api/client-login' && request.method === 'POST') return clientLogin(request, env);
     if (url.pathname === '/api/event-assistant' && request.method === 'POST') return eventAssistantApi(request, env);
     if (url.pathname === '/api/event-state') return eventStateApi(request, env);
+    if (url.pathname === '/api/pending-participants' && request.method === 'GET') return pendingParticipantsApi(request, env);
     if (url.pathname === '/api/rsvp-link' && request.method === 'POST') return rsvpLinkApi(request, env);
     if (url.pathname === '/api/rsvp' && request.method === 'POST') return rsvpSubmitApi(request, env);
     if (url.pathname === '/rsvp' && request.method === 'GET') return rsvpPage(request, env);
