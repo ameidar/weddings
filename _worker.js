@@ -388,19 +388,16 @@ async function applyAgentActions(state, actions, env) {
       else assignParticipantToTable(state, idx, action.table, actionsLog);
     } else if (action.type === 'update_guest') {
       ensureParticipant(state, action, actionsLog);
-    } else if (action.type === 'send_whatsapp') {
+    } else if (action.type === 'send_whatsapp' || action.type === 'prepare_whatsapp') {
       let idx = findParticipantIndexFlexible(state, action.name || action.to);
       let guest = idx >= 0 ? state.participants[idx] : null;
       const phone = action.phone || guest?.['טלפון וואטסאפ'];
       if (!guest && !phone) { needsFollowup = true; actionsLog.push(`לא מצאתי את ${action.name || action.to || 'המשתתף'} במערכת. מה מספר הוואטסאפ?`); continue; }
       if (!phone) { needsFollowup = true; actionsLog.push(`מצאתי את ${guest['שם מלא / שם לקוח']}, אבל חסר מספר וואטסאפ. מה המספר?`); continue; }
       const message = action.message || defaultWhatsAppMessageForGuest(guest, action.purpose || action.message_type);
-      await sendWhatsAppFromAgent(env, phone, message);
-      state.whatsappLog = state.whatsappLog || {};
-      const key = String(phone).replace(/\D/g,'');
-      state.whatsappLog[key] = state.whatsappLog[key] || [];
-      state.whatsappLog[key].unshift({ direction:'out', message, date:new Date().toISOString(), source:'agent', guest: guest?.['שם מלא / שם לקוח'] || action.name || '' });
-      actionsLog.push(`שלחתי וואטסאפ ל${guest?.['שם מלא / שם לקוח'] || action.name || phone}: ${message}`);
+      actionsLog.push(`הכנתי הודעת וואטסאפ לאישור לפני שליחה:\nאל: ${guest?.['שם מלא / שם לקוח'] || action.name || phone} (${phone})\nהודעה: ${message}\n\nכדי לשלוח בפועל צריך לאשר שליחה ממודול הוואטסאפ.`);
+    } else if (action.type === 'create_task_board') {
+      actionsLog.push(buildEventTaskBoard(state));
     } else if (action.type === 'answer_only') {
       actionsLog.push(action.answer || 'אין פעולה לביצוע');
     }
@@ -444,14 +441,61 @@ function cleanAgentName(raw) {
 function hasEventActionVerb(text) {
   return /(שלח|תשלח|לשלוח|הוסף|תוסיף|תכניס|הכנס|תרשום|רשום|עדכן|תעדכן|שבץ|תשבץ|מקם|תמקם|תושיב|סמן|תסמן|מחק|תמחק)/.test(String(text || ''));
 }
+function daysUntilEvent(state) {
+  const d = state?.eventSettings?.date;
+  if (!d) return null;
+  const target = new Date(`${d}T00:00:00Z`);
+  if (Number.isNaN(target.getTime())) return null;
+  return Math.ceil((target.getTime() - Date.now()) / 86400000);
+}
+function buildEventTaskBoard(state) {
+  const settings = state?.eventSettings || {};
+  const participants = (Array.isArray(state?.participants) ? state.participants : []).filter(g => g['שם מלא / שם לקוח'] || g['טלפון וואטסאפ']);
+  const vendors = Array.isArray(state?.vendors) ? state.vendors : [];
+  const walletTx = Array.isArray(state?.walletTx) ? state.walletTx : [];
+  const totalPeople = participants.reduce((sum,g)=>sum+guestQty(g),0);
+  const pendingRsvp = participants.filter(g => String(g['סטטוס אישור השתתפות'] || '').includes('טרם') || !g['סטטוס אישור השתתפות']);
+  const unassigned = participants.filter(g => !g['שולחן / אזור']);
+  const missingPhones = participants.filter(g => !g['טלפון וואטסאפ']);
+  const openVendors = vendors.filter(v => !/סגור|שולם|הושלם/.test(String(v.status || '')));
+  const unpaidVendors = vendors.filter(v => Number(v.agreed || 0) > 0 && !walletTx.some(tx => String(tx.note || tx.vendor || '').includes(v.name || '')));
+  const days = daysUntilEvent(state);
+  const title = `${settings.name || 'האירוע'}${settings.type ? ' · '+settings.type : ''}${days === null ? '' : days >= 0 ? ` · נשארו ${days} ימים` : ` · עבר לפני ${Math.abs(days)} ימים`}`;
+  const tasks = [];
+  if (!settings.date) tasks.push('להגדיר תאריך אירוע כדי שאוכל לתזמן תזכורות ומשימות לפי זמן.');
+  if (!settings.venue) tasks.push('להשלים מקום/אולם אירוע.');
+  if (pendingRsvp.length) tasks.push(`לטפל באישורי הגעה: ${pendingRsvp.length} רשומות עדיין ללא אישור.`);
+  if (missingPhones.length) tasks.push(`להשלים מספרי וואטסאפ ל-${missingPhones.length} משתתפים כדי שאפשר יהיה לשלוח תזכורות.`);
+  if (unassigned.length) tasks.push(`להשלים סידור שולחנות ל-${unassigned.reduce((s,g)=>s+guestQty(g),0)} אנשים.`);
+  if (openVendors.length) tasks.push(`לסגור סטטוס מול ספקים פתוחים: ${openVendors.map(v=>v.name).filter(Boolean).slice(0,5).join(', ') || openVendors.length}.`);
+  if (unpaidVendors.length) tasks.push(`לבדוק תשלומים/ארנק לספקים עם סכום שסוכם: ${unpaidVendors.length}.`);
+  if (!tasks.length) tasks.push('המצב נראה מסודר. מומלץ לבצע בדיקת אישורי הגעה, שולחנות, ספקים והודעות אחרונה לפני האירוע.');
+  return `לוח משימות אישי עבור ${title}\nסה״כ במערכת: ${participants.length} רשומות / ${totalPeople} אנשים.\n\nמשימות מומלצות:\n${tasks.map((t,i)=>`${i+1}. ${t}`).join('\n')}\n\nאפשר לבקש ממני להכין הודעת תזכורת, לעדכן משתתפים, לשבץ לשולחן או לסכם מצב בכל רגע.`;
+}
 function answerEventQuery(state, command) {
   const text = String(command || '');
   if (hasEventActionVerb(text)) return '';
   const participants = (Array.isArray(state?.participants) ? state.participants : []).filter(g => g['שם מלא / שם לקוח'] || g['טלפון וואטסאפ']);
   const totalPeople = participants.reduce((sum,g)=>sum+guestQty(g),0);
+  if (/משימות|לוח משימות|מה נשאר|נשארו לי|צריך לעשות|עד האירוע/.test(text)) return buildEventTaskBoard(state);
+  if (/סיכום|מצב האירוע|סטטוס|איפה אנחנו עומדים/.test(text)) {
+    const pending = participants.filter(g => String(g['סטטוס אישור השתתפות'] || '').includes('טרם') || !g['סטטוס אישור השתתפות']);
+    const assigned = participants.filter(g => g['שולחן / אזור']);
+    return `סיכום אישי של ${state?.eventSettings?.name || 'האירוע'}:\nסוג אירוע: ${state?.eventSettings?.type || 'לא הוגדר'}\nתאריך: ${state?.eventSettings?.date || 'לא הוגדר'}\nמקום: ${state?.eventSettings?.venue || 'לא הוגדר'}\nמשתתפים: ${participants.length} רשומות / ${totalPeople} אנשים\nטרם אישרו: ${pending.reduce((s,g)=>s+guestQty(g),0)} אנשים\nמשובצים לשולחנות: ${assigned.reduce((s,g)=>s+guestQty(g),0)} אנשים\nספקים: ${(Array.isArray(state?.vendors) ? state.vendors : []).length}\n\n${buildEventTaskBoard(state)}`;
+  }
   if (/מי.*(משתתפים|מוזמנים|אורחים)|רשימת.*(משתתפים|מוזמנים|אורחים)/.test(text)) {
     if (!participants.length) return 'אין עדיין משתתפים רשומים באירוע.';
     return `כרגע רשומים ${participants.length} רשומות משתתפים / ${totalPeople} אנשים לפי כמות מוזמנים:\n` + participants.map((g,i)=>`${i+1}. ${g['שם מלא / שם לקוח']} — ${guestQty(g)} מוזמנים, ${g['סטטוס אישור השתתפות'] || 'ללא סטטוס'}${g['שולחן / אזור'] ? ', '+g['שולחן / אזור'] : ''}`).join('\n');
+  }
+  if (/כמה.*(אישרו|מאשרים|מאושר|מגיעים|אישור|הגעה)/.test(text)) {
+    const approved = participants.filter(g => /אישר|מאושר|מגיע/.test(String(g['סטטוס אישור השתתפות'] || '')));
+    const approvedPeople = approved.reduce((sum,g)=>sum+guestQty(g),0);
+    return `כרגע אישרו הגעה ${approved.length} רשומות משתתפים / ${approvedPeople} אנשים לפי כמות מוזמנים.`;
+  }
+  if (/כמה.*(לא אישרו|טרם|לא ענו|לא ענה)/.test(text)) {
+    const pending = participants.filter(g => String(g['סטטוס אישור השתתפות'] || '').includes('טרם') || !g['סטטוס אישור השתתפות']);
+    const pendingPeople = pending.reduce((sum,g)=>sum+guestQty(g),0);
+    return `כרגע טרם אישרו ${pending.length} רשומות משתתפים / ${pendingPeople} אנשים לפי כמות מוזמנים.`;
   }
   if (/כמה.*(משתתפים|מוזמנים|אורחים|אנשים)/.test(text)) return `כרגע יש ${participants.length} רשומות משתתפים, סה״כ ${totalPeople} אנשים לפי כמות מוזמנים.`;
   if (/מי.*(לא ענה|טרם|לא אישר)|טרם.*(ענו|אישרו)/.test(text)) {
@@ -490,7 +534,7 @@ function parseAgentActionsFallback(command, state={}) {
   if (waMatch || /וואטסאפ|הודעה/.test(text) && /שלח|תשלח|לשלוח/.test(text)) {
     const name = cleanAgentName(waMatch?.[1] || mentioned || '');
     const purpose = /אישור|מאשר|מאשרת|להגיע|הגעה/.test(text) ? 'אישור הגעה' : 'עדכון';
-    return [{ type:'send_whatsapp', name, phone, purpose, message: deriveWhatsAppMessageFromCommand(command, name) }];
+    return [{ type:'prepare_whatsapp', name, phone, purpose, message: deriveWhatsAppMessageFromCommand(command, name) }];
   }
 
   const phoneUpdate = text.match(/(?:תוסיף|הוסף|עדכן|תעדכן).*?(?:טלפון|מספר).*?(?:ל|של)\s+([^,\.\d]+?)\s+(\+?\d[\d\-\s]{7,}\d?)/) || text.match(/(?:ל|של)\s+([^,\.\d]+?)\s+(\+?\d[\d\-\s]{7,}\d?)/);
@@ -526,12 +570,17 @@ function parseAgentActionsFallback(command, state={}) {
   return [{ type: 'ask_followup', question: 'אני איתך. מה לבצע באירוע? אפשר לכתוב חופשי, למשל: “תוסיף את משפחת כהן עם 4 מוזמנים, טלפון 052..., שולחן 7” או “מי עדיין לא אישר הגעה?”' }];
 }
 
-const AGENT_SCHEMA_PROMPT = `אתה סוכן אירועים אישי בתוך מערכת ניהול אירועים בעברית. התפקיד שלך: להבין הוראות חופשיות, לשאול רק כשחסר פרט קריטי, ולהפעיל כלים בטוחים על נתוני האירוע.
+const AGENT_SCHEMA_PROMPT = `אתה סוכן אירועים אישי ומזמין בתוך מערכת ניהול אירועים בעברית. אתה לא סוכן עצמאי, אלא רכיב AI שמבוסס רק על האירוע הספציפי שאליו הלקוח התחבר: שם האירוע, סוג האירוע, דף הלקוח, עסק/בעלים, ארנק, משתתפים, שולחנות, ספקים, היסטוריית הודעות ומשימות. המטרה שלך היא להקל על הלקוח, לעשות סדר, ולסייע בהצלחת האירוע מכל הבחינות.
 
 החזר JSON בלבד בפורמט {"actions":[...]} בלי טקסט נוסף.
-פעולות מותרות: ask_followup {type,question}, add_or_update_guest {type,name,count,phone,group,rsvp,notes,table}, assign_table {type,name,table}, update_guest {type,name,count,phone,group,rsvp,notes}, send_whatsapp {type,name,phone,message,purpose}, answer_only {type,answer}.
+פעולות מותרות: ask_followup {type,question}, add_or_update_guest {type,name,count,phone,group,rsvp,notes,table}, assign_table {type,name,table}, update_guest {type,name,count,phone,group,rsvp,notes}, prepare_whatsapp {type,name,phone,message,purpose}, create_task_board {type}, answer_only {type,answer}.
 
 כללים חשובים:
+- התייחס תמיד ל-eventSettings: סוג האירוע, שם האירוע, בעל האירוע/עסק, תאריך, מקום וארנק.
+- אם המשתמש מבקש לתת לך שם או לשנות שם לעוזר, החזר update_event_assistant_name {type,name} רק אם פעולה זו נתמכת; אחרת answer_only שמסביר להשתמש בשדה שם העוזר בממשק.
+- אם המשתמש מבקש הודעה/תזכורת/וואטסאפ — הכן נוסח עם prepare_whatsapp בלבד. אל תחזיר פעולה ששולחת בפועל, כי שליחה חיצונית דורשת אישור UI מפורש.
+- אם המשתמש מבקש מה נשאר לעשות/לוח משימות — החזר answer_only עם לוח משימות מותאם לנתוני האירוע.
+
 - אם המשתמש מבקש מידע על האירוע — ענה מתוך מצב האירוע, לא בפעולה כללית.
 - אם המשתמש נתן שם+טלפון+מסר לשליחת וואטסאפ — החזר send_whatsapp. אל תשאל שוב על טלפון שכבר מופיע.
 - אם המשתמש נתן הוראה חדשה, אל תמשיך שיחת follow-up קודמת אלא אם הטקסט מציין במפורש שהוא תשובה לשאלה.
@@ -543,7 +592,7 @@ const AGENT_SCHEMA_PROMPT = `אתה סוכן אירועים אישי בתוך מ
 
 דוגמאות:
 משתמש: "תכניס את משפחת ימיני עם 5 משתתפים לשולחן 5 טלפון 0528746137" => add_or_update_guest עם name=משפחת ימיני,count=5,phone=0528746137,table=5,group=משפחה.
-משתמש: "שלח וואטסאפ לעמי 0528746137 תשאל אותו אם הוא מגיע" => send_whatsapp name=עמי,phone=0528746137,message="היי עמי, האם אתה מגיע לאירוע?".
+משתמש: "שלח וואטסאפ לעמי 0528746137 תשאל אותו אם הוא מגיע" => prepare_whatsapp name=עמי,phone=0528746137,message="היי עמי, האם אתה מגיע לאירוע?".
 משתמש: "מי עדיין לא אישר?" => answer_only עם תשובה לפי הנתונים.`;
 async function planWithAnthropic(env, state, command) {
   const requested = env.ANTHROPIC_MODEL || 'claude-opus-4-7';
@@ -622,7 +671,7 @@ function repairAgentActions(state, command, actions) {
   const participants = Array.isArray(state.participants) ? state.participants : [];
   const text = String(command || '').toLowerCase();
   return (actions || []).map(action => {
-    if (action.type !== 'send_whatsapp') return action;
+    if (action.type !== 'send_whatsapp' && action.type !== 'prepare_whatsapp') return action;
     const phoneMatch = String(command || '').match(/(?:טלפון|נייד|מספר)\s*[:\-]?\s*(\+?\d[\d\-\s]{7,})/) || String(command || '').match(/(\+?\d[\d\-\s]{8,}\d)/);
     const currentName = String(action.name || action.to || '').trim();
     const badName = !currentName || ['אותה','אותו','לה','לו','אליו','אליה','הלקוח','הלקוחה'].includes(currentName);
@@ -638,11 +687,24 @@ function repairAgentActions(state, command, actions) {
     return { ...action, phone: action.phone || phoneMatch?.[1], message: action.message || deriveWhatsAppMessageFromCommand(command, currentName) };
   });
 }
+
+function normalizeAgentCommand(command) {
+  const text = String(command || '');
+  // If the frontend sends a follow-up bundle, keep the current user answer as the primary command.
+  const current = text.match(/תשובת המשתמש עכשיו:\s*([\s\S]+)$/);
+  if (current?.[1]) {
+    const now = current[1].trim();
+    // For a fresh question/instruction, ignore examples embedded in the previous bot question.
+    if (now && (hasEventActionVerb(now) || /\?|כמה|מי|איפה|מה מצב|סיכום|סטטוס/.test(now))) return now;
+  }
+  return text;
+}
 async function eventAgentApi(request, env) {
   if (!env.EVENTS_KV) return jsonResponse({ ok: false, error: 'Cloudflare KV binding EVENTS_KV is not configured' }, 501);
   const body = await request.json().catch(() => ({}));
   const eventId = String(body.eventId || '').trim();
-  const command = String(body.command || body.question || '').trim();
+  let command = String(body.command || body.question || '').trim();
+  command = normalizeAgentCommand(command);
   if (!eventId || !command) return jsonResponse({ ok: false, error: 'Missing eventId or command' }, 400);
   const session = await requireEventAccess(request, env, eventId);
   if (!session) return jsonResponse({ ok: false, error: 'Unauthorized' }, 401);
@@ -651,6 +713,8 @@ async function eventAgentApi(request, env) {
   let state;
   try { state = raw ? JSON.parse(raw) : body.state || {}; } catch { state = body.state || {}; }
   if (!state || typeof state !== 'object') state = {};
+  state.eventSettings = state.eventSettings || {};
+  if (body.assistantName && !state.eventSettings.assistantName) state.eventSettings.assistantName = String(body.assistantName).trim();
   let actions = await planAgentActionsWithAi(env, state, command);
   actions = repairAgentActions(state, command, actions);
   const { actionsLog, needsFollowup } = await applyAgentActions(state, actions, env);

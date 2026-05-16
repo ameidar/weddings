@@ -887,7 +887,8 @@ async function askEventAi(){
         suppressSync=false;
         fillEventSettings(); render(); renderHall(); renderVendors(); renderWallet(); updateVendorStats(); renderWhatsAppGuests();
       }
-      if(data.needsFollowup) setAgentPending({command:commandForAgent, question:data.answer||''}); else setAgentPending(null);
+      const genericHelp = String(data.answer||'').includes('אני איתך. מה לבצע באירוע') || String(data.answer||'').includes('אני יכול לבצע פעולות במערכת');
+      if(data.needsFollowup && !genericHelp) setAgentPending({command:q, question:data.answer||''}); else setAgentPending(null);
       if(last) last.textContent=data.answer || 'בוצע'; else aiAddMessage('bot',data.answer||'בוצע');
       return;
     }
