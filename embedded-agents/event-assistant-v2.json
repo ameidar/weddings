@@ -16,14 +16,35 @@
     "No OpenClaw sub-agents or workspaces are created for app clients."
   ],
   "supportedIntents": {
-    "queries": ["rsvp_counts", "pending_list", "confirmed_list", "event_summary", "task_board", "table_lookup", "capabilities"],
-    "actions": ["rename_assistant", "add_guest", "assign_table", "prepare_whatsapp_draft"]
+    "queries": [
+      "rsvp_counts",
+      "pending_list",
+      "confirmed_list",
+      "event_summary",
+      "task_board",
+      "table_lookup",
+      "capabilities"
+    ],
+    "actions": [
+      "rename_assistant",
+      "add_guest",
+      "assign_table",
+      "prepare_whatsapp_draft"
+    ],
+    "aiEnhancedActions": [
+      "free_form_update_guest",
+      "free_form_add_guest",
+      "free_form_assign_table",
+      "free_form_whatsapp_draft",
+      "free_form_clarify"
+    ]
   },
   "safety": {
     "eventIsolation": "requireEventAccess(request, env, eventId)",
     "noExternalSend": true,
     "noDeploy": true,
-    "noFilesystemOrShell": true
+    "noFilesystemOrShell": true,
+    "llmExecutesDirectly": false
   },
   "qaPrompts": [
     "כמה אישרו הגעה?",
@@ -31,5 +52,6 @@
     "מה מצב האירוע?",
     "תוסיף את משפחת ימיני עם 5 משתתפים לשולחן 5 טלפון 0528746137",
     "הוסף את משפחת כהן"
-  ]
+  ],
+  "brain": "OpenAI JSON intent planner when OPENAI_API_KEY is configured, with deterministic safe fallback"
 }
