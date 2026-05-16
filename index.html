@@ -336,6 +336,7 @@ let adminEventsCache = [];
 let selectedAdminEventId = localStorage.getItem('selected_admin_event_id') || '';
 let currentAdminToken = sessionStorage.getItem(ADMIN_SESSION_KEY) || localStorage.getItem(ADMIN_SESSION_KEY) || '';
 let currentClientToken = '';
+let eventAssistantHistory = [];
 let syncTimer = null;
 let suppressSync = false;
 
@@ -669,7 +670,7 @@ async function clientLogin(){
   catch(e){ const ev=loadAdminEvents().find(x=>x.id===id); const localUser=ev ? eventLoginUsers(ev).find(u=>u.username===username && u.password===password) : null; if(ev && localUser){ sessionStorage.setItem('client_event_access_'+id,'1'); await enterClientMode(ev); } else { status.textContent=e.message; status.className='status bad-text'; } }
 }
 function clientLogout(){ const id=currentEventId()||eventSlug(); if(id){ sessionStorage.removeItem(CLIENT_SESSION_PREFIX+id); sessionStorage.removeItem('client_event_access_'+id); } currentClientToken=''; document.body.classList.remove('client-mode'); document.body.classList.add('client-auth-locked'); const pass=document.getElementById('clientPassword'); if(pass) pass.value=''; showPage('client-login'); }
-async function enterClientMode(ev){ document.body.classList.remove('admin-landing','admin-locked','client-auth-locked'); document.body.classList.add('client-mode'); applyAdminEventToWorkspace(ev); await loadRemoteEventState(); await loadPendingParticipants(); fillEventSettings(); render(); renderHall(); renderVendors(); renderWallet(); updateVendorStats(); renderWhatsAppGuests(); updateEventAssistantUi(); showPage('overview'); document.querySelectorAll('.nav-btn.admin-only').forEach(e=>e.remove()); scheduleEventStateSync(); }
+async function enterClientMode(ev){ document.body.classList.remove('admin-landing','admin-locked','client-auth-locked'); document.body.classList.add('client-mode'); applyAdminEventToWorkspace(ev); await loadRemoteEventState(); await loadPendingParticipants(); await loadEventAssistantHistory(); fillEventSettings(); render(); renderHall(); renderVendors(); renderWallet(); updateVendorStats(); renderWhatsAppGuests(); updateEventAssistantUi(); renderEventAssistantHistory(); showPage('overview'); document.querySelectorAll('.nav-btn.admin-only').forEach(e=>e.remove()); scheduleEventStateSync(); }
 async function bootMode(){
   setupAdminDateMin();
   renderCreateColorPalette();
@@ -1050,7 +1051,33 @@ function exportSeatingCSV(){
 }
 
 
-function eventAssistantAdd(role, text){ const box=document.getElementById('eventAssistantChat'); if(!box) return; box.innerHTML += `<div class="assistant-msg ${role}">${escapeHtml(text)}</div>`; box.scrollTop=box.scrollHeight; }
+function normalizeEventAssistantHistory(messages){
+  return Array.isArray(messages) ? messages.map(m=>({role:(m.role==='assistant'||m.role==='bot')?'assistant':'user',content:String(m.content||m.text||'').trim(),ts:m.ts||new Date().toISOString()})).filter(m=>m.content).slice(-60) : [];
+}
+function eventAssistantLocalKey(){ return eventStorageKey('event_assistant_chat_v1'); }
+function saveEventAssistantHistoryLocal(){ try{ localStorage.setItem(eventAssistantLocalKey(), JSON.stringify(eventAssistantHistory)); }catch(e){} }
+function loadEventAssistantHistoryLocal(){ try{ eventAssistantHistory=normalizeEventAssistantHistory(JSON.parse(localStorage.getItem(eventAssistantLocalKey())||'[]')); }catch(e){ eventAssistantHistory=[]; } }
+function renderEventAssistantHistory(){
+  const box=document.getElementById('eventAssistantChat'); if(!box) return;
+  const welcome=`היי, אני ${eventSettings.assistantName||'עוזר האירוע האישי'} של ${eventSettings.name||'האירוע שלך'}. אפשר לשאול אותי כמה אישרו הגעה, מי לא ענה, מה המשימות, להוסיף משתתף, או לשלוח וואטסאפ כמו “תשלח בקשה לאישור הגעה לעמי מידר”.`;
+  box.innerHTML=`<div class="assistant-msg bot" id="eventAssistantWelcome">${escapeHtml(welcome)}</div>` + eventAssistantHistory.map(m=>`<div class="assistant-msg ${m.role==='user'?'user':'bot'}">${escapeHtml(m.content)}</div>`).join('');
+  box.scrollTop=box.scrollHeight;
+}
+function eventAssistantAdd(role, text, persist=true){
+  const box=document.getElementById('eventAssistantChat'); if(!box) return null;
+  const el=document.createElement('div'); el.className=`assistant-msg ${role}`; el.textContent=text; box.appendChild(el); box.scrollTop=box.scrollHeight;
+  if(persist){ eventAssistantHistory.push({role:role==='user'?'user':'assistant',content:String(text||''),ts:new Date().toISOString()}); eventAssistantHistory=normalizeEventAssistantHistory(eventAssistantHistory); saveEventAssistantHistoryLocal(); }
+  return el;
+}
+async function loadEventAssistantHistory(){
+  loadEventAssistantHistoryLocal();
+  if(!currentClientToken || !currentEventId()) return;
+  try{
+    const res=await fetch('/api/event-assistant-history?eventId='+encodeURIComponent(currentEventId()),{headers:clientAuthHeaders()});
+    const data=await res.json();
+    if(res.ok && data.ok){ eventAssistantHistory=normalizeEventAssistantHistory(data.messages); saveEventAssistantHistoryLocal(); }
+  }catch(e){}
+}
 function updateEventAssistantUi(){
   const title=document.getElementById('eventAssistantTitle'); if(title) title.textContent=eventSettings.assistantName||'עוזר אירוע אישי';
   const welcome=document.getElementById('eventAssistantWelcome');
@@ -1060,10 +1087,10 @@ function askEventAssistantQuick(text){ const input=document.getElementById('even
 async function askEventAssistant(){
   const input=document.getElementById('eventAssistantInput'); const command=(input?.value||'').trim(); if(!command) return;
   eventAssistantAdd('user', command); if(input) input.value='';
-  eventAssistantAdd('bot', 'בודק את נתוני האירוע...');
+  eventAssistantAdd('bot', 'בודק את נתוני האירוע...', false);
   await syncEventStateNow();
   try{
-    const res=await fetch('/api/event-assistant',{method:'POST',headers:{'content-type':'application/json',...clientAuthHeaders()},body:JSON.stringify({eventId:currentEventId(),command,state:collectEventState()})});
+    const res=await fetch('/api/event-assistant',{method:'POST',headers:{'content-type':'application/json',...clientAuthHeaders()},body:JSON.stringify({eventId:currentEventId(),command,state:collectEventState(),history:eventAssistantHistory.slice(-20)})});
     const ct=res.headers.get('content-type')||'';
     const data=ct.includes('application/json') ? await res.json() : {ok:false,error:'השרת החזיר HTML במקום JSON. כדאי לרענן ולהתחבר מחדש.'};
     const box=document.getElementById('eventAssistantChat'); const last=box?.lastElementChild;
@@ -1084,8 +1111,9 @@ async function askEventAssistant(){
       fillEventSettings(); render(); renderHall(); renderVendors(); renderWallet(); updateVendorStats(); renderWhatsAppGuests(); updateEventAssistantUi();
     }
     if(data.whatsappSent && data.draft?.phone && data.draft?.message){ addLocalWaLog(data.draft.phone, 'out', data.draft.message); }
-    if(last) last.textContent=data.answer||'בוצע'; else eventAssistantAdd('bot', data.answer||'בוצע');
-  }catch(e){ const box=document.getElementById('eventAssistantChat'); const last=box?.lastElementChild; if(last) last.textContent='לא הצלחתי לענות כרגע: '+e.message; else eventAssistantAdd('bot','לא הצלחתי לענות כרגע: '+e.message); }
+    if(Array.isArray(data.history)){ eventAssistantHistory=normalizeEventAssistantHistory(data.history); saveEventAssistantHistoryLocal(); renderEventAssistantHistory(); }
+    else { const answer=data.answer||'בוצע'; if(last) last.textContent=answer; else eventAssistantAdd('bot', answer, false); eventAssistantHistory.push({role:'assistant',content:answer,ts:new Date().toISOString()}); eventAssistantHistory=normalizeEventAssistantHistory(eventAssistantHistory); saveEventAssistantHistoryLocal(); }
+  }catch(e){ const answer='לא הצלחתי לענות כרגע: '+e.message; const box=document.getElementById('eventAssistantChat'); const last=box?.lastElementChild; if(last) last.textContent=answer; else eventAssistantAdd('bot',answer,false); eventAssistantHistory.push({role:'assistant',content:answer,ts:new Date().toISOString()}); eventAssistantHistory=normalizeEventAssistantHistory(eventAssistantHistory); saveEventAssistantHistoryLocal(); }
 }
 
 function escapeHtml(s){ return String(s).replace(/[&<>\"]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[m])); }

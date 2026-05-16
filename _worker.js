@@ -12,6 +12,7 @@ function jsonResponse(body, status = 200, extraHeaders = {}) {
 const enc = new TextEncoder();
 const EVENTS_KEY = 'admin_events_v2';
 const EVENT_STATE_PREFIX = 'event_state_v1:';
+const EVENT_ASSISTANT_CHAT_PREFIX = 'event_assistant_chat_v1:';
 
 function base64url(bytes) {
   let bin = '';
@@ -236,6 +237,46 @@ async function eventStateApi(request, env) {
     return jsonResponse({ ok: true, eventId, state: saved });
   }
   return jsonResponse({ ok: false, error: 'Method not allowed' }, 405);
+}
+
+function eventAssistantChatKey(eventId, session = {}) {
+  const who = session.role === 'admin' ? 'admin' : String(session.username || session.name || 'client').trim().toLowerCase() || 'client';
+  return `${EVENT_ASSISTANT_CHAT_PREFIX}${eventId}:${who}`;
+}
+
+function sanitizeAssistantHistory(messages, limit = 24) {
+  if (!Array.isArray(messages)) return [];
+  return messages
+    .map((m) => ({
+      role: m?.role === 'assistant' || m?.role === 'bot' ? 'assistant' : 'user',
+      content: String(m?.content || m?.text || '').trim().slice(0, 1200),
+      ts: m?.ts || m?.time || new Date().toISOString(),
+    }))
+    .filter((m) => m.content)
+    .slice(-limit);
+}
+
+async function loadEventAssistantHistory(env, eventId, session) {
+  const raw = await env.EVENTS_KV.get(eventAssistantChatKey(eventId, session));
+  try { return sanitizeAssistantHistory(raw ? JSON.parse(raw) : [], 30); } catch { return []; }
+}
+
+async function saveEventAssistantHistory(env, eventId, session, messages) {
+  await env.EVENTS_KV.put(eventAssistantChatKey(eventId, session), JSON.stringify(sanitizeAssistantHistory(messages, 60)));
+}
+
+async function eventAssistantHistoryApi(request, env) {
+  if (!env.EVENTS_KV) return jsonResponse({ ok: false, error: 'Cloudflare KV binding EVENTS_KV is not configured' }, 501);
+  const url = new URL(request.url);
+  let body = {};
+  if (request.method !== 'GET') body = await request.json().catch(() => ({}));
+  const eventId = String(url.searchParams.get('eventId') || body.eventId || '').trim();
+  if (!eventId) return jsonResponse({ ok:false, error:'Missing eventId' }, 400);
+  const session = await requireEventAccess(request, env, eventId);
+  if (!session) return jsonResponse({ ok:false, error:'Unauthorized' }, 401);
+  if (request.method === 'GET') return jsonResponse({ ok:true, eventId, messages: await loadEventAssistantHistory(env, eventId, session) });
+  if (request.method === 'DELETE') { await env.EVENTS_KV.put(eventAssistantChatKey(eventId, session), JSON.stringify([])); return jsonResponse({ ok:true, eventId, messages: [] }); }
+  return jsonResponse({ ok:false, error:'Method not allowed' }, 405);
 }
 
 function eventAssistantStateSnapshot(state) {
@@ -498,7 +539,7 @@ function eventAssistantAiState(state) {
   }).slice(0, 60000);
 }
 
-async function planEventAssistantWithOpenClaw(env, state, command, eventId) {
+async function planEventAssistantWithOpenClaw(env, state, command, eventId, history = []) {
   const token = env.OPAL_EMBEDDED_ASSISTANT_TOKEN || env.AMI_EMBEDDED_ASSISTANT_TOKEN;
   if (!token) return null;
   const endpoint = env.OPAL_EMBEDDED_ASSISTANT_URL || 'https://opal.hai.tech/api/embedded/ami/event-assistant';
@@ -506,7 +547,7 @@ async function planEventAssistantWithOpenClaw(env, state, command, eventId) {
     const res = await fetch(endpoint, {
       method: 'POST',
       headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
-      body: JSON.stringify({ eventId, command, state, agentId: 'agent-mp6tgr93', timeoutSeconds: 90 }),
+      body: JSON.stringify({ eventId, command, state, history: sanitizeAssistantHistory(history, 20), agentId: 'agent-mp6tgr93', timeoutSeconds: 90 }),
     });
     const data = await res.json().catch(() => null);
     if (!res.ok || !data?.ok) return null;
@@ -639,18 +680,27 @@ async function eventAssistantApi(request, env) {
   try { state = raw ? JSON.parse(raw) : (body.state || {}); } catch { state = body.state || {}; }
   if (!state || typeof state !== 'object') state = {};
   state.eventSettings = state.eventSettings || {};
+  const storedHistory = await loadEventAssistantHistory(env, eventId, session);
+  const requestHistory = sanitizeAssistantHistory(body.history, 20);
+  const history = requestHistory.length ? requestHistory : storedHistory;
   const whatsappResult = await handleEventAssistantWhatsApp(env, request, state, command, eventId);
   const queryAnswer = whatsappResult ? '' : answerEventAssistantQuery(state, command);
   let result = whatsappResult || (queryAnswer ? { changed:false, intent:'query', answer:queryAnswer } : { intent:'action', ...handleEventAssistantAction(state, command) });
   const isFallback = String(result.answer || '').includes('אני לא רוצה לנחש פעולה');
   if (isFallback || (env.EVENT_ASSISTANT_BRAIN_MODE === 'always' && !queryAnswer)) {
-    const brainPlan = await planEventAssistantWithOpenClaw(env, state, command, eventId);
+    const brainPlan = await planEventAssistantWithOpenClaw(env, state, command, eventId, history);
     const brainResult = applyEventAssistantAiPlan(state, brainPlan);
     if (brainResult) result = { ...brainResult, brain: 'openclaw' };
   }
   result.openClawBrainEnabled = !!(env.OPAL_EMBEDDED_ASSISTANT_TOKEN || env.AMI_EMBEDDED_ASSISTANT_TOKEN);
   if (result.changed) await env.EVENTS_KV.put(key, JSON.stringify({ ...state, eventId, updatedAt: new Date().toISOString() }));
-  return jsonResponse({ ok: true, eventId, ...result, state });
+  const nextHistory = sanitizeAssistantHistory([
+    ...history,
+    { role: 'user', content: command, ts: new Date().toISOString() },
+    { role: 'assistant', content: result.answer || 'בוצע', ts: new Date().toISOString() },
+  ], 60);
+  await saveEventAssistantHistory(env, eventId, session, nextHistory);
+  return jsonResponse({ ok: true, eventId, ...result, state, history: nextHistory });
 }
 
 async function eventActionsApi(request, env) {
@@ -771,6 +821,7 @@ export default {
     if (url.pathname === '/api/events') return eventsApi(request, env);
     if (url.pathname === '/api/client-login' && request.method === 'POST') return clientLogin(request, env);
     if (url.pathname === '/api/event-assistant' && request.method === 'POST') return eventAssistantApi(request, env);
+    if (url.pathname === '/api/event-assistant-history') return eventAssistantHistoryApi(request, env);
     if (url.pathname === '/api/event-actions') return eventActionsApi(request, env);
     if (url.pathname === '/api/event-state') return eventStateApi(request, env);
     if (url.pathname === '/api/pending-participants' && request.method === 'GET') return pendingParticipantsApi(request, env);
