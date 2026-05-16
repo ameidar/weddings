@@ -380,6 +380,11 @@ async function loadRemoteEventState(){
       suppressSync=true;
       if(data.state.eventSettings){ const adminBrandColor=eventSettings?.brandColor; eventSettings={...data.state.eventSettings,id:currentEventId(),brandColor:normalizeBrandColor(adminBrandColor || data.state.eventSettings.brandColor)}; applyEventTheme(); eventStorageSet(EVENT_KEY,JSON.stringify(eventSettings)); }
       if(Array.isArray(data.state.participants)){ guests=data.state.participants; eventStorageSet(STORAGE_KEY,JSON.stringify(guests)); }
+      if(Array.isArray(data.state.pendingParticipants)){
+        const existingNames=new Set(guests.map(g=>String(g['שם מלא / שם לקוח']||'').trim().toLowerCase()).filter(Boolean));
+        const additions=data.state.pendingParticipants.filter(g=>g && !existingNames.has(String(g['שם מלא / שם לקוח']||'').trim().toLowerCase()));
+        if(additions.length){ guests=[...guests,...additions]; eventStorageSet(STORAGE_KEY,JSON.stringify(guests)); }
+      }
       if(data.state.hall){ hall=data.state.hall; eventStorageSet(HALL_KEY,JSON.stringify(hall)); }
       if(Array.isArray(data.state.vendors)){ vendors=data.state.vendors; eventStorageSet(VENDOR_KEY,JSON.stringify(vendors)); }
       if(Array.isArray(data.state.walletTx)){ walletTx=data.state.walletTx; eventStorageSet(WALLET_KEY,JSON.stringify(walletTx)); }
@@ -1055,6 +1060,11 @@ async function askEventAssistant(){
       suppressSync=true;
       if(data.state.eventSettings){ eventSettings=data.state.eventSettings; eventStorageSet(EVENT_KEY,JSON.stringify(eventSettings)); }
       if(Array.isArray(data.state.participants)){ guests=data.state.participants; eventStorageSet(STORAGE_KEY,JSON.stringify(guests)); }
+      if(Array.isArray(data.state.pendingParticipants)){
+        const existingNames=new Set(guests.map(g=>String(g['שם מלא / שם לקוח']||'').trim().toLowerCase()).filter(Boolean));
+        const additions=data.state.pendingParticipants.filter(g=>g && !existingNames.has(String(g['שם מלא / שם לקוח']||'').trim().toLowerCase()));
+        if(additions.length){ guests=[...guests,...additions]; eventStorageSet(STORAGE_KEY,JSON.stringify(guests)); }
+      }
       if(data.state.hall){ hall=data.state.hall; eventStorageSet(HALL_KEY,JSON.stringify(hall)); }
       if(Array.isArray(data.state.vendors)){ vendors=data.state.vendors; eventStorageSet(VENDOR_KEY,JSON.stringify(vendors)); }
       if(Array.isArray(data.state.walletTx)){ walletTx=data.state.walletTx; eventStorageSet(WALLET_KEY,JSON.stringify(walletTx)); }
