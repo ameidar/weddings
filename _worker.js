@@ -280,8 +280,8 @@ function answerEventAssistantQuery(state, command) {
   if (/כמה.*(אישרו|מאשרים|אישור|הגעה|מגיעים)|כמה אישור/.test(text)) return `כרגע אישרו הגעה ${snap.confirmed.length} רשומות / ${snap.confirmedPeople} אנשים מתוך ${snap.totalPeople}.\nטרם ענו: ${snap.pending.length} רשומות / ${snap.pendingPeople} אנשים.\nלא מגיעים: ${snap.declined.length} רשומות / ${snap.declinedPeople} אנשים.`;
   if (/כמה.*(לא אישרו|טרם|לא ענו|לא ענה)/.test(text)) return `כרגע טרם ענו ${snap.pending.length} רשומות / ${snap.pendingPeople} אנשים.`;
   if (/כמה.*(משתתפים|מוזמנים|אורחים|אנשים)/.test(text)) return `כרגע יש ${snap.participants.length} רשומות משתתפים, סה״כ ${snap.totalPeople} אנשים לפי כמויות.`;
-  if (/מי.*(לא ענה|טרם|לא אישר)|טרם.*(ענו|אישרו)/.test(text)) return snap.pending.length ? `אלו עדיין לא אישרו:\n${snap.pending.map(g=>`- ${g['שם מלא / שם לקוח']} (${snap.qty(g)} מוזמנים)`).join('\n')}` : 'אין כרגע משתתפים שמסומנים כטרם נענו.';
-  if (/מי.*(מאושר|אישר|מגיע)/.test(text)) return snap.confirmed.length ? `אלו אישרו הגעה:\n${snap.confirmed.map(g=>`- ${g['שם מלא / שם לקוח']} (${snap.qty(g)} מוזמנים)`).join('\n')}` : 'אין כרגע משתתפים שמסומנים כמאושרים.';
+  if (/(^|\s)מי\s.*(לא ענה|טרם|לא אישר)|טרם.*(ענו|אישרו)/.test(text)) return snap.pending.length ? `אלו עדיין לא אישרו:\n${snap.pending.map(g=>`- ${g['שם מלא / שם לקוח']} (${snap.qty(g)} מוזמנים)`).join('\n')}` : 'אין כרגע משתתפים שמסומנים כטרם נענו.';
+  if (/(^|\s)מי\s.*(מאושר|אישר|מגיע)/.test(text)) return snap.confirmed.length ? `אלו אישרו הגעה:\n${snap.confirmed.map(g=>`- ${g['שם מלא / שם לקוח']} (${snap.qty(g)} מוזמנים)`).join('\n')}` : 'אין כרגע משתתפים שמסומנים כמאושרים.';
   if (/איפה|איזה שולחן|יושב|יושבת/.test(text)) {
     const raw = (text.match(/משפחת\s+([^?.,!]+)/) || text.match(/(?:איפה|שולחן|יושב|יושבת)\s+([^?.,!]+)/) || [])[1];
     const { guest } = findGuestByName(state, raw ? (text.includes('משפחת') ? 'משפחת ' + raw.trim() : raw.trim()) : '');
@@ -300,6 +300,27 @@ function handleEventAssistantAction(state, command) {
     const phone = extractAssistantPhone(text) || guest?.['טלפון וואטסאפ'] || '';
     const message = /אישור|הגעה|מאשר/.test(text) ? `היי ${guest?.['שם מלא / שם לקוח'] || name || 'אורח/ת יקר/ה'}, נשמח לדעת האם אתם מאשרים הגעה לאירוע. תודה רבה!` : `היי ${guest?.['שם מלא / שם לקוח'] || name || 'אורח/ת יקר/ה'}, רציתי לעדכן אותך לגבי האירוע.`;
     return { changed: false, needsConfirmation: true, draft: { type:'whatsapp', name: guest?.['שם מלא / שם לקוח'] || name, phone, message }, answer: `הכנתי טיוטת וואטסאפ לאישור לפני שליחה:\nאל: ${guest?.['שם מלא / שם לקוח'] || name || phone || 'לא נבחר'}${phone ? ' ('+phone+')' : ''}\nהודעה: ${message}\n\nלא שלחתי בפועל. שליחה מתבצעת רק ממודול הוואטסאפ אחרי אישור.` };
+  }
+  const updateCount = text.match(/(?:תעדכן|עדכן|תשנה|שנה)\s+(?:את\s+)?(.+?)\s+(?:ל|עם)\s*[־-]?\s*(\d+)\s*(?:משתתפים|מוזמנים|אנשים|מגיעים|אורחים|נפשות)/);
+  if (updateCount) {
+    const name = cleanEventAssistantName(updateCount[1]);
+    const count = Number(updateCount[2]);
+    const found = findGuestByName(state, name);
+    if (!found.guest) return { changed:false, answer:`לא מצאתי את ${name} ברשימת המשתתפים. בדוק את השם או בקש להוסיף אותו כמשתתף חדש.` };
+    found.guest['כמות מוזמנים'] = String(count);
+    if (/יגיעו|מגיעים|יאשר|אישר|אישור|הגעה/.test(text)) found.guest['סטטוס אישור השתתפות'] = 'אישר';
+    const note = /ילד|ילדה|ילדים/.test(text) ? 'כולל ילד/ים' : '';
+    if (note) found.guest['הערות'] = `${found.guest['הערות'] ? found.guest['הערות'] + ' | ' : ''}${note}`;
+    return { changed:true, answer:`עדכנתי את ${found.guest['שם מלא / שם לקוח']} ל-${count} מוזמנים${/יגיעו|מגיעים|יאשר|אישר|אישור|הגעה/.test(text) ? ' וסימנתי שאישרו הגעה' : ''}${note ? ' ('+note+')' : ''}.` };
+  }
+  const updateRsvp = text.match(/(?:תעדכן|עדכן|סמן|תסמן)\s+(?:את\s+)?(.+?)\s+(?:כ|שהם\s+)?(מגיעים|יגיעו|אישרו|לא מגיעים|לא יגיעו|טרם ענו|לא ענו)/);
+  if (updateRsvp) {
+    const name = cleanEventAssistantName(updateRsvp[1]);
+    const found = findGuestByName(state, name);
+    if (!found.guest) return { changed:false, answer:`לא מצאתי את ${name} ברשימת המשתתפים.` };
+    const raw = updateRsvp[2];
+    found.guest['סטטוס אישור השתתפות'] = /לא מגיעים|לא יגיעו/.test(raw) ? 'לא מגיע' : /טרם|לא ענו/.test(raw) ? 'טרם נענה' : 'אישר';
+    return { changed:true, answer:`עדכנתי את סטטוס ההגעה של ${found.guest['שם מלא / שם לקוח']} ל־${found.guest['סטטוס אישור השתתפות']}.` };
   }
   const table = (text.match(/(?:שולחן|לשולחן|בשולחן)\s*(\d+)/) || [])[1];
   if (/(שבץ|תשבץ|מקם|תמקם|להושיב|הושב)/.test(text)) {
@@ -328,6 +349,95 @@ function handleEventAssistantAction(state, command) {
   }
   return { changed:false, answer:'אני לא רוצה לנחש פעולה. אפשר לשאול שאלה כמו “כמה אישרו הגעה?” או לתת פעולה ברורה כמו “הוסף את משפחת כהן עם 4 מוזמנים”.' };
 }
+function eventAssistantAiState(state) {
+  const snap = eventAssistantStateSnapshot(state);
+  return JSON.stringify({
+    eventSettings: snap.settings,
+    participants: snap.participants.map(g => ({
+      name: g['שם מלא / שם לקוח'] || '', phone: g['טלפון וואטסאפ'] || '', count: g['כמות מוזמנים'] || '1',
+      rsvp: g['סטטוס אישור השתתפות'] || '', table: g['שולחן / אזור'] || '', notes: g['הערות'] || ''
+    })).slice(0, 300),
+    totals: { people: snap.totalPeople, confirmedPeople: snap.confirmedPeople, pendingPeople: snap.pendingPeople, declinedPeople: snap.declinedPeople },
+    vendors: snap.vendors.map(v => ({ name:v.name, category:v.category, status:v.status, agreed:v.agreed, paid:v.paid })).slice(0, 80)
+  }).slice(0, 60000);
+}
+
+async function planEventAssistantWithOpenClaw(env, state, command, eventId) {
+  const token = env.OPAL_EMBEDDED_ASSISTANT_TOKEN || env.AMI_EMBEDDED_ASSISTANT_TOKEN;
+  if (!token) return null;
+  const endpoint = env.OPAL_EMBEDDED_ASSISTANT_URL || 'https://opal.hai.tech/api/embedded/ami/event-assistant';
+  try {
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+      body: JSON.stringify({ eventId, command, state, agentId: 'agent-mp6tgr93', timeoutSeconds: 90 }),
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok || !data?.ok) return null;
+    return data.plan || null;
+  } catch {
+    return null;
+  }
+}
+
+function applyEventAssistantAiPlan(state, plan) {
+  if (!plan || typeof plan !== 'object') return null;
+  const intent = String(plan.intent || '').toLowerCase();
+  const action = String(plan.action || '').toLowerCase();
+  if (intent === 'clarify') return { changed:false, intent:'clarify', answer: plan.answer || 'אפשר לחדד מה תרצה שאעשה?' };
+  if (action === 'answer') return { changed:false, intent:'query-ai', answer: plan.answer || 'אין לי מספיק נתונים כדי לענות.' };
+  if (action === 'task_board') return { changed:false, intent:'query-ai', answer: eventAssistantTasks(state) };
+  if (action === 'rename_assistant') {
+    const name = cleanEventAssistantName(plan.assistantName || plan.name || '');
+    if (!name) return { changed:false, intent:'clarify', answer:'איזה שם לתת לעוזר?' };
+    state.eventSettings = state.eventSettings || {}; state.eventSettings.assistantName = name;
+    return { changed:true, intent:'action-ai', answer:`מעולה, מעכשיו אפשר לקרוא לי ${name}.` };
+  }
+  if (action === 'update_guest') {
+    const found = findGuestByName(state, plan.name || '');
+    if (!found.guest) return { changed:false, intent:'clarify', answer:`לא מצאתי את ${plan.name || 'המשתתף'} ברשימת המשתתפים. אפשר לכתוב את השם בדיוק כפי שמופיע בטבלה?` };
+    const updates = [];
+    if (Number(plan.count) > 0) { found.guest['כמות מוזמנים'] = String(Number(plan.count)); updates.push(`${Number(plan.count)} מוזמנים`); }
+    if (plan.phone) { found.guest['טלפון וואטסאפ'] = String(plan.phone); updates.push('טלפון'); }
+    if (plan.table) { found.guest['שולחן / אזור'] = `שולחן ${String(plan.table).replace(/\D/g,'') || plan.table}`; updates.push(found.guest['שולחן / אזור']); }
+    if (plan.rsvp) { found.guest['סטטוס אישור השתתפות'] = /לא/.test(String(plan.rsvp)) ? 'לא מגיע' : /טרם/.test(String(plan.rsvp)) ? 'טרם נענה' : 'אישר'; updates.push(`סטטוס ${found.guest['סטטוס אישור השתתפות']}`); }
+    if (plan.note) { found.guest['הערות'] = `${found.guest['הערות'] ? found.guest['הערות'] + ' | ' : ''}${plan.note}`; updates.push(plan.note); }
+    return { changed:true, intent:'action-ai', answer:`עדכנתי את ${found.guest['שם מלא / שם לקוח']}${updates.length ? ': ' + updates.join(', ') : ''}.` };
+  }
+  if (action === 'add_guest') {
+    const name = cleanEventAssistantName(plan.name || '');
+    const count = Number(plan.count) || 0;
+    if (!name) return { changed:false, intent:'clarify', answer:'את מי להוסיף?' };
+    if (!count) return { changed:false, intent:'clarify', answer:`כמה מוזמנים לרשום עבור ${name}?` };
+    state.participants = Array.isArray(state.participants) ? state.participants : [];
+    const existing = findGuestByName(state, name);
+    const guest = existing.guest || { 'מספר': state.participants.length + 1, 'שם מלא / שם לקוח': name, 'סטטוס אישור השתתפות':'טרם נענה', 'סטטוס תשלום':'טרם שולם' };
+    guest['שם מלא / שם לקוח'] = name; guest['כמות מוזמנים'] = String(count);
+    if (plan.phone) guest['טלפון וואטסאפ'] = String(plan.phone);
+    if (plan.table) guest['שולחן / אזור'] = `שולחן ${String(plan.table).replace(/\D/g,'') || plan.table}`;
+    if (plan.rsvp) guest['סטטוס אישור השתתפות'] = /לא/.test(String(plan.rsvp)) ? 'לא מגיע' : /טרם/.test(String(plan.rsvp)) ? 'טרם נענה' : 'אישר';
+    if (plan.note) guest['הערות'] = `${guest['הערות'] ? guest['הערות'] + ' | ' : ''}${plan.note}`;
+    if (!existing.guest) state.participants.push(guest);
+    state.participants.forEach((g,i)=>g['מספר']=i+1);
+    return { changed:true, intent:'action-ai', answer:`${existing.guest ? 'עדכנתי' : 'הוספתי'} את ${name} עם ${count} מוזמנים${plan.table ? ` ושיבוץ לשולחן ${plan.table}` : ''}.` };
+  }
+  if (action === 'assign_table') {
+    const found = findGuestByName(state, plan.name || '');
+    if (!found.guest) return { changed:false, intent:'clarify', answer:`לא מצאתי את ${plan.name || 'המשתתף'} ברשימת המשתתפים.` };
+    if (!plan.table) return { changed:false, intent:'clarify', answer:'לאיזה שולחן לשבץ?' };
+    found.guest['שולחן / אזור'] = `שולחן ${String(plan.table).replace(/\D/g,'') || plan.table}`;
+    return { changed:true, intent:'action-ai', answer:`שיבצתי את ${found.guest['שם מלא / שם לקוח']} ל${found.guest['שולחן / אזור']}.` };
+  }
+  if (action === 'prepare_whatsapp') {
+    const found = findGuestByName(state, plan.name || '');
+    const phone = plan.phone || found.guest?.['טלפון וואטסאפ'] || '';
+    const name = found.guest?.['שם מלא / שם לקוח'] || plan.name || '';
+    const message = plan.message || `היי ${name || 'אורח/ת יקר/ה'}, רציתי לעדכן אותך לגבי האירוע.`;
+    return { changed:false, intent:'action-ai', needsConfirmation:true, draft:{type:'whatsapp', name, phone, message}, answer:`הכנתי טיוטת וואטסאפ לאישור לפני שליחה:\nאל: ${name || phone || 'לא נבחר'}${phone ? ' ('+phone+')' : ''}\nהודעה: ${message}\n\nלא שלחתי בפועל.` };
+  }
+  return null;
+}
+
 async function eventAssistantApi(request, env) {
   if (!env.EVENTS_KV) return jsonResponse({ ok: false, error: 'Cloudflare KV binding EVENTS_KV is not configured' }, 501);
   const body = await request.json().catch(() => ({}));
@@ -343,7 +453,14 @@ async function eventAssistantApi(request, env) {
   if (!state || typeof state !== 'object') state = {};
   state.eventSettings = state.eventSettings || {};
   const queryAnswer = answerEventAssistantQuery(state, command);
-  const result = queryAnswer ? { changed:false, intent:'query', answer:queryAnswer } : { intent:'action', ...handleEventAssistantAction(state, command) };
+  let result = queryAnswer ? { changed:false, intent:'query', answer:queryAnswer } : { intent:'action', ...handleEventAssistantAction(state, command) };
+  const isFallback = String(result.answer || '').includes('אני לא רוצה לנחש פעולה');
+  if (isFallback || (env.EVENT_ASSISTANT_BRAIN_MODE === 'always' && !queryAnswer)) {
+    const brainPlan = await planEventAssistantWithOpenClaw(env, state, command, eventId);
+    const brainResult = applyEventAssistantAiPlan(state, brainPlan);
+    if (brainResult) result = { ...brainResult, brain: 'openclaw' };
+  }
+  result.openClawBrainEnabled = !!(env.OPAL_EMBEDDED_ASSISTANT_TOKEN || env.AMI_EMBEDDED_ASSISTANT_TOKEN);
   if (result.changed) await env.EVENTS_KV.put(key, JSON.stringify({ ...state, eventId, updatedAt: new Date().toISOString() }));
   return jsonResponse({ ok: true, eventId, ...result, state });
 }
