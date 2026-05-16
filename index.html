@@ -275,6 +275,11 @@ const ADMIN_SESSION_KEY = 'dynamic_event_admin_session_v2';
 const CLIENT_SESSION_PREFIX = 'dynamic_event_client_session_v2_';
 const EVENT_KEY = 'dynamic_event_settings_v1';
 const STORAGE_KEY = 'dynamic_event_participants_v1';
+let activeEventId = eventSlug() || '';
+function eventStorageKey(base){ return activeEventId ? `${base}_${activeEventId}` : base; }
+function eventStorageGet(base){ return localStorage.getItem(eventStorageKey(base)); }
+function eventStorageSet(base,value){ localStorage.setItem(eventStorageKey(base), value); }
+function eventStorageRemove(base){ localStorage.removeItem(eventStorageKey(base)); }
 let adminEventsCache = [];
 let currentAdminToken = sessionStorage.getItem(ADMIN_SESSION_KEY) || localStorage.getItem(ADMIN_SESSION_KEY) || '';
 let currentClientToken = '';
@@ -293,7 +298,7 @@ function eventSlug(){ return new URLSearchParams(location.search).get('event'); 
 function isClientUrl(){ return location.hash === '#client' || !!eventSlug(); }
 function authHeaders(){ return currentAdminToken ? {authorization:'Bearer '+currentAdminToken} : {}; }
 function clientAuthHeaders(){ return currentClientToken ? {authorization:'Bearer '+currentClientToken} : {}; }
-function currentEventId(){ return eventSlug() || eventSettings?.id || ''; }
+function currentEventId(){ return activeEventId || eventSlug() || eventSettings?.id || ''; }
 function collectEventState(){ return {eventSettings, participants:guests, hall, vendors, walletTx, savedAt:new Date().toISOString()}; }
 async function syncEventStateNow(){
   if(suppressSync || !currentClientToken || !currentEventId()) return;
@@ -307,11 +312,11 @@ async function loadRemoteEventState(){
     const data=await res.json();
     if(res.ok && data.ok && data.state){
       suppressSync=true;
-      if(data.state.eventSettings){ eventSettings=data.state.eventSettings; localStorage.setItem(EVENT_KEY,JSON.stringify(eventSettings)); }
-      if(Array.isArray(data.state.participants)){ guests=data.state.participants; localStorage.setItem(STORAGE_KEY,JSON.stringify(guests)); }
-      if(data.state.hall){ hall=data.state.hall; localStorage.setItem(HALL_KEY,JSON.stringify(hall)); }
-      if(Array.isArray(data.state.vendors)){ vendors=data.state.vendors; localStorage.setItem(VENDOR_KEY,JSON.stringify(vendors)); }
-      if(Array.isArray(data.state.walletTx)){ walletTx=data.state.walletTx; localStorage.setItem(WALLET_KEY,JSON.stringify(walletTx)); }
+      if(data.state.eventSettings){ eventSettings={...data.state.eventSettings,id:currentEventId()}; eventStorageSet(EVENT_KEY,JSON.stringify(eventSettings)); }
+      if(Array.isArray(data.state.participants)){ guests=data.state.participants; eventStorageSet(STORAGE_KEY,JSON.stringify(guests)); }
+      if(data.state.hall){ hall=data.state.hall; eventStorageSet(HALL_KEY,JSON.stringify(hall)); }
+      if(Array.isArray(data.state.vendors)){ vendors=data.state.vendors; eventStorageSet(VENDOR_KEY,JSON.stringify(vendors)); }
+      if(Array.isArray(data.state.walletTx)){ walletTx=data.state.walletTx; eventStorageSet(WALLET_KEY,JSON.stringify(walletTx)); }
       suppressSync=false;
       return true;
     }
@@ -419,12 +424,23 @@ function adminOpenEvent(id){
   window.open(link, '_blank', 'noopener');
 }
 function applyAdminEventToWorkspace(ev){
-  eventSettings={name:ev.name,type:ev.type,owner:ev.owner,date:ev.date,venue:ev.venue,expected:Number(ev.expected)||100,notes:ev.notes};
-  localStorage.setItem(EVENT_KEY,JSON.stringify(eventSettings));
-  reconcileGuestsWithExpected(eventSettings.expected);
+  activeEventId = ev.id || eventSlug() || '';
+  eventSettings={id:ev.id,name:ev.name,type:ev.type,owner:ev.owner,date:ev.date,venue:ev.venue,expected:Number(ev.expected)||100,notes:ev.notes};
+  eventStorageSet(EVENT_KEY,JSON.stringify(eventSettings));
+  guests = loadData();
+  hall = loadHall();
+  vendors = loadVendors();
+  walletTx = loadWalletTx();
+  selectedVendorIndex = vendors.length ? 0 : null;
+  selectedWhatsAppIndex = null;
   fillEventSettings();
   render();
   renderHall();
+  renderVendors();
+  fillVendorForm();
+  renderWallet();
+  updateVendorStats();
+  renderWhatsAppGuests();
 }
 async function adminDeleteEvent(id){ if(!confirm('למחוק את האירוע מרשימת האדמין?')) return; const local=loadAdminEvents().filter(ev=>ev.id!==id); saveAdminEventsLocal(local); try{ const res=await fetch('/api/events?id='+encodeURIComponent(id),{method:'DELETE',headers:authHeaders()}); const data=await res.json(); if(res.ok&&data.ok) saveAdminEventsLocal(data.events||local); }catch(e){} }
 function adminExportEvents(){ const blob=new Blob([JSON.stringify(loadAdminEvents(),null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='admin-events.json'; a.click(); URL.revokeObjectURL(a.href); }
@@ -450,7 +466,7 @@ async function bootMode(){
 }
 
 function defaultEventSettings(){ return {name:'אירוע חדש', type:'חתונה', owner:'', date:'', venue:'', expected:100, notes:''}; }
-function loadEventSettings(){ try{ const v=localStorage.getItem(EVENT_KEY); if(v) return JSON.parse(v); }catch(e){} return defaultEventSettings(); }
+function loadEventSettings(){ try{ const v=eventStorageGet(EVENT_KEY); if(v) return JSON.parse(v); }catch(e){} return defaultEventSettings(); }
 let eventSettings = loadEventSettings();
 function fillEventSettings(){
   const set=(id,val)=>{ const el=document.getElementById(id); if(el) el.value=val??''; };
@@ -460,7 +476,7 @@ function fillEventSettings(){
 function saveEventSettings(){
   const get=id=>document.getElementById(id)?.value||'';
   eventSettings={...eventSettings,name:get('eventName')||'אירוע חדש',type:get('eventType')||'אירוע',owner:get('eventOwner'),date:get('eventDate'),venue:get('eventVenue'),expected:Number(get('eventExpected'))||0,notes:get('eventNotes')};
-  localStorage.setItem(EVENT_KEY, JSON.stringify(eventSettings));
+  eventStorageSet(EVENT_KEY, JSON.stringify(eventSettings));
   applyEventToDashboard(false);
   scheduleEventStateSync();
 }
@@ -477,7 +493,7 @@ function updateClientExpectedCount(){
   const expected=Number(input?.value)||0;
   if(expected < 1){ alert('נא להזין מספר משתתפים תקין'); input?.focus(); return; }
   eventSettings.expected=expected;
-  localStorage.setItem(EVENT_KEY, JSON.stringify(eventSettings));
+  eventStorageSet(EVENT_KEY, JSON.stringify(eventSettings));
   reconcileGuestsWithExpected(expected);
   applyEventToDashboard(false);
   render();
@@ -492,7 +508,7 @@ function exportFullEventJSON(){
 }
 function importFullEventJSON(ev){
   const file=ev.target.files[0]; if(!file) return; const r=new FileReader();
-  r.onload=()=>{ try{ const data=JSON.parse(r.result); if(data.eventSettings) localStorage.setItem(EVENT_KEY,JSON.stringify(data.eventSettings)); if(data.participants) localStorage.setItem(STORAGE_KEY,JSON.stringify(data.participants)); if(data.hall) localStorage.setItem(HALL_KEY,JSON.stringify(data.hall)); if(data.vendors) localStorage.setItem(VENDOR_KEY,JSON.stringify(data.vendors)); if(data.walletTx) localStorage.setItem(WALLET_KEY,JSON.stringify(data.walletTx)); location.reload(); }catch(e){ alert('קובץ גיבוי לא תקין'); } };
+  r.onload=()=>{ try{ const data=JSON.parse(r.result); if(data.eventSettings) eventStorageSet(EVENT_KEY,JSON.stringify({...data.eventSettings,id:currentEventId()||data.eventSettings.id})); if(data.participants) eventStorageSet(STORAGE_KEY,JSON.stringify(data.participants)); if(data.hall) eventStorageSet(HALL_KEY,JSON.stringify(data.hall)); if(data.vendors) eventStorageSet(VENDOR_KEY,JSON.stringify(data.vendors)); if(data.walletTx) eventStorageSet(WALLET_KEY,JSON.stringify(data.walletTx)); location.reload(); }catch(e){ alert('קובץ גיבוי לא תקין'); } };
   r.readAsText(file,'utf-8');
 }
 
@@ -515,8 +531,8 @@ function reconcileGuestsWithExpected(expected){
   guests.forEach((g,i)=>g['מספר']=i+1);
   save();
 }
-function loadData(){ try{ const saved=localStorage.getItem(STORAGE_KEY); if(saved) return JSON.parse(saved); }catch(e){} return Array.from({length:(Number(eventSettings?.expected)||100)},(_,i)=>emptyRow(i+1)); }
-function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(guests)); updateStats(); scheduleEventStateSync(); }
+function loadData(){ try{ const saved=eventStorageGet(STORAGE_KEY); if(saved) return JSON.parse(saved); }catch(e){} return Array.from({length:(Number(eventSettings?.expected)||100)},(_,i)=>emptyRow(i+1)); }
+function save(){ eventStorageSet(STORAGE_KEY, JSON.stringify(guests)); updateStats(); scheduleEventStateSync(); }
 function render(){
   document.getElementById('head').innerHTML = headers.map(h=>`<th>${h}</th>`).join('') + '<th>פעולות</th>';
   const q = document.getElementById('search').value.trim().toLowerCase();
@@ -555,8 +571,8 @@ function parseCSVLine(line){ const out=[]; let cur='',q=false; for(let i=0;i<lin
 function importCSV(ev){ const file=ev.target.files[0]; if(!file)return; const r=new FileReader(); r.onload=()=>{ const lines=r.result.replace(/^\ufeff/,'').split(/\r?\n/).filter(Boolean); const hh=parseCSVLine(lines.shift()); guests=lines.map((line,i)=>{ const vals=parseCSVLine(line); const row=emptyRow(i+1); hh.forEach((h,j)=>{ if(headers.includes(h)) row[h]=vals[j]??''; }); return row; }); hall.tables?.forEach(t=>t.guestIndexes=[]); save(); saveHall(); render(); renderHall(); renderWhatsAppGuests(); }; r.readAsText(file,'utf-8'); }
 const WA_LOG_KEY = 'dynamic_event_whatsapp_log_v1';
 let selectedWhatsAppIndex = null;
-function loadWaLocalLog(){ try{return JSON.parse(localStorage.getItem(WA_LOG_KEY)||'{}');}catch(e){return {};}}
-function saveWaLocalLog(log){ localStorage.setItem(WA_LOG_KEY, JSON.stringify(log)); }
+function loadWaLocalLog(){ try{return JSON.parse(eventStorageGet(WA_LOG_KEY)||'{}');}catch(e){return {};}}
+function saveWaLocalLog(log){ eventStorageSet(WA_LOG_KEY, JSON.stringify(log)); }
 function waLogKey(phone){ return String(phone||'').replace(/\D/g,'') || 'unknown'; }
 function addLocalWaLog(phone, direction, message){ const key=waLogKey(phone); const log=loadWaLocalLog(); log[key]=log[key]||[]; log[key].unshift({direction,message,date:new Date().toISOString(),source:'local'}); log[key]=log[key].slice(0,100); saveWaLocalLog(log); renderWhatsAppLog(); }
 function renderWhatsAppGuests(){
@@ -677,10 +693,10 @@ let vendors = loadVendors();
 let selectedVendorIndex = vendors.length ? 0 : null;
 let walletTx = loadWalletTx();
 function nis(n){ return '₪' + (Number(n)||0).toLocaleString('he-IL'); }
-function loadVendors(){ try{ const v=localStorage.getItem(VENDOR_KEY); if(v) return JSON.parse(v); }catch(e){} return []; }
-function saveVendors(){ localStorage.setItem(VENDOR_KEY, JSON.stringify(vendors)); renderVendors(); updateVendorStats(); scheduleEventStateSync(); }
-function loadWalletTx(){ try{ const v=localStorage.getItem(WALLET_KEY); if(v) return JSON.parse(v); }catch(e){} return []; }
-function saveWallet(){ localStorage.setItem(WALLET_KEY, JSON.stringify(walletTx)); renderWallet(); updateVendorStats(); scheduleEventStateSync(); }
+function loadVendors(){ try{ const v=eventStorageGet(VENDOR_KEY); if(v) return JSON.parse(v); }catch(e){} return []; }
+function saveVendors(){ eventStorageSet(VENDOR_KEY, JSON.stringify(vendors)); renderVendors(); updateVendorStats(); scheduleEventStateSync(); }
+function loadWalletTx(){ try{ const v=eventStorageGet(WALLET_KEY); if(v) return JSON.parse(v); }catch(e){} return []; }
+function saveWallet(){ eventStorageSet(WALLET_KEY, JSON.stringify(walletTx)); renderWallet(); updateVendorStats(); scheduleEventStateSync(); }
 function walletBalance(){ return walletTx.reduce((s,t)=>s+(t.type==='income'?1:-1)*(Number(t.amount)||0),0); }
 function newVendor(){ vendors.push({name:'ספק חדש',category:'אחר',contact:'',phone:'',email:'',contractUrl:'',agreed:0,paid:0,status:'פתוח',dueDate:'',contractText:'',notes:''}); selectedVendorIndex=vendors.length-1; saveVendors(); fillVendorForm(); }
 function currentVendor(){ return selectedVendorIndex===null ? null : vendors[selectedVendorIndex]; }
@@ -706,8 +722,8 @@ let hall = loadHall();
 let draggedGuestIndex = null;
 let movingTable = null;
 function defaultHall(){ return {name:'אולם מרכזי', columns:5, feature:'dance', mapImage:'', tables:Array.from({length:35},(_,i)=>({id:i+1,name:`שולחן ${i+1}`,capacity:10,x:5+(i%5)*18,y:8+Math.floor(i/5)*14,guestIndexes:[]}))}; }
-function loadHall(){ try{ const saved=localStorage.getItem(HALL_KEY); if(saved) return JSON.parse(saved); }catch(e){} return defaultHall(); }
-function saveHall(){ localStorage.setItem(HALL_KEY, JSON.stringify(hall)); updateSeatingStats(); scheduleEventStateSync(); }
+function loadHall(){ try{ const saved=eventStorageGet(HALL_KEY); if(saved) return JSON.parse(saved); }catch(e){} return defaultHall(); }
+function saveHall(){ eventStorageSet(HALL_KEY, JSON.stringify(hall)); updateSeatingStats(); scheduleEventStateSync(); }
 function initHallInputs(){
   document.getElementById('hallName').value = hall.name || '';
   document.getElementById('tableCount').value = hall.tables?.length || 35;
