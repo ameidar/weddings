@@ -478,6 +478,8 @@ async function completeAdminReset(){
 }
 function adminLogout(){ sessionStorage.removeItem(ADMIN_SESSION_KEY); localStorage.removeItem(ADMIN_SESSION_KEY); currentAdminToken=''; document.body.className='admin-locked'; document.querySelector('header h1').textContent='כניסת אדמין'; document.querySelector('header p').textContent='מערכת מאובטחת לניהול אירועים, לקוחות ודפי אירוע ייחודיים'; }
 async function enterAdminMode(){
+  selectedAdminEventId='';
+  localStorage.removeItem('selected_admin_event_id');
   document.body.classList.remove('admin-locked','client-mode'); document.body.classList.add('admin-landing');
   document.querySelector('header h1').textContent='דשבורד אדמין ראשי';
   document.querySelector('header p').textContent='יצירת אירועים, הפקת משתמש וסיסמה ללקוח, וצפייה בכל הפעילות במקום אחד';
@@ -567,7 +569,7 @@ function renderAdminEvents(){
   const count=document.getElementById('adminEventsCount'); if(count) count.textContent=list.length;
   const selector=document.getElementById('adminEventSelector');
   if(selector){
-    const current=list.some(ev=>ev.id===selectedAdminEventId) ? selectedAdminEventId : (list[0]?.id || '');
+    const current=list.some(ev=>ev.id===selectedAdminEventId) ? selectedAdminEventId : '';
     selectedAdminEventId=current;
     if(current) localStorage.setItem('selected_admin_event_id', current); else localStorage.removeItem('selected_admin_event_id');
     selector.innerHTML='<option value="">בחר אירוע לניהול...</option>'+list.map(ev=>`<option value="${ev.id}">${escapeHtml(ev.name||'אירוע ללא שם')} · ${escapeHtml(ev.owner||'ללא לקוח')} · ${escapeHtml(ev.date||'ללא תאריך')}</option>`).join('');
