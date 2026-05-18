@@ -569,7 +569,7 @@ async function adminCreateEvent(){
   const clientPassword=get('adminPassword') || makePassword(10);
   const primaryUsername=makeClientUsername(get('adminOwner')||get('adminEventName'));
   const extraUsers=parseExtraClientUsers(get('adminExtraUsers')).filter(u=>u.username!==primaryUsername);
-  const ev={id:makeEventId(get('adminEventName')), name:get('adminEventName')||'אירוע חדש', type:get('adminEventType')||'אירוע', owner:get('adminOwner'), clientUsername:primaryUsername, clientEmail:get('adminClientEmail'), clientPhone:get('adminClientPhone'), date:eventDate, venue:get('adminVenue'), brandColor:normalizeBrandColor(get('adminBrandColor')||'#7357ff'), designTemplate:'classic-luxury', invitationBackground:'', expected, notes:get('adminNotes'), modules:get('adminModules'), clientPassword, clientUsers:extraUsers, createdAt:new Date().toISOString(), updatedAt:new Date().toISOString()};
+  const ev={id:makeEventId(get('adminEventName')), name:get('adminEventName')||'אירוע חדש', type:get('adminEventType')||'אירוע', owner:get('adminOwner'), clientUsername:primaryUsername, clientEmail:get('adminClientEmail'), clientPhone:get('adminClientPhone'), date:eventDate, venue:get('adminVenue'), venueAddress:'', venueContactName:'', venueContactPhone:'', venueContactEmail:'', venueNotes:'', brandColor:normalizeBrandColor(get('adminBrandColor')||'#7357ff'), designTemplate:'classic-luxury', invitationBackground:'', expected, notes:get('adminNotes'), modules:get('adminModules'), clientPassword, clientUsers:extraUsers, createdAt:new Date().toISOString(), updatedAt:new Date().toISOString()};
   const list=[ev,...loadAdminEvents().filter(x=>x.id!==ev.id)]; saveAdminEventsLocal(list);
   try{ const res=await fetch('/api/events',{method:'POST',headers:{'content-type':'application/json',...authHeaders()},body:JSON.stringify(ev)}); const data=await res.json(); if(res.ok&&data.ok) saveAdminEventsLocal(data.events||list); }catch(e){}
   const shareText=`שלום ${ev.owner||''}, נוצר עבורך דשבורד לניהול האירוע: ${ev.name}.\n${formatCredentials(ev)}`;
@@ -609,6 +609,15 @@ function adminDesignPanelHtml(ev){
   const bg=ev.invitationBackground||'';
   return `<h4>עיצוב דף לקוח</h4><div class="label">בחר טמפלייט ססגוני מתוך המאגר, או העלה את תמונת ההזמנה כרקע אישי לדף הלקוח.</div><div class="theme-gallery">${templates}</div><div class="client-detail-grid"><div class="client-detail"><span class="label">צבע מוביל</span><br><span class="color-swatch" style="background:${normalizeBrandColor(ev.brandColor)}"></span> ${normalizeBrandColor(ev.brandColor)}</div><div class="client-detail"><span class="label">טמפלייט נוכחי</span><br>${escapeHtml((EVENT_DESIGN_TEMPLATES.find(t=>t.id===templateId)||EVENT_DESIGN_TEMPLATES[0]).name)}</div></div><div class="toolbar"><button class="secondary" onclick="adminChangeEventColor('${ev.id}')">שנה צבע ידנית</button><button class="secondary" onclick="adminOpenEvent('${ev.id}')">פתח דף לקוח לתצוגה</button></div><h4 style="margin-top:16px">רקע מהזמנת החתונה</h4><div id="invitationPreview_${ev.id}" class="invitation-bg-preview" style="${bg?`background-image:url(${bg})`:''}">${bg?'תמונת ההזמנה נטענה כרקע':'אין עדיין רקע הזמנה. העלה תמונת JPG/PNG מההזמנה.'}</div><div class="toolbar"><input type="file" accept="image/*" onchange="adminUploadInvitationBackground('${ev.id}',this.files?.[0])" /><button class="secondary" onclick="adminClearInvitationBackground('${ev.id}')">הסר רקע הזמנה</button></div><div class="note">המערכת מקטינה את התמונה אוטומטית לפני שמירה כדי שהדף ייטען מהר.</div>`;
 }
+function adminDetailsPanelHtml(ev){
+  const input=(key,label,type='text',placeholder='')=>`<div class="field"><label for="${key}_${ev.id}">${label}</label><input id="${key}_${ev.id}" type="${type}" value="${escapeHtml(ev[key]||'')}" placeholder="${escapeHtml(placeholder)}" /></div>`;
+  const area=(key,label,placeholder='')=>`<div class="field full"><label for="${key}_${ev.id}">${label}</label><textarea id="${key}_${ev.id}" placeholder="${escapeHtml(placeholder)}">${escapeHtml(ev[key]||'')}</textarea></div>`;
+  return `<h4>עריכת פרטי אירוע ולקוח</h4><div class="label">הפרטים נשמרים ברשימת האדמין ומסתנכרנים לדף הלקוח.</div><div class="form-grid admin-form">
+    ${input('name','שם האירוע')}${input('type','סוג האירוע')}${input('owner','שם הלקוח / המארגן')}${input('clientEmail','אימייל לקוח','email','name@example.com')}${input('clientPhone','וואטסאפ לקוח','tel','972501234567')}${input('date','תאריך האירוע','date')}${input('expected','מספר מוזמנים משוער','number','350')}${input('venue','שם המקום / אולם')}
+    <div class="field full"><h4 style="margin:8px 0 0">פרטים מלאים על מקום האירוע</h4></div>
+    ${input('venueAddress','כתובת מלאה של המקום','text','רחוב, מספר, עיר')}${input('venueContactName','איש קשר במקום')}${input('venueContactPhone','טלפון איש קשר','tel')}${input('venueContactEmail','מייל איש קשר','email')}${area('venueNotes','הערות על המקום','חניה, כניסת ספקים, שעות הגעה, אישורי טעינה/פריקה וכו׳')}${area('notes','הערות אדמין כלליות')}
+  </div><div class="toolbar"><button onclick="adminSaveEventDetails('${ev.id}')">שמור פרטים</button><button class="secondary" onclick="adminOpenEvent('${ev.id}')">פתח דף לקוח לתצוגה</button></div>`;
+}
 function adminEventCardHtml(ev){
   const username=ev.clientUsername||ev.owner||'client';
   const users=eventLoginUsers(ev);
@@ -627,13 +636,25 @@ ${formatCredentials(ev)}`;
     ${panel('access',`<h4>כניסה ושיתוף</h4>${eventLinkCard(ev,shareText,{title:'אתר האירוע',desc:'פתיחה מהירה, העתקת קישור ושליחת פרטי כניסה ללקוח.'})}<div class="toolbar"><button onclick="copyText('${jsArg(shareText)}')">העתק הודעה ללקוח</button><a href="${mailto}">שלח במייל</a><a href="${waLink}" target="_blank">שלח בוואטסאפ</a></div>`)}
     ${panel('users',`<h4>משתמשים מורשים</h4><div class="label">מנהלי אירוע מורשים: ${usersHtml}</div><div class="client-detail-grid">${usersList}</div><div class="toolbar"><button class="secondary" onclick="adminAddClientUser('${ev.id}')">הוסף מנהל אירוע</button><button onclick="copyText('${jsArg(formatCredentials(ev))}')">העתק כל פרטי הכניסה</button></div>`)}
     ${panel('design',adminDesignPanelHtml(ev))}
-    ${panel('details',`<h4>פרטי לקוח ואירוע</h4><div class="client-detail-grid"><div class="client-detail"><span class="label">אימייל</span><br>${escapeHtml(ev.clientEmail||'לא הוזן')}</div><div class="client-detail"><span class="label">וואטסאפ</span><br>${escapeHtml(ev.clientPhone||'לא הוזן')}</div><div class="client-detail"><span class="label">מקום</span><br>${escapeHtml(ev.venue||'לא הוזן')}</div><div class="client-detail"><span class="label">נוצר</span><br>${new Date(ev.createdAt||Date.now()).toLocaleString('he-IL')}</div></div><div class="note">${escapeHtml(ev.notes||'אין הערות אדמין')}</div>`)}
+    ${panel('details',adminDetailsPanelHtml(ev))}
     ${panel('security',`<h4>אבטחה וסיסמאות</h4><div class="note">איפוס סיסמה מחליף את סיסמת הלקוח הראשי. מומלץ לשלוח ללקוח את ההודעה החדשה מיד אחרי האיפוס.</div><div class="toolbar"><button class="secondary" onclick="adminResetClientPassword('${ev.id}')">אפס סיסמת לקוח ראשי</button></div>`)}
     ${panel('danger',`<h4>ניהול מתקדם</h4><div class="note">פעולות מחיקה הן רגישות. מחיקה מסירה את האירוע מרשימת האדמין.</div><div class="toolbar"><button class="secondary" onclick="adminOpenEvent('${ev.id}')">פתח לצפייה/עריכה</button><button class="danger" onclick="adminDeleteEvent('${ev.id}')">מחק אירוע</button></div>`)}
   </div>`;
 }
 
 function copyText(text){ navigator.clipboard?.writeText(text); alert('הועתק'); }
+async function adminSaveEventDetails(id){
+  const list=loadAdminEvents(); const ev=list.find(x=>x.id===id); if(!ev) return;
+  const get=key=>document.getElementById(`${key}_${id}`)?.value || '';
+  const expected=Number(get('expected'))||0;
+  if(expected < 1){ alert('נא להזין מספר מוזמנים משוער תקין'); document.getElementById(`expected_${id}`)?.focus(); return; }
+  const patch={
+    name:get('name')||'אירוע חדש', type:get('type')||'אירוע', owner:get('owner'), clientEmail:get('clientEmail'), clientPhone:get('clientPhone'), date:get('date'), expected,
+    venue:get('venue'), venueAddress:get('venueAddress'), venueContactName:get('venueContactName'), venueContactPhone:get('venueContactPhone'), venueContactEmail:get('venueContactEmail'), venueNotes:get('venueNotes'), notes:get('notes')
+  };
+  await adminSaveEventDesign(id,patch,{successHtml:'<div class="color-editor"><b>פרטי האירוע נשמרו ✅</b><div class="note">העדכון נשמר באדמין וסונכרן לדף הלקוח.</div></div>'});
+  showClientAdminMenu(id,'details');
+}
 async function adminAddClientUser(id){
   const list=loadAdminEvents();
   const ev=list.find(x=>x.id===id); if(!ev) return;
@@ -750,7 +771,7 @@ function adminOpenEvent(id){
 }
 function applyAdminEventToWorkspace(ev){
   activeEventId = ev.id || eventSlug() || '';
-  eventSettings={id:ev.id,name:ev.name,type:ev.type,owner:ev.owner,date:ev.date,venue:ev.venue,brandColor:normalizeBrandColor(ev.brandColor),designTemplate:ev.designTemplate||'classic-luxury',invitationBackground:ev.invitationBackground||'',expected:Number(ev.expected)||100,notes:ev.notes};
+  eventSettings={id:ev.id,name:ev.name,type:ev.type,owner:ev.owner,date:ev.date,venue:ev.venue,venueAddress:ev.venueAddress||'',venueContactName:ev.venueContactName||'',venueContactPhone:ev.venueContactPhone||'',venueContactEmail:ev.venueContactEmail||'',venueNotes:ev.venueNotes||'',brandColor:normalizeBrandColor(ev.brandColor),designTemplate:ev.designTemplate||'classic-luxury',invitationBackground:ev.invitationBackground||'',expected:Number(ev.expected)||100,notes:ev.notes};
   eventStorageSet(EVENT_KEY,JSON.stringify(eventSettings));
   guests = loadData();
   hall = loadHall();
@@ -793,7 +814,7 @@ async function bootMode(){
   if(await checkAdminSession()) await enterAdminMode(); else adminLogout();
 }
 
-function defaultEventSettings(){ return {name:'אירוע חדש', type:'חתונה', owner:'', date:'', venue:'', brandColor:'#7357ff', designTemplate:'classic-luxury', invitationBackground:'', expected:100, notes:''}; }
+function defaultEventSettings(){ return {name:'אירוע חדש', type:'חתונה', owner:'', date:'', venue:'', venueAddress:'', venueContactName:'', venueContactPhone:'', venueContactEmail:'', venueNotes:'', brandColor:'#7357ff', designTemplate:'classic-luxury', invitationBackground:'', expected:100, notes:''}; }
 function loadEventSettings(){ try{ const v=eventStorageGet(EVENT_KEY); if(v) return JSON.parse(v); }catch(e){} return defaultEventSettings(); }
 let eventSettings = loadEventSettings();
 function fillEventSettings(){
