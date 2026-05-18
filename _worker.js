@@ -107,6 +107,9 @@ function configuredAdminResetEmail(env) {
 }
 
 async function sendResetEmail(env, to, link) {
+  if (env.COMPOSIO_API_KEY && env.COMPOSIO_GMAIL_CONNECTED_ACCOUNT_ID) {
+    return sendResetEmailViaComposioGmail(env, to, link);
+  }
   if (!env.RESEND_API_KEY) return { ok: false, error: 'Email provider is not configured' };
   const from = env.RESET_FROM_EMAIL || 'Event Admin <onboarding@resend.dev>';
   const subject = 'איפוס סיסמה למערכת ניהול האירועים';
@@ -119,6 +122,39 @@ async function sendResetEmail(env, to, link) {
   const body = await upstream.text();
   if (!upstream.ok) return { ok: false, error: body || `Email send failed (${upstream.status})` };
   return { ok: true };
+}
+
+async function composioRequest(env, path, body) {
+  const upstream = await fetch(`https://backend.composio.dev${path}`, {
+    method: 'POST',
+    headers: { 'x-api-key': env.COMPOSIO_API_KEY, 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const text = await upstream.text();
+  let data;
+  try { data = text ? JSON.parse(text) : {}; } catch { data = { raw: text }; }
+  if (!upstream.ok) throw new Error(data?.error?.message || data?.message || text || `Composio request failed (${upstream.status})`);
+  return data;
+}
+
+async function sendResetEmailViaComposioGmail(env, to, link) {
+  const subject = 'איפוס סיסמה למערכת ניהול האירועים';
+  const body = `שלום,\n\nקיבלנו בקשה לאיפוס סיסמת האדמין למערכת ניהול האירועים.\n\nלאיפוס הסיסמה יש לפתוח את הקישור הבא בתוך 30 דקות:\n${link}\n\nאם לא ביקשת איפוס, אפשר להתעלם מהמייל.`;
+  try {
+    const session = await composioRequest(env, '/api/v3.1/tool_router/session', {
+      user_id: env.COMPOSIO_USER_ID || 'opal-agent',
+      toolkits: { enable: ['gmail'] },
+      connected_accounts: { gmail: [env.COMPOSIO_GMAIL_CONNECTED_ACCOUNT_ID] },
+    });
+    const sent = await composioRequest(env, `/api/v3.1/tool_router/session/${session.session_id}/execute`, {
+      tool_slug: 'GMAIL_SEND_EMAIL',
+      arguments: { recipient_email: to, subject, body },
+    });
+    if (sent?.error) return { ok: false, error: sent.error };
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err.message || 'Gmail send failed' };
+  }
 }
 
 async function requestAdminPasswordReset(request, env) {
