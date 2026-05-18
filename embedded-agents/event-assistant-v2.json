@@ -9,6 +9,8 @@
   "branch": "feature/event-action-api",
   "principles": [
     "One embedded assistant component serves all clients; context is isolated by eventId and client session.",
+    "The assistant speaks as the personal helper of the current event, adapted to event type, owner/business, date and available event data.",
+    "The assistant may be renamed by the client and stores the chosen name in eventSettings.assistantName.",
     "Questions are answered directly from event state before any action flow starts.",
     "Data-changing actions require explicit action verbs such as add/update/assign/prepare.",
     "The assistant never treats its own examples as user commands.",
@@ -22,6 +24,7 @@
       "confirmed_list",
       "event_summary",
       "task_board",
+      "next_steps_until_event",
       "table_lookup",
       "capabilities"
     ],

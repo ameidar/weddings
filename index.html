@@ -26,6 +26,17 @@
     <input id="adminLoginUser" autocomplete="username" placeholder="משתמש" value="admin" />
     <input id="adminLoginPass" autocomplete="current-password" type="password" placeholder="סיסמה" onkeydown="if(event.key==='Enter') adminLogin()" />
     <div class="toolbar"><button onclick="adminLogin()">כניסה למערכת</button></div>
+    <div class="toolbar"><button class="secondary" onclick="toggleAdminReset()">שכחתי סיסמה / איפוס דרך המייל</button></div>
+    <div id="adminResetBox" class="hidden" style="margin-top:12px;border-top:1px solid var(--line);padding-top:12px">
+      <p class="label">הזן את אימייל האדמין ונשלח קישור איפוס מאובטח.</p>
+      <input id="adminResetEmail" type="email" autocomplete="email" placeholder="אימייל אדמין" />
+      <div class="toolbar"><button class="secondary" onclick="requestAdminReset()">שלח קישור איפוס</button></div>
+    </div>
+    <div id="adminResetCompleteBox" class="hidden" style="margin-top:12px;border-top:1px solid var(--line);padding-top:12px">
+      <p class="label">בחר סיסמה חדשה לאדמין.</p>
+      <input id="adminNewPassword" type="password" autocomplete="new-password" placeholder="סיסמה חדשה (לפחות 10 תווים)" />
+      <div class="toolbar"><button class="secondary" onclick="completeAdminReset()">עדכן סיסמה</button></div>
+    </div>
     <div id="adminLoginStatus" class="status"></div>
   </div>
 </section>
@@ -58,7 +69,7 @@
     </div>
     <div class="card client-only event-assistant-card">
       <h3 id="eventAssistantTitle" style="margin:0 0 8px;font-size:24px">עוזר אירוע אישי</h3>
-      <div class="note">העוזר עובד על האירוע של הלקוח המחובר בלבד. הוא עונה קודם כל על שאלות נתונים, ומבצע שינוי רק כשיש הוראה ברורה.</div>
+      <div class="note">העוזר האישי מותאם לאירוע שאליו התחברת בלבד. המטרה שלו היא להקל עליך, לעשות סדר ולהוביל את האירוע להצלחה — במוזמנים, אישורי הגעה, שולחנות, ספקים, הודעות, תשלומים ומשימות. אפשר גם לתת לו שם, למשל: “תקרא לך ליאו”.</div>
       <div class="assistant-actions">
         <button onclick="askEventAssistantQuick('כמה אישרו הגעה?')">כמה אישרו?</button>
         <button onclick="askEventAssistantQuick('מי עדיין לא אישר הגעה?')">מי לא ענה?</button>
@@ -68,7 +79,7 @@
       </div>
       <div id="eventAssistantChat" class="assistant-chat"><div class="assistant-msg bot" id="eventAssistantWelcome">היי, אני עוזר האירוע האישי. שאל אותי למשל: כמה אישרו הגעה?</div></div>
       <div class="toolbar" style="margin-bottom:0">
-        <input id="eventAssistantInput" placeholder="כתוב שאלה או פעולה ברורה..." onkeydown="if(event.key==='Enter') askEventAssistant()" style="flex:1;min-width:260px" />
+        <input id="eventAssistantInput" placeholder="כתוב שאלה או פעולה, למשל: תקרא לך ליאו / מה נשאר לי עד האירוע?" onkeydown="if(event.key==='Enter') askEventAssistant()" style="flex:1;min-width:260px" />
         <button onclick="askEventAssistant()">שלח</button>
       </div>
     </div>
@@ -430,6 +441,39 @@ async function adminLogin(){
     if(!res.ok || !data.ok) throw new Error(data.error||'כניסה נכשלה');
     currentAdminToken=data.token; sessionStorage.setItem(ADMIN_SESSION_KEY,currentAdminToken); localStorage.setItem(ADMIN_SESSION_KEY,currentAdminToken);
     await enterAdminMode();
+  }catch(e){ status.textContent=e.message; status.className='status bad-text'; }
+}
+function adminResetToken(){ return new URL(location.href).searchParams.get('adminReset') || ''; }
+function toggleAdminReset(force){
+  const box=document.getElementById('adminResetBox');
+  if(!box) return;
+  const show=typeof force==='boolean'?force:box.classList.contains('hidden');
+  box.classList.toggle('hidden', !show);
+}
+async function requestAdminReset(){
+  const status=document.getElementById('adminLoginStatus');
+  const email=document.getElementById('adminResetEmail')?.value.trim();
+  status.textContent='שולח קישור איפוס...'; status.className='status';
+  try{
+    const res=await fetch('/api/admin-password-reset/request',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email})});
+    const data=await res.json();
+    if(!res.ok || !data.ok) throw new Error(data.error||'שליחת קישור האיפוס נכשלה');
+    status.textContent=data.message||'אם האימייל מורשה, נשלח אליו קישור איפוס.'; status.className='status ok-text';
+  }catch(e){ status.textContent=e.message; status.className='status bad-text'; }
+}
+async function completeAdminReset(){
+  const status=document.getElementById('adminLoginStatus');
+  const token=adminResetToken();
+  const password=document.getElementById('adminNewPassword')?.value||'';
+  status.textContent='מעדכן סיסמה...'; status.className='status';
+  try{
+    const res=await fetch('/api/admin-password-reset/complete',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({token,password})});
+    const data=await res.json();
+    if(!res.ok || !data.ok) throw new Error(data.error||'איפוס הסיסמה נכשל');
+    status.textContent=data.message||'הסיסמה עודכנה בהצלחה.'; status.className='status ok-text';
+    document.getElementById('adminLoginPass').value=password;
+    document.getElementById('adminResetCompleteBox')?.classList.add('hidden');
+    history.replaceState({},'',location.pathname+location.hash);
   }catch(e){ status.textContent=e.message; status.className='status bad-text'; }
 }
 function adminLogout(){ sessionStorage.removeItem(ADMIN_SESSION_KEY); localStorage.removeItem(ADMIN_SESSION_KEY); currentAdminToken=''; document.body.className='admin-locked'; document.querySelector('header h1').textContent='כניסת אדמין'; document.querySelector('header p').textContent='מערכת מאובטחת לניהול אירועים, לקוחות ודפי אירוע ייחודיים'; }
@@ -1059,7 +1103,7 @@ function saveEventAssistantHistoryLocal(){ try{ localStorage.setItem(eventAssist
 function loadEventAssistantHistoryLocal(){ try{ eventAssistantHistory=normalizeEventAssistantHistory(JSON.parse(localStorage.getItem(eventAssistantLocalKey())||'[]')); }catch(e){ eventAssistantHistory=[]; } }
 function renderEventAssistantHistory(){
   const box=document.getElementById('eventAssistantChat'); if(!box) return;
-  const welcome=`היי, אני ${eventSettings.assistantName||'עוזר האירוע האישי'} של ${eventSettings.name||'האירוע שלך'}. אפשר לשאול אותי כמה אישרו הגעה, מי לא ענה, מה המשימות, להוסיף משתתף, או לשלוח וואטסאפ כמו “תשלח בקשה לאישור הגעה לעמי מידר”.`;
+  const welcome=`היי, אני ${eventSettings.assistantName||'עוזר האירוע האישי'} של ${eventSettings.name||'האירוע שלך'}. אני כאן כדי להקל עליך ולהוביל את האירוע להצלחה — מוזמנים, אישורי הגעה, שולחנות, ספקים, הודעות, תשלומים ומשימות. אפשר גם לתת לי שם, למשל: “תקרא לך ליאו”.`;
   box.innerHTML=`<div class="assistant-msg bot" id="eventAssistantWelcome">${escapeHtml(welcome)}</div>` + eventAssistantHistory.map(m=>`<div class="assistant-msg ${m.role==='user'?'user':'bot'}">${escapeHtml(m.content)}</div>`).join('');
   box.scrollTop=box.scrollHeight;
 }
@@ -1081,7 +1125,7 @@ async function loadEventAssistantHistory(){
 function updateEventAssistantUi(){
   const title=document.getElementById('eventAssistantTitle'); if(title) title.textContent=eventSettings.assistantName||'עוזר אירוע אישי';
   const welcome=document.getElementById('eventAssistantWelcome');
-  if(welcome) welcome.textContent=`היי, אני ${eventSettings.assistantName||'עוזר האירוע האישי'} של ${eventSettings.name||'האירוע שלך'}. אפשר לשאול אותי כמה אישרו הגעה, מי לא ענה, מה המשימות, להוסיף משתתף, או לשלוח וואטסאפ כמו “תשלח בקשה לאישור הגעה לעמי מידר”.`;
+  if(welcome) welcome.textContent=`היי, אני ${eventSettings.assistantName||'עוזר האירוע האישי'} של ${eventSettings.name||'האירוע שלך'}. אני כאן כדי להקל עליך ולהוביל את האירוע להצלחה — מוזמנים, אישורי הגעה, שולחנות, ספקים, הודעות, תשלומים ומשימות. אפשר גם לתת לי שם, למשל: “תקרא לך ליאו”.`;
 }
 function askEventAssistantQuick(text){ const input=document.getElementById('eventAssistantInput'); if(input) input.value=text; askEventAssistant(); }
 async function askEventAssistant(){
@@ -1125,6 +1169,11 @@ initHallInputs();
 renderHall();
 renderAdminEvents();
 bootMode();
+if(adminResetToken()){
+  document.body.className='admin-locked';
+  document.getElementById('adminResetCompleteBox')?.classList.remove('hidden');
+  document.getElementById('adminLoginStatus').textContent='התקבל קישור איפוס. נא לבחור סיסמה חדשה.';
+}
 </script>
 </body>
 </html>

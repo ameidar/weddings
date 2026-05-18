@@ -13,6 +13,8 @@ const enc = new TextEncoder();
 const EVENTS_KEY = 'admin_events_v2';
 const EVENT_STATE_PREFIX = 'event_state_v1:';
 const EVENT_ASSISTANT_CHAT_PREFIX = 'event_assistant_chat_v1:';
+const ADMIN_CONFIG_KEY = 'admin_config_v1';
+const ADMIN_RESET_PREFIX = 'admin_password_reset_v1:';
 
 function base64url(bytes) {
   let bin = '';
@@ -82,11 +84,78 @@ async function adminLogin(request, env) {
   const username = String(body.username || '').trim();
   const password = String(body.password || '');
   const expectedUser = env.ADMIN_USERNAME || 'admin';
-  const expectedHash = env.ADMIN_PASSWORD_HASH || (env.ADMIN_PASSWORD ? await sha256Hex(env.ADMIN_PASSWORD) : '');
+  const expectedHash = await adminPasswordHash(env);
   if (!expectedHash) return jsonResponse({ ok: false, error: 'Admin password is not configured' }, 503);
   const ok = username === expectedUser && safeEqual(await sha256Hex(password), expectedHash);
   if (!ok) return jsonResponse({ ok: false, error: 'שם משתמש או סיסמה שגויים' }, 401);
   return jsonResponse({ ok: true, token: await signSession(env, { role: 'admin', username }) });
+}
+
+async function adminPasswordHash(env) {
+  if (env.EVENTS_KV) {
+    const raw = await env.EVENTS_KV.get(ADMIN_CONFIG_KEY);
+    try {
+      const config = raw ? JSON.parse(raw) : null;
+      if (config?.adminPasswordHash) return String(config.adminPasswordHash);
+    } catch {}
+  }
+  return env.ADMIN_PASSWORD_HASH || (env.ADMIN_PASSWORD ? await sha256Hex(env.ADMIN_PASSWORD) : '');
+}
+
+function configuredAdminResetEmail(env) {
+  return String(env.ADMIN_RESET_EMAIL || env.ADMIN_EMAIL || '').trim().toLowerCase();
+}
+
+async function sendResetEmail(env, to, link) {
+  if (!env.RESEND_API_KEY) return { ok: false, error: 'Email provider is not configured' };
+  const from = env.RESET_FROM_EMAIL || 'Event Admin <onboarding@resend.dev>';
+  const subject = 'איפוס סיסמה למערכת ניהול האירועים';
+  const text = `שלום,\n\nקיבלנו בקשה לאיפוס סיסמת האדמין למערכת ניהול האירועים.\n\nלאיפוס הסיסמה יש לפתוח את הקישור הבא בתוך 30 דקות:\n${link}\n\nאם לא ביקשת איפוס, אפשר להתעלם מהמייל.`;
+  const upstream = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { authorization: `Bearer ${env.RESEND_API_KEY}`, 'content-type': 'application/json' },
+    body: JSON.stringify({ from, to: [to], subject, text }),
+  });
+  const body = await upstream.text();
+  if (!upstream.ok) return { ok: false, error: body || `Email send failed (${upstream.status})` };
+  return { ok: true };
+}
+
+async function requestAdminPasswordReset(request, env) {
+  if (!env.EVENTS_KV) return jsonResponse({ ok: false, error: 'Cloudflare KV binding EVENTS_KV is not configured' }, 501);
+  const body = await request.json().catch(() => ({}));
+  const email = String(body.email || '').trim().toLowerCase();
+  const resetEmail = configuredAdminResetEmail(env);
+  if (!resetEmail) return jsonResponse({ ok: false, error: 'ADMIN_RESET_EMAIL is not configured' }, 501);
+  if (!email) return jsonResponse({ ok: false, error: 'נא להזין אימייל' }, 400);
+  // Do not reveal whether an email exists, but only send when it matches the configured admin reset email.
+  if (email !== resetEmail) return jsonResponse({ ok: true, message: 'אם האימייל מורשה, נשלח אליו קישור איפוס.' });
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  const token = base64url(bytes);
+  const tokenHash = await sha256Hex(token);
+  await env.EVENTS_KV.put(ADMIN_RESET_PREFIX + tokenHash, JSON.stringify({ email, exp: Date.now() + 1000 * 60 * 30 }), { expirationTtl: 60 * 30 });
+  const url = new URL(request.url);
+  const link = `${url.origin}/?adminReset=${encodeURIComponent(token)}`;
+  const sent = await sendResetEmail(env, email, link);
+  if (!sent.ok) return jsonResponse({ ok: false, error: sent.error || 'שליחת המייל נכשלה' }, 502);
+  return jsonResponse({ ok: true, message: 'נשלח קישור איפוס לאימייל האדמין.' });
+}
+
+async function completeAdminPasswordReset(request, env) {
+  if (!env.EVENTS_KV) return jsonResponse({ ok: false, error: 'Cloudflare KV binding EVENTS_KV is not configured' }, 501);
+  const body = await request.json().catch(() => ({}));
+  const token = String(body.token || '').trim();
+  const password = String(body.password || '');
+  if (!token || !password) return jsonResponse({ ok: false, error: 'Missing token or password' }, 400);
+  if (password.length < 10) return jsonResponse({ ok: false, error: 'הסיסמה חייבת להיות באורך 10 תווים לפחות' }, 400);
+  const key = ADMIN_RESET_PREFIX + await sha256Hex(token);
+  const raw = await env.EVENTS_KV.get(key);
+  let reset;
+  try { reset = raw ? JSON.parse(raw) : null; } catch { reset = null; }
+  if (!reset?.exp || reset.exp < Date.now()) return jsonResponse({ ok: false, error: 'קישור האיפוס אינו תקין או שפג תוקפו' }, 400);
+  await env.EVENTS_KV.put(ADMIN_CONFIG_KEY, JSON.stringify({ adminPasswordHash: await sha256Hex(password), updatedAt: new Date().toISOString(), updatedBy: 'email-reset' }));
+  await env.EVENTS_KV.delete(key);
+  return jsonResponse({ ok: true, message: 'הסיסמה עודכנה בהצלחה. אפשר להתחבר עם הסיסמה החדשה.' });
 }
 
 async function loadEvents(env) {
@@ -817,6 +886,8 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (url.pathname === '/api/admin-login' && request.method === 'POST') return adminLogin(request, env);
+    if (url.pathname === '/api/admin-password-reset/request' && request.method === 'POST') return requestAdminPasswordReset(request, env);
+    if (url.pathname === '/api/admin-password-reset/complete' && request.method === 'POST') return completeAdminPasswordReset(request, env);
     if (url.pathname === '/api/auth/me') return jsonResponse({ ok: !!(await verifySession(request, env)), session: await verifySession(request, env) });
     if (url.pathname === '/api/events') return eventsApi(request, env);
     if (url.pathname === '/api/client-login' && request.method === 'POST') return clientLogin(request, env);
