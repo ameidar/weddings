@@ -212,6 +212,39 @@
     @media(max-width:760px){.admin-locked .auth-shell.opening-hero{grid-template-columns:1fr;padding:42px 20px!important}.opening-copy p{font-size:16px}.opening-actions span{font-size:13px;padding:9px 12px}.opening-login{padding:22px!important}}
     @media(max-width:560px){.grid{grid-template-columns:1fr!important}.card{border-radius:18px!important}}
 
+
+
+    /* Client pages must stay controlled by the client's selected event design, not the Orma admin skin */
+    body.client-mode,body.client-auth-locked{
+      --bg:#f7f7fb;--card:#fff;--text:#172033;--muted:#667085;--line:#e4e7ec;--brand:var(--client-brand,#7357ff);
+      background:var(--client-page-bg,#f7f7fb)!important;color:var(--text)!important;
+    }
+    body.client-mode:before,body.client-auth-locked:before{display:none!important}
+    body.client-mode header,body.client-auth-locked header{display:block!important;background:var(--client-header-bg,linear-gradient(135deg,#7357ff,#9b7cff))!important;color:#fff!important;border-bottom:0!important;box-shadow:none!important;backdrop-filter:none!important}
+    body.client-mode header:before,body.client-auth-locked header:before,body.client-mode header h1:after,body.client-auth-locked header h1:after{display:none!important;content:none!important}
+    body.client-mode header h1,body.client-auth-locked header h1{color:#fff!important;font-size:40px!important;line-height:1.15!important;letter-spacing:0!important;font-weight:800!important}
+    body.client-mode header p,body.client-auth-locked header p{color:#fff!important;opacity:.92!important;font-size:21px!important}
+    body.client-mode .sidebar{background:#fff!important;border-left:1px solid var(--line)!important;box-shadow:none!important;backdrop-filter:none!important}
+    body.client-mode .sidebar-title{color:var(--text)!important;font-size:16px!important;letter-spacing:0!important;text-transform:none!important}
+    body.client-mode .nav-btn{background:#fff!important;color:var(--text)!important;border:1px solid transparent!important;border-radius:12px!important;box-shadow:none!important}
+    body.client-mode .nav-btn:hover{background:#f7f7fb!important;transform:none!important}
+    body.client-mode .nav-btn.active{background:#ede9fe!important;color:#4c1d95!important;border-color:#ddd6fe!important;box-shadow:none!important}
+    body.client-mode .card,body.client-auth-locked .card,body.client-mode .login-box,body.client-auth-locked .login-box,body.client-mode .table-wrap,body.client-mode .event-picker-card,body.client-mode .admin-event-card,body.client-mode .client-admin-panel,body.client-mode .event-link-card,body.client-mode .wa-guest-list,body.client-mode .chat-log,body.client-mode .assistant-chat,body.client-mode .contract-box,body.client-mode .unassigned-box,body.client-mode .vendor-item,body.client-mode .wa-guest-item,body.client-mode .client-detail,body.client-mode .selected-event-empty{
+      background:var(--card)!important;color:var(--text)!important;border:1px solid var(--line)!important;border-radius:14px!important;box-shadow:0 4px 14px rgba(16,24,40,.04)!important;backdrop-filter:none!important;
+    }
+    body.client-mode .grid>.card:before{display:none!important}
+    body.client-mode h2,body.client-mode h3,body.client-mode h4,body.client-auth-locked h2,body.client-auth-locked h3{color:var(--text)!important;letter-spacing:0!important}
+    body.client-mode .label,body.client-mode .note,body.client-auth-locked .label{color:var(--muted)!important}
+    body.client-mode .stat{color:var(--text)!important;font-size:32px!important;letter-spacing:0!important}
+    body.client-mode input,body.client-mode select,body.client-mode textarea,body.client-auth-locked input,body.client-auth-locked select,body.client-auth-locked textarea,body.client-mode td input,body.client-mode td select{background:#fff!important;color:var(--text)!important;border:1px solid var(--line)!important;border-radius:10px!important}
+    body.client-mode input::placeholder,body.client-mode textarea::placeholder,body.client-auth-locked input::placeholder{color:#98a2b3!important}
+    body.client-mode .toolbar button,body.client-auth-locked .toolbar button{background:var(--brand)!important;color:#fff!important;border:0!important;box-shadow:none!important;border-radius:10px!important}
+    body.client-mode .toolbar button.secondary,body.client-auth-locked .toolbar button.secondary,body.client-mode .event-link-actions button,body.client-mode .event-link-actions a,body.client-mode .share-actions button,body.client-mode .share-actions a,body.client-mode .assistant-actions button{background:#fff!important;color:var(--text)!important;border:1px solid var(--line)!important;box-shadow:none!important}
+    body.client-mode th{background:#f8fafc!important;color:#344054!important;border-color:var(--line)!important}body.client-mode td{border-color:#eef2f7!important}body.client-mode tbody tr:nth-child(even){background:#fcfcff!important}body.client-mode tbody tr:hover{background:#f5f3ff!important}
+    body.client-mode .hall-map{background:#fbfbff!important;border:2px dashed #d0d5dd!important}.client-mode .table-card{background:#fff!important;color:var(--text)!important}.client-mode .guest-chip{background:#f2f4f7!important;color:var(--text)!important;border-color:#e4e7ec!important}.client-mode .guest-chip.unassigned{background:#fff7ed!important;border-color:#fed7aa!important}
+    body.client-mode .assistant-msg.user,body.client-mode .chat-msg.out{background:#ede9fe!important;color:#312e81!important;border:0!important}.client-mode .assistant-msg.bot,.client-mode .chat-msg.in{background:#fff!important;color:var(--text)!important;border:1px solid var(--line)!important}
+    body.client-mode .pill{background:#ede9fe!important;color:#4c1d95!important;border:0!important}.client-mode .money{color:var(--text)!important}
+
   </style>
 </head>
 <body class="admin-locked">
@@ -726,10 +759,15 @@ function applyEventTheme(){
   const template=currentDesignTemplate();
   const color=normalizeBrandColor(eventSettings?.brandColor || template.brand);
   document.documentElement.style.setProperty('--brand', color);
+  document.body.style.setProperty('--client-brand', color);
+  const headerBg=eventSettings?.invitationBackground ? `linear-gradient(135deg, ${template.overlay||'rgba(17,24,39,.82)'}, ${color}cc), url(${eventSettings.invitationBackground}) center/cover` : template.header;
+  const pageBg=eventSettings?.invitationBackground ? `linear-gradient(180deg, rgba(255,255,255,.88), rgba(255,255,255,.94)), url(${eventSettings.invitationBackground}) center/cover fixed` : template.page;
+  document.body.style.setProperty('--client-page-bg', pageBg);
+  document.body.style.setProperty('--client-header-bg', headerBg);
   const header=document.querySelector('header');
-  if(header) header.style.background=eventSettings?.invitationBackground ? `linear-gradient(135deg, ${template.overlay||'rgba(17,24,39,.82)'}, ${color}cc), url(${eventSettings.invitationBackground}) center/cover` : template.header;
+  if(header) header.style.setProperty('background', headerBg, 'important');
   document.body.classList.toggle('client-design-shell', !!eventSettings?.invitationBackground || !!eventSettings?.designTemplate);
-  document.body.style.background=eventSettings?.invitationBackground ? `linear-gradient(180deg, rgba(255,255,255,.88), rgba(255,255,255,.94)), url(${eventSettings.invitationBackground}) center/cover fixed` : template.page;
+  document.body.style.setProperty('background', pageBg, 'important');
 }
 const EVENT_DESIGN_TEMPLATES=[
   {id:'classic-luxury',name:'יוקרה קלאסית',desc:'סגול-זהב נקי ואלגנטי',brand:'#7357ff',header:'linear-gradient(135deg,#4c1d95,#b7791f)',page:'#f7f7fb',overlay:'rgba(76,29,149,.82)'},
