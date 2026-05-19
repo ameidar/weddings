@@ -873,7 +873,8 @@ function renderAdminEventDropdown(list){
   const current=list.find(ev=>ev.id===selectedAdminEventId);
   text.textContent=current ? `${current.name||'אירוע ללא שם'} · ${current.owner||'ללא לקוח'}` : 'בחר אירוע לניהול...';
   if(!list.length){ menu.innerHTML='<div class="custom-ddl-empty">עדיין אין אירועים להצגה</div>'; return; }
-  menu.innerHTML='<div class="custom-ddl-empty" style="text-align:right;font-weight:900;color:var(--orma-gold)">כל האירועים ('+list.length+')</div>'+list.map(ev=>`<button type="button" class="custom-ddl-option ${ev.id===selectedAdminEventId?'active':''}" onclick="chooseAdminEventFromDropdown('${jsArg(ev.id)}')"><b>${escapeHtml(ev.name||'אירוע ללא שם')}</b><small>${escapeHtml(ev.owner||'ללא לקוח')} · ${escapeHtml(ev.date||'ללא תאריך')} · ${escapeHtml(ev.type||'אירוע')}</small></button>`).join('');
+  menu.innerHTML='<div class="custom-ddl-empty" style="text-align:right;font-weight:900;color:var(--orma-gold)">כל האירועים ('+list.length+')</div>'+list.map(ev=>`<button type="button" class="custom-ddl-option ${ev.id===selectedAdminEventId?'active':''}" data-event-id="${escapeHtml(ev.id)}"><b>${escapeHtml(ev.name||'אירוע ללא שם')}</b><small>${escapeHtml(ev.owner||'ללא לקוח')} · ${escapeHtml(ev.date||'ללא תאריך')} · ${escapeHtml(ev.type||'אירוע')}</small></button>`).join('');
+  menu.querySelectorAll('.custom-ddl-option[data-event-id]').forEach(btn=>btn.addEventListener('click',()=>chooseAdminEventFromDropdown(btn.dataset.eventId||'')));
 }
 function closeAdminEventDropdown(){
   const menu=document.getElementById('adminEventDropdownMenu'); const wrap=document.getElementById('adminEventDdl');
@@ -890,10 +891,19 @@ function toggleAdminEventDropdown(){
     menu.classList.remove('hidden'); wrap.classList.add('open');
   }
 }
-function chooseAdminEventFromDropdown(id){ closeAdminEventDropdown(); selectAdminEvent(id); }
+function chooseAdminEventFromDropdown(id){
+  const selector=document.getElementById('adminEventSelector');
+  if(selector) selector.value=id||'';
+  closeAdminEventDropdown();
+  selectAdminEvent(id);
+  showAdminPanel('events');
+  setTimeout(()=>document.getElementById('adminEventsList')?.scrollIntoView({behavior:'smooth',block:'nearest'}),0);
+}
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeAdminEventDropdown(); });
 function selectAdminEvent(id){
   selectedAdminEventId=id||'';
+  const selector=document.getElementById('adminEventSelector');
+  if(selector) selector.value=selectedAdminEventId;
   if(selectedAdminEventId) localStorage.setItem('selected_admin_event_id', selectedAdminEventId); else localStorage.removeItem('selected_admin_event_id');
   renderAdminEvents();
 }
