@@ -167,15 +167,17 @@
     .custom-ddl-button:hover,.custom-ddl.open .custom-ddl-button{border-color:rgba(216,176,122,.46)!important;background:rgba(242,237,232,.09)!important}
     .custom-ddl-arrow{color:var(--orma-gold);font-size:22px;transition:transform .18s ease}.custom-ddl.open .custom-ddl-arrow{transform:rotate(180deg)}
     .custom-ddl-menu{
-      position:absolute;top:calc(100% + 8px);right:0;left:0;max-height:320px;overflow:auto;z-index:9999;
-      background:rgba(15,17,16,.96)!important;border:1px solid rgba(216,176,122,.22)!important;border-radius:20px!important;
-      box-shadow:0 28px 80px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.05)!important;
-      backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);padding:8px!important;
+      position:fixed;top:180px;right:24px;left:24px;max-width:760px;margin:0 auto;max-height:min(68vh,520px);overflow:auto;z-index:2147483000;
+      background:rgba(15,17,16,.98)!important;border:1px solid rgba(216,176,122,.24)!important;border-radius:22px!important;
+      box-shadow:0 34px 120px rgba(0,0,0,.72), inset 0 1px 0 rgba(255,255,255,.06)!important;
+      backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);padding:10px!important;
     }
-    .custom-ddl-option{width:100%;border:0!important;background:transparent!important;color:var(--orma-cream)!important;text-align:right;display:block;padding:13px 14px!important;border-radius:14px!important;cursor:pointer;font-size:16px!important;line-height:1.35!important;box-shadow:none!important}
+    .custom-ddl-option{width:100%;border:0!important;background:transparent!important;color:var(--orma-cream)!important;text-align:right;display:block;padding:15px 16px!important;border-radius:16px!important;cursor:pointer;font-size:16px!important;line-height:1.35!important;box-shadow:none!important}
     .custom-ddl-option:hover,.custom-ddl-option.active{background:rgba(216,176,122,.16)!important;color:#fff!important}
     .custom-ddl-option b{display:block;color:var(--orma-cream);font-size:16px}.custom-ddl-option small{display:block;color:var(--orma-muted);font-size:13px;margin-top:4px}
     .custom-ddl-empty{padding:14px;color:var(--orma-muted);text-align:center}
+    .custom-ddl-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.18);z-index:2147482999}
+    @media(max-width:760px){.custom-ddl-menu{top:120px;right:12px;left:12px;max-height:70vh}}
     .admin-locked .auth-shell.opening-hero:before{
       content:"";position:absolute;inset:0;z-index:-2;
       background:
@@ -871,28 +873,25 @@ function renderAdminEventDropdown(list){
   const current=list.find(ev=>ev.id===selectedAdminEventId);
   text.textContent=current ? `${current.name||'אירוע ללא שם'} · ${current.owner||'ללא לקוח'}` : 'בחר אירוע לניהול...';
   if(!list.length){ menu.innerHTML='<div class="custom-ddl-empty">עדיין אין אירועים להצגה</div>'; return; }
-  menu.innerHTML=list.map(ev=>`<button type="button" class="custom-ddl-option ${ev.id===selectedAdminEventId?'active':''}" onclick="chooseAdminEventFromDropdown('${jsArg(ev.id)}')"><b>${escapeHtml(ev.name||'אירוע ללא שם')}</b><small>${escapeHtml(ev.owner||'ללא לקוח')} · ${escapeHtml(ev.date||'ללא תאריך')} · ${escapeHtml(ev.type||'אירוע')}</small></button>`).join('');
+  menu.innerHTML='<div class="custom-ddl-empty" style="text-align:right;font-weight:900;color:var(--orma-gold)">כל האירועים ('+list.length+')</div>'+list.map(ev=>`<button type="button" class="custom-ddl-option ${ev.id===selectedAdminEventId?'active':''}" onclick="chooseAdminEventFromDropdown('${jsArg(ev.id)}')"><b>${escapeHtml(ev.name||'אירוע ללא שם')}</b><small>${escapeHtml(ev.owner||'ללא לקוח')} · ${escapeHtml(ev.date||'ללא תאריך')} · ${escapeHtml(ev.type||'אירוע')}</small></button>`).join('');
+}
+function closeAdminEventDropdown(){
+  const menu=document.getElementById('adminEventDropdownMenu'); const wrap=document.getElementById('adminEventDdl');
+  if(menu) menu.classList.add('hidden'); if(wrap) wrap.classList.remove('open');
+  document.getElementById('adminEventDropdownBackdrop')?.remove();
 }
 function toggleAdminEventDropdown(){
   const wrap=document.getElementById('adminEventDdl'); const menu=document.getElementById('adminEventDropdownMenu');
   if(!wrap||!menu) return;
   const open=menu.classList.contains('hidden');
-  document.querySelectorAll('.custom-ddl-menu').forEach(el=>el.classList.add('hidden'));
-  document.querySelectorAll('.custom-ddl').forEach(el=>el.classList.remove('open'));
-  if(open){ menu.classList.remove('hidden'); wrap.classList.add('open'); }
-}
-function chooseAdminEventFromDropdown(id){
-  const menu=document.getElementById('adminEventDropdownMenu'); const wrap=document.getElementById('adminEventDdl');
-  if(menu) menu.classList.add('hidden'); if(wrap) wrap.classList.remove('open');
-  selectAdminEvent(id);
-}
-document.addEventListener('click',e=>{
-  const wrap=document.getElementById('adminEventDdl');
-  if(wrap && !wrap.contains(e.target)){
-    const menu=document.getElementById('adminEventDropdownMenu');
-    if(menu) menu.classList.add('hidden'); wrap.classList.remove('open');
+  closeAdminEventDropdown();
+  if(open){
+    const backdrop=document.createElement('div'); backdrop.id='adminEventDropdownBackdrop'; backdrop.className='custom-ddl-backdrop'; backdrop.onclick=closeAdminEventDropdown; document.body.appendChild(backdrop);
+    menu.classList.remove('hidden'); wrap.classList.add('open');
   }
-});
+}
+function chooseAdminEventFromDropdown(id){ closeAdminEventDropdown(); selectAdminEvent(id); }
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeAdminEventDropdown(); });
 function selectAdminEvent(id){
   selectedAdminEventId=id||'';
   if(selectedAdminEventId) localStorage.setItem('selected_admin_event_id', selectedAdminEventId); else localStorage.removeItem('selected_admin_event_id');
