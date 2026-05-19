@@ -154,6 +154,28 @@
       position:relative;
       isolation:isolate;
     }
+
+    .native-select-hidden{position:absolute!important;opacity:0!important;pointer-events:none!important;width:1px!important;height:1px!important;overflow:hidden!important}
+    .custom-ddl{position:relative;width:100%;z-index:30}
+    .custom-ddl-button{
+      width:100%;min-height:58px;border-radius:18px!important;padding:0 18px!important;
+      display:flex;align-items:center;justify-content:space-between;gap:14px;text-align:right;cursor:pointer;
+      background:rgba(242,237,232,.065)!important;color:var(--orma-cream)!important;
+      border:1px solid rgba(216,176,122,.20)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.04)!important;
+      font-size:18px!important;font-weight:850!important;
+    }
+    .custom-ddl-button:hover,.custom-ddl.open .custom-ddl-button{border-color:rgba(216,176,122,.46)!important;background:rgba(242,237,232,.09)!important}
+    .custom-ddl-arrow{color:var(--orma-gold);font-size:22px;transition:transform .18s ease}.custom-ddl.open .custom-ddl-arrow{transform:rotate(180deg)}
+    .custom-ddl-menu{
+      position:absolute;top:calc(100% + 8px);right:0;left:0;max-height:320px;overflow:auto;z-index:9999;
+      background:rgba(15,17,16,.96)!important;border:1px solid rgba(216,176,122,.22)!important;border-radius:20px!important;
+      box-shadow:0 28px 80px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.05)!important;
+      backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);padding:8px!important;
+    }
+    .custom-ddl-option{width:100%;border:0!important;background:transparent!important;color:var(--orma-cream)!important;text-align:right;display:block;padding:13px 14px!important;border-radius:14px!important;cursor:pointer;font-size:16px!important;line-height:1.35!important;box-shadow:none!important}
+    .custom-ddl-option:hover,.custom-ddl-option.active{background:rgba(216,176,122,.16)!important;color:#fff!important}
+    .custom-ddl-option b{display:block;color:var(--orma-cream);font-size:16px}.custom-ddl-option small{display:block;color:var(--orma-muted);font-size:13px;margin-top:4px}
+    .custom-ddl-empty{padding:14px;color:var(--orma-muted);text-align:center}
     .admin-locked .auth-shell.opening-hero:before{
       content:"";position:absolute;inset:0;z-index:-2;
       background:
@@ -294,8 +316,14 @@
         <div class="toolbar" style="margin:0"><button onclick="showAdminPanel('create')">צור אירוע חדש</button><button class="secondary" onclick="adminExportEvents()">ייצוא רשימה</button></div>
       </div>
       <div class="event-picker-card">
-        <label for="adminEventSelector">בחר אירוע / לקוח</label>
-        <select id="adminEventSelector" onchange="selectAdminEvent(this.value)"><option value="">בחר אירוע לניהול...</option></select>
+        <label for="adminEventSelectorButton">בחר אירוע / לקוח</label>
+        <select id="adminEventSelector" class="native-select-hidden" onchange="selectAdminEvent(this.value)" aria-hidden="true"><option value="">בחר אירוע לניהול...</option></select>
+        <div class="custom-ddl" id="adminEventDdl">
+          <button type="button" id="adminEventSelectorButton" class="custom-ddl-button" onclick="toggleAdminEventDropdown()">
+            <span id="adminEventSelectorText">בחר אירוע לניהול...</span><span class="custom-ddl-arrow">⌄</span>
+          </button>
+          <div id="adminEventDropdownMenu" class="custom-ddl-menu hidden"></div>
+        </div>
       </div>
       <div id="adminEventsList" class="admin-event-list hidden"></div>
     </div>
@@ -792,10 +820,41 @@ function renderAdminEvents(){
     selector.innerHTML='<option value="">בחר אירוע לניהול...</option>'+list.map(ev=>`<option value="${ev.id}">${escapeHtml(ev.name||'אירוע ללא שם')} · ${escapeHtml(ev.owner||'ללא לקוח')} · ${escapeHtml(ev.date||'ללא תאריך')}</option>`).join('');
     selector.value=current;
   }
+  renderAdminEventDropdown(list);
   if(!list.length){ box.innerHTML='<div class="selected-event-empty">עדיין לא נוצרו אירועים. לחץ על “צור אירוע חדש”.</div>'; return; }
   const ev=list.find(x=>x.id===selectedAdminEventId);
   box.innerHTML=ev ? adminEventCardHtml(ev) : '<div class="selected-event-empty">בחר אירוע מהרשימה כדי לראות את הנתונים והפעולות שלו.</div>';
 }
+function renderAdminEventDropdown(list){
+  const wrap=document.getElementById('adminEventDdl');
+  const menu=document.getElementById('adminEventDropdownMenu');
+  const text=document.getElementById('adminEventSelectorText');
+  if(!wrap||!menu||!text) return;
+  const current=list.find(ev=>ev.id===selectedAdminEventId);
+  text.textContent=current ? `${current.name||'אירוע ללא שם'} · ${current.owner||'ללא לקוח'}` : 'בחר אירוע לניהול...';
+  if(!list.length){ menu.innerHTML='<div class="custom-ddl-empty">עדיין אין אירועים להצגה</div>'; return; }
+  menu.innerHTML=list.map(ev=>`<button type="button" class="custom-ddl-option ${ev.id===selectedAdminEventId?'active':''}" onclick="chooseAdminEventFromDropdown('${jsArg(ev.id)}')"><b>${escapeHtml(ev.name||'אירוע ללא שם')}</b><small>${escapeHtml(ev.owner||'ללא לקוח')} · ${escapeHtml(ev.date||'ללא תאריך')} · ${escapeHtml(ev.type||'אירוע')}</small></button>`).join('');
+}
+function toggleAdminEventDropdown(){
+  const wrap=document.getElementById('adminEventDdl'); const menu=document.getElementById('adminEventDropdownMenu');
+  if(!wrap||!menu) return;
+  const open=menu.classList.contains('hidden');
+  document.querySelectorAll('.custom-ddl-menu').forEach(el=>el.classList.add('hidden'));
+  document.querySelectorAll('.custom-ddl').forEach(el=>el.classList.remove('open'));
+  if(open){ menu.classList.remove('hidden'); wrap.classList.add('open'); }
+}
+function chooseAdminEventFromDropdown(id){
+  const menu=document.getElementById('adminEventDropdownMenu'); const wrap=document.getElementById('adminEventDdl');
+  if(menu) menu.classList.add('hidden'); if(wrap) wrap.classList.remove('open');
+  selectAdminEvent(id);
+}
+document.addEventListener('click',e=>{
+  const wrap=document.getElementById('adminEventDdl');
+  if(wrap && !wrap.contains(e.target)){
+    const menu=document.getElementById('adminEventDropdownMenu');
+    if(menu) menu.classList.add('hidden'); wrap.classList.remove('open');
+  }
+});
 function selectAdminEvent(id){
   selectedAdminEventId=id||'';
   if(selectedAdminEventId) localStorage.setItem('selected_admin_event_id', selectedAdminEventId); else localStorage.removeItem('selected_admin_event_id');
