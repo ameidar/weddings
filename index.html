@@ -176,7 +176,6 @@
     .custom-ddl-option:hover,.custom-ddl-option.active{background:rgba(216,176,122,.16)!important;color:#fff!important}
     .custom-ddl-option b{display:block;color:var(--orma-cream);font-size:16px}.custom-ddl-option small{display:block;color:var(--orma-muted);font-size:13px;margin-top:4px}
     .custom-ddl-empty{padding:14px;color:var(--orma-muted);text-align:center}
-    .custom-ddl-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.18);z-index:2147482999}
     @media(max-width:760px){.custom-ddl-menu{top:120px;right:12px;left:12px;max-height:70vh}}
     .admin-locked .auth-shell.opening-hero:before{
       content:"";position:absolute;inset:0;z-index:-2;
@@ -874,31 +873,39 @@ function renderAdminEventDropdown(list){
   text.textContent=current ? `${current.name||'אירוע ללא שם'} · ${current.owner||'ללא לקוח'}` : 'בחר אירוע לניהול...';
   if(!list.length){ menu.innerHTML='<div class="custom-ddl-empty">עדיין אין אירועים להצגה</div>'; return; }
   menu.innerHTML='<div class="custom-ddl-empty" style="text-align:right;font-weight:900;color:var(--orma-gold)">כל האירועים ('+list.length+')</div>'+list.map(ev=>`<button type="button" class="custom-ddl-option ${ev.id===selectedAdminEventId?'active':''}" data-event-id="${escapeHtml(ev.id)}"><b>${escapeHtml(ev.name||'אירוע ללא שם')}</b><small>${escapeHtml(ev.owner||'ללא לקוח')} · ${escapeHtml(ev.date||'ללא תאריך')} · ${escapeHtml(ev.type||'אירוע')}</small></button>`).join('');
-  menu.querySelectorAll('.custom-ddl-option[data-event-id]').forEach(btn=>btn.addEventListener('click',()=>chooseAdminEventFromDropdown(btn.dataset.eventId||'')));
+  menu.querySelectorAll('.custom-ddl-option[data-event-id]').forEach(btn=>{
+    const pick=()=>chooseAdminEventFromDropdown(btn.dataset.eventId||'');
+    btn.addEventListener('pointerdown',e=>{ e.preventDefault(); pick(); });
+    btn.addEventListener('click',e=>{ e.preventDefault(); pick(); });
+  });
 }
 function closeAdminEventDropdown(){
   const menu=document.getElementById('adminEventDropdownMenu'); const wrap=document.getElementById('adminEventDdl');
   if(menu) menu.classList.add('hidden'); if(wrap) wrap.classList.remove('open');
-  document.getElementById('adminEventDropdownBackdrop')?.remove();
 }
 function toggleAdminEventDropdown(){
   const wrap=document.getElementById('adminEventDdl'); const menu=document.getElementById('adminEventDropdownMenu');
   if(!wrap||!menu) return;
   const open=menu.classList.contains('hidden');
   closeAdminEventDropdown();
-  if(open){
-    const backdrop=document.createElement('div'); backdrop.id='adminEventDropdownBackdrop'; backdrop.className='custom-ddl-backdrop'; backdrop.onclick=closeAdminEventDropdown; document.body.appendChild(backdrop);
-    menu.classList.remove('hidden'); wrap.classList.add('open');
-  }
+  if(open){ menu.classList.remove('hidden'); wrap.classList.add('open'); }
 }
 function chooseAdminEventFromDropdown(id){
+  if(!id) return;
+  selectedAdminEventId=id;
   const selector=document.getElementById('adminEventSelector');
-  if(selector) selector.value=id||'';
+  if(selector) selector.value=id;
+  localStorage.setItem('selected_admin_event_id', id);
   closeAdminEventDropdown();
-  selectAdminEvent(id);
+  renderAdminEvents();
   showAdminPanel('events');
-  setTimeout(()=>document.getElementById('adminEventsList')?.scrollIntoView({behavior:'smooth',block:'nearest'}),0);
+  const selectedCard=document.getElementById('adminEventsList');
+  if(selectedCard) selectedCard.scrollIntoView({behavior:'smooth',block:'start'});
 }
+document.addEventListener('click',e=>{
+  const wrap=document.getElementById('adminEventDdl'); const menu=document.getElementById('adminEventDropdownMenu');
+  if(menu && !menu.classList.contains('hidden') && wrap && !wrap.contains(e.target) && !menu.contains(e.target)) closeAdminEventDropdown();
+});
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeAdminEventDropdown(); });
 function selectAdminEvent(id){
   selectedAdminEventId=id||'';
