@@ -1574,7 +1574,7 @@ function fillPaymentTemplatePreview(force=false){
   box.value=renderPaymentMessageTemplate(tpl,{payerName:name,amount,description,paymentLink});
 }
 function renderPaymentMessageTemplate(tpl,p){
-  const link=p.paymentLink||'[כאן יופיע לינק התשלום מ-Morning / משולם]';
+  const link=p.shortPaymentLink||p.paymentLink||'[כאן יופיע לינק התשלום מ-Morning / משולם]';
   return String(tpl||PAYMENT_MESSAGE_TEMPLATES.warm)
     .replaceAll('{name}',p.payerName||'יקר/ה')
     .replaceAll('{eventName}',eventSettings.name||'האירוע')
@@ -1613,7 +1613,7 @@ async function generatePaymentChoiceLink(id){
     const res=await fetch('/api/payment-choice-link',{method:'POST',headers:{'content-type':'application/json',...eventAccessHeaders()},body:JSON.stringify({eventId:currentEventId(),paymentId:p.id})});
     const data=await res.json().catch(()=>({}));
     if(!res.ok||!data.ok) throw new Error(data.error||'יצירת דף בחירת סכום נכשלה');
-    p.paymentLink=data.url; p.provider='morning'; p.providerStatus='gift_amount_choice_ready'; p.updatedAt=new Date().toISOString();
+    p.paymentLink=data.url; p.shortPaymentLink=data.url; if(data.longUrl) p.longPaymentLink=data.longUrl; p.provider='morning'; p.providerStatus='gift_amount_choice_ready'; p.updatedAt=new Date().toISOString();
     const tpl=PAYMENT_MESSAGE_TEMPLATES[p.messageTemplate||'warm']||PAYMENT_MESSAGE_TEMPLATES.warm;
     p.customMessage=renderPaymentMessageTemplate(tpl,p); savePayments();
     if(status){ status.textContent='דף בחירת סכום מתנה נוצר ונשמר בבקשת התשלום ✅'; status.className='status ok-text'; }
@@ -1647,7 +1647,8 @@ function paymentRequestTitle(p){
   return Number(p.amount)>0 ? 'בקשת תשלום כללית' : 'בקשת מתנה פתוחה';
 }
 function paymentLinkTypeLabel(p){
-  if(p.paymentLink && p.providerStatus==='gift_amount_choice_ready') return 'דף בחירת סכום מוכן לשליחה';
+  if(p.shortPaymentLink) return 'דף בחירת סכום מוכן לשליחה — לינק קצר';
+  if(p.paymentLink && p.providerStatus==='gift_amount_choice_ready') return p.paymentLink.includes('/pay?t=') ? 'דף בחירת סכום מוכן — מומלץ לקצר לינק' : 'דף בחירת סכום מוכן לשליחה';
   if(p.paymentLink) return 'לינק תשלום מוכן לשליחה';
   if(p.method==='morning-link' && Number(p.amount)>0) return 'צריך ליצור לינק Morning';
   if(p.method==='morning-link') return 'צריך ליצור דף בחירת סכום';
@@ -1662,7 +1663,8 @@ function paymentNextStepLabel(p){
 }
 function paymentActionsHtml(p){
   if(p.direction==='out') return `<button onclick="markPayoutPaid('${p.id}')">סמן תשלום לספק כבוצע</button>`;
-  const createBtn=!p.paymentLink&&p.method==='morning-link' ? (Number(p.amount)>0 ? `<button onclick="generateMorningPaymentLink('${p.id}')">צור לינק Morning</button>` : `<button onclick="generatePaymentChoiceLink('${p.id}')">צור דף מתנה</button>`) : '';
+  const isGift=p.method==='morning-link' && Number(p.amount)<=0;
+  const createBtn=p.method==='morning-link' ? (isGift ? `<button onclick="generatePaymentChoiceLink('${p.id}')">${p.paymentLink?'קצר/חדש דף מתנה':'צור דף מתנה'}</button>` : (!p.paymentLink?`<button onclick="generateMorningPaymentLink('${p.id}')">צור לינק Morning</button>`:'')) : '';
   return `${createBtn}<button onclick="copyPaymentMessage('${p.id}')">העתק הודעה לשליחה</button><button onclick="openPaymentWhatsApp('${p.id}')">שלח/פתח וואטסאפ</button><button onclick="markPaymentPaid('${p.id}')">סמן שהתקבל תשלום</button><button onclick="cancelPaymentRequest('${p.id}')">בטל בקשה</button>`;
 }
 function paymentReminderMessage(p){
