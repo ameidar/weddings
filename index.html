@@ -613,8 +613,81 @@ let eventAssistantHistory = [];
 let syncTimer = null;
 let suppressSync = false;
 const OPAL_WIDGET_SCRIPT_ID = 'opal-system-widget-script';
+function summarizeParticipantsForOpal(participants){
+  const list=Array.isArray(participants)?participants:[];
+  const partySize=g=>Math.max(0,Number(g?.['כמות מוזמנים']||g?.['כמות מגיעים']||1)||1);
+  const byStatus=list.reduce((acc,g)=>{ const s=String(g?.['סטטוס אישור השתתפות']||'טרם נענה'); acc[s]=(acc[s]||0)+partySize(g); return acc; },{});
+  return {רשומות:list.length,סהכ_אנשים:list.reduce((s,g)=>s+partySize(g),0),אישרו:byStatus['אישר']||0,לא_מגיעים:byStatus['לא מגיע']||0,טרם_נענו:byStatus['טרם נענה']||0};
+}
+function summarizeSelectedEventLocalStateForOpal(eventId){
+  const readJson=(key,fallback)=>{ try{return JSON.parse(localStorage.getItem(key)||'')||fallback;}catch(e){return fallback;} };
+  const suffix=eventId?`_${eventId}`:'';
+  return {
+    participants:readJson(`dynamic_event_participants_v1${suffix}`,[]),
+    hall:readJson(`dynamic_event_hall_v1${suffix}`,{}),
+    vendors:readJson(`dynamic_event_vendors_v1${suffix}`,[]),
+    walletTx:readJson(`dynamic_event_wallet_v1${suffix}`,[])
+  };
+}
+function eventSummaryForOpal(ev){
+  if(!ev) return null;
+  return {id:ev.id,name:ev.name,type:ev.type,owner:ev.owner,clientEmail:ev.clientEmail,clientPhone:ev.clientPhone,date:ev.date,venue:ev.venue,expected:Number(ev.expected)||0,modules:ev.modules,updatedAt:ev.updatedAt||ev.createdAt||''};
+}
+async function buildOpalLiveContext(){
+  const events=loadAdminEvents().map(eventSummaryForOpal).filter(Boolean);
+  const selected=events.find(ev=>ev.id===selectedAdminEventId)||null;
+  let state=selected ? summarizeSelectedEventLocalStateForOpal(selected.id) : {participants:[],hall:{},vendors:[],walletTx:[]};
+  if(selected?.id && currentAdminToken){
+    try{
+      const f=window.__opalOriginalFetch||window.fetch.bind(window);
+      const res=await f('/api/event-state?eventId='+encodeURIComponent(selected.id),{headers:authHeaders()});
+      const data=await res.json().catch(()=>({}));
+      if(res.ok && data.ok && data.state) state={...state,...data.state};
+    }catch(e){}
+  }
+  const hall=state.hall||{};
+  const tables=Array.isArray(hall.tables)?hall.tables:[];
+  const vendors=Array.isArray(state.vendors)?state.vendors:[];
+  const walletTx=Array.isArray(state.walletTx)?state.walletTx:[];
+  const context={
+    source:'live-admin-dashboard-context',
+    note:'זהו Context חי שנוסף אוטומטית מהמערכת בזמן השאלה. אל תחשוף סיסמאות או טוקנים. אם נדרשת פעולה רגישה/שליחה/מחיקה/שינוי כספי — בקש אישור מפורש.',
+    currentPage:document.querySelector('.page-section.active')?.dataset?.page||'',
+    eventsCount:events.length,
+    events:events.slice(0,25),
+    selectedEvent:selected,
+    selectedEventStats:selected?{
+      participants:summarizeParticipantsForOpal(state.participants),
+      tables:{count:tables.length,totalCapacity:tables.reduce((s,t)=>s+(Number(t.capacity)||0),0)},
+      vendors:{count:vendors.length,totalAgreed:vendors.reduce((s,v)=>s+(Number(v.amount)||Number(v.agreedAmount)||0),0)},
+      wallet:{transactions:walletTx.length,balance:walletTx.reduce((s,t)=>s+(t.type==='expense'?-1:1)*(Number(t.amount)||0),0)}
+    }:null
+  };
+  return JSON.stringify(context).slice(0,7000);
+}
+function installOpalLiveContextBridge(){
+  if(window.__opalLiveContextBridgeInstalled) return;
+  window.__opalLiveContextBridgeInstalled=true;
+  window.__opalOriginalFetch=window.__opalOriginalFetch||window.fetch.bind(window);
+  window.fetch=async function(input,init){
+    const url=typeof input==='string'?input:(input?.url||'');
+    const isOpalChat=url.includes('/api/embed/agent-mp6tgr93/chat');
+    if(isOpalChat && init?.body){
+      try{
+        const body=JSON.parse(init.body);
+        if(body?.message && !String(body.message).includes('[[LIVE_EVENT_CONTEXT]]')){
+          const context=await buildOpalLiveContext();
+          body.message=`[[LIVE_EVENT_CONTEXT]]\n${context}\n[[END_LIVE_EVENT_CONTEXT]]\n\nשאלת האדמין:\n${body.message}`;
+          init={...init,body:JSON.stringify(body)};
+        }
+      }catch(e){}
+    }
+    return window.__opalOriginalFetch(input,init);
+  };
+}
 function loadOpalSystemWidget(){
   if(isClientUrl() || document.getElementById(OPAL_WIDGET_SCRIPT_ID)) return;
+  installOpalLiveContextBridge();
   const script=document.createElement('script');
   script.id=OPAL_WIDGET_SCRIPT_ID;
   script.src='https://opal.hai.tech/embed/widget.js';
