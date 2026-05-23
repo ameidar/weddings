@@ -273,7 +273,7 @@
   <div class="opening-copy">
     <div class="opening-eyebrow">✦ HAI TECH EVENTS</div>
     <h1>כל אירוע.<br>כל אורח.<br><em>כל פרט במקום אחד.</em></h1>
-    <p>מערכת חכמה לניהול אירועים שמחברת בין מוזמנים, וואטסאפ, סידורי שולחן, ספקים, תשלומים ועוזר AI אישי — בחוויה אלגנטית שמרגישה כמו האירוע עצמו.</p>
+    <p>מערכת חכמה לניהול אירועים שמחברת בין מוזמנים, וואטסאפ, סידורי שולחן, ספקים, תשלומים וסוכן Opal מובנה — בחוויה אלגנטית שמרגישה כמו האירוע עצמו.</p>
     <div class="opening-actions">
       <span>ניהול מוזמנים</span><span>סידור שולחנות</span><span>וואטסאפ</span><span>ספקים וארנק</span>
     </div>
@@ -332,22 +332,6 @@
         <button onclick="updateClientExpectedCount()">עדכן מספר משתתפים</button>
       </div>
       <div class="note">אפשר לשנות רק את מספר המשתתפים. פרטי האירוע כמו תאריך ואולם נשארים נעולים לעריכה ע״י האדמין.</div>
-    </div>
-    <div class="card client-only event-assistant-card">
-      <h3 id="eventAssistantTitle" style="margin:0 0 8px;font-size:24px">עוזר אירוע אישי</h3>
-      <div class="note">העוזר האישי מותאם לאירוע שאליו התחברת בלבד. המטרה שלו היא להקל עליך, לעשות סדר ולהוביל את האירוע להצלחה — במוזמנים, אישורי הגעה, שולחנות, ספקים, הודעות, תשלומים ומשימות. אפשר גם לתת לו שם, למשל: “תקרא לך ליאו”.</div>
-      <div class="assistant-actions">
-        <button onclick="askEventAssistantQuick('כמה אישרו הגעה?')">כמה אישרו?</button>
-        <button onclick="askEventAssistantQuick('מי עדיין לא אישר הגעה?')">מי לא ענה?</button>
-        <button onclick="askEventAssistantQuick('מה מצב האירוע?')">סיכום מצב</button>
-        <button onclick="askEventAssistantQuick('מה המשימות שנשארו עד האירוע?')">משימות</button>
-        <button onclick="askEventAssistantQuick('מה אתה יכול לעשות בשבילי?')">מה אפשר לבקש?</button>
-      </div>
-      <div id="eventAssistantChat" class="assistant-chat"><div class="assistant-msg bot" id="eventAssistantWelcome">היי, אני עוזר האירוע האישי. שאל אותי למשל: כמה אישרו הגעה?</div></div>
-      <div class="toolbar" style="margin-bottom:0">
-        <input id="eventAssistantInput" placeholder="כתוב שאלה או פעולה, למשל: תקרא לך ליאו / מה נשאר לי עד האירוע?" onkeydown="if(event.key==='Enter') askEventAssistant()" style="flex:1;min-width:260px" />
-        <button onclick="askEventAssistant()">שלח</button>
-      </div>
     </div>
   </section>
 
@@ -628,6 +612,18 @@ let currentClientToken = '';
 let eventAssistantHistory = [];
 let syncTimer = null;
 let suppressSync = false;
+const OPAL_WIDGET_SCRIPT_ID = 'opal-system-widget-script';
+function loadOpalSystemWidget(){
+  if(isClientUrl() || document.getElementById(OPAL_WIDGET_SCRIPT_ID)) return;
+  const script=document.createElement('script');
+  script.id=OPAL_WIDGET_SCRIPT_ID;
+  script.src='https://opal.hai.tech/embed/widget.js';
+  script.dataset.opalAgent='agent-mp6tgr93';
+  script.dataset.opalKey='pub_mUM0rdLAa-1lLWBQkVIZOn6Q';
+  script.dataset.opalLanguage='he';
+  script.async=true;
+  document.body.appendChild(script);
+}
 
 function showPage(page){
   if(document.body.classList.contains('client-mode') && (page==='event' || page==='admin')) page='overview';
@@ -761,6 +757,7 @@ async function enterAdminMode(){
   document.body.classList.remove('admin-locked','client-mode'); document.body.classList.add('admin-landing');
   document.querySelector('header h1').textContent='דשבורד אדמין ראשי';
   document.querySelector('header p').textContent='יצירת אירועים, הפקת משתמש וסיסמה ללקוח, וצפייה בכל הפעילות במקום אחד';
+  loadOpalSystemWidget();
   await fetchAdminEvents(); showPage('admin');
 }
 async function checkAdminSession(){
@@ -1125,7 +1122,7 @@ async function clientLogin(){
   catch(e){ const ev=loadAdminEvents().find(x=>x.id===id); const localUser=ev ? eventLoginUsers(ev).find(u=>u.username===username && u.password===password) : null; if(ev && localUser){ sessionStorage.setItem('client_event_access_'+id,'1'); await enterClientMode(ev); } else { status.textContent=e.message; status.className='status bad-text'; } }
 }
 function clientLogout(){ const id=currentEventId()||eventSlug(); if(id){ sessionStorage.removeItem(CLIENT_SESSION_PREFIX+id); sessionStorage.removeItem('client_event_access_'+id); } currentClientToken=''; document.body.classList.remove('client-mode'); document.body.classList.add('client-auth-locked'); const pass=document.getElementById('clientPassword'); if(pass) pass.value=''; showPage('client-login'); }
-async function enterClientMode(ev){ document.body.classList.remove('admin-landing','admin-locked','client-auth-locked'); document.body.classList.add('client-mode'); applyAdminEventToWorkspace(ev); await loadRemoteEventState(); await loadPendingParticipants(); await loadEventAssistantHistory(); fillEventSettings(); render(); renderHall(); renderVendors(); renderWallet(); updateVendorStats(); renderWhatsAppGuests(); updateEventAssistantUi(); renderEventAssistantHistory(); showPage('overview'); document.querySelectorAll('.nav-btn.admin-only').forEach(e=>e.remove()); scheduleEventStateSync(); }
+async function enterClientMode(ev){ document.body.classList.remove('admin-landing','admin-locked','client-auth-locked'); document.body.classList.add('client-mode'); applyAdminEventToWorkspace(ev); await loadRemoteEventState(); await loadPendingParticipants(); fillEventSettings(); render(); renderHall(); renderVendors(); renderWallet(); updateVendorStats(); renderWhatsAppGuests(); showPage('overview'); document.querySelectorAll('.nav-btn.admin-only').forEach(e=>e.remove()); scheduleEventStateSync(); }
 async function bootMode(){
   setupAdminDateMin();
   renderCreateColorPalette();
