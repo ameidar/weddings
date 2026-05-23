@@ -316,6 +316,7 @@
     <button class="nav-btn" data-target="guests" onclick="showPage('guests')">👥 משתתפים</button>
     <button class="nav-btn" data-target="whatsapp" onclick="showPage('whatsapp')">💬 וואטסאפ</button>
     <button class="nav-btn" data-target="seating" onclick="showPage('seating')">🪑 שולחנות ומפה</button>
+    <button class="nav-btn" data-target="payments" onclick="showPage('payments')">💳 תשלומים וארנק</button>
     <button class="nav-btn" data-target="vendors" onclick="showPage('vendors')">🤝 ספקים וארנק</button>
     <button class="nav-btn client-only" onclick="clientLogout()">🚪 יציאה</button>
   </aside>
@@ -532,6 +533,54 @@ imma, 123456, אמא"></textarea><small>כל משתמש כאן יוכל להיכ
   </section>
 
 
+  <section class="card page-section" data-page="payments" style="margin-top:14px">
+    <h2 style="margin:0 0 10px;font-size:24px">תשלומים, לינקים וארנק אירוע</h2>
+    <div class="note">מודול עבודה למשולם / Grow: כרגע אפשר לנהל בקשות תשלום, סטטוסים, ארנק ותשלומים לספקים. לאחר קבלת פרטי ה־API נחבר יצירת לינק אמיתי, Webhook ועדכון אוטומטי.</div>
+    <section class="grid" style="grid-template-columns:repeat(4,minmax(140px,1fr));margin:12px 0">
+      <div class="card"><div class="stat" id="paymentWalletBalance">₪0</div><div class="label">יתרת ארנק אירוע</div></div>
+      <div class="card"><div class="stat" id="paymentPendingTotal">₪0</div><div class="label">בקשות ממתינות</div></div>
+      <div class="card"><div class="stat" id="paymentPaidTotal">₪0</div><div class="label">תשלומים שהתקבלו</div></div>
+      <div class="card"><div class="stat" id="paymentPayoutTotal">₪0</div><div class="label">תשלומים לספקים</div></div>
+    </section>
+    <div class="vendor-grid">
+      <div>
+        <h3 style="margin:0 0 8px;font-size:18px">יצירת בקשת תשלום</h3>
+        <div class="form-grid">
+          <input id="paymentPayerName" placeholder="שם משלם / לקוח" />
+          <input id="paymentPayerPhone" placeholder="טלפון וואטסאפ" />
+          <input id="paymentPayerEmail" type="email" placeholder="אימייל" />
+          <input id="paymentAmount" type="number" min="1" placeholder="סכום לתשלום" />
+          <input class="full" id="paymentDescription" placeholder="תיאור התשלום, לדוגמה: מקדמה לאירוע / תשלום אורח" />
+          <select id="paymentMethod"><option value="grow-link">לינק משולם / Grow</option><option value="manual-bank">העברה ידנית / בנקאית</option><option value="cash">מזומן</option></select>
+          <select id="paymentNotify"><option value="whatsapp">הכנת הודעת וואטסאפ</option><option value="email">הכנת מייל</option><option value="none">ללא הודעה</option></select>
+          <button onclick="createPaymentRequest()">צור בקשת תשלום</button>
+        </div>
+        <div id="paymentCreateStatus" class="status"></div>
+        <h3 style="margin:18px 0 8px;font-size:18px">בקשות תשלום</h3>
+        <div id="paymentRequestsList" class="vendor-list"></div>
+      </div>
+      <div>
+        <h3 style="margin:0 0 8px;font-size:18px">פעילות ארנק ותשלומים החוצה</h3>
+        <div class="note">תשלומים החוצה מסומנים כרגע כרישום תפעולי/בקשת תשלום. העברה אמיתית תופעל רק אחרי שנחבר יכולת payouts מאושרת במשולם ונוסיף אישור מפורש.</div>
+        <div class="form-grid">
+          <select id="payoutVendorSelect"><option value="">בחר ספק / יעד</option></select>
+          <input id="payoutAmount" type="number" min="1" placeholder="סכום לתשלום" />
+          <input class="full" id="payoutNote" placeholder="הערה / מטרת התשלום" />
+          <button onclick="createPayoutRequest()">רשום בקשת תשלום לספק</button>
+        </div>
+        <div id="payoutStatus" class="status"></div>
+        <h3 style="margin:18px 0 8px;font-size:18px">תנועות ארנק אחרונות</h3>
+        <div id="paymentWalletTxList" style="max-height:240px;overflow:auto"></div>
+        <h3 style="margin:18px 0 8px;font-size:18px">סטטוס חיבור משולם</h3>
+        <div class="client-detail-grid">
+          <div class="client-detail"><span class="label">מצב API</span><br><b id="growApiStatus">ממתין לפרטי חיבור</b></div>
+          <div class="client-detail"><span class="label">Webhook</span><br><b>/api/meshulam/webhook</b></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
   <section class="card page-section" data-page="vendors" style="margin-top:14px">
     <h2 style="margin:0 0 10px;font-size:20px">ניהול ספקים, חוזים וארנק אירוע</h2>
     <section class="grid" style="grid-template-columns:repeat(4,minmax(140px,1fr));margin-bottom:12px">
@@ -626,7 +675,8 @@ function summarizeSelectedEventLocalStateForOpal(eventId){
     participants:readJson(`dynamic_event_participants_v1${suffix}`,[]),
     hall:readJson(`dynamic_event_hall_v1${suffix}`,{}),
     vendors:readJson(`dynamic_event_vendors_v1${suffix}`,[]),
-    walletTx:readJson(`dynamic_event_wallet_v1${suffix}`,[])
+    walletTx:readJson(`dynamic_event_wallet_v1${suffix}`,[]),
+    payments:readJson(`dynamic_event_payments_v1${suffix}`,[])
   };
 }
 function eventSummaryForOpal(ev){
@@ -636,7 +686,7 @@ function eventSummaryForOpal(ev){
 async function buildOpalLiveContext(){
   const events=loadAdminEvents().map(eventSummaryForOpal).filter(Boolean);
   const selected=events.find(ev=>ev.id===selectedAdminEventId)||null;
-  let state=selected ? summarizeSelectedEventLocalStateForOpal(selected.id) : {participants:[],hall:{},vendors:[],walletTx:[]};
+  let state=selected ? summarizeSelectedEventLocalStateForOpal(selected.id) : {participants:[],hall:{},vendors:[],walletTx:[],payments:[]};
   if(selected?.id && currentAdminToken){
     try{
       const f=window.__opalOriginalFetch||window.fetch.bind(window);
@@ -649,6 +699,7 @@ async function buildOpalLiveContext(){
   const tables=Array.isArray(hall.tables)?hall.tables:[];
   const vendors=Array.isArray(state.vendors)?state.vendors:[];
   const walletTx=Array.isArray(state.walletTx)?state.walletTx:[];
+  const payments=Array.isArray(state.payments)?state.payments:[];
   const context={
     source:'live-admin-dashboard-context',
     note:'זהו Context חי שנוסף אוטומטית מהמערכת בזמן השאלה. אל תחשוף סיסמאות או טוקנים. אם נדרשת פעולה רגישה/שליחה/מחיקה/שינוי כספי — בקש אישור מפורש.',
@@ -660,7 +711,8 @@ async function buildOpalLiveContext(){
       participants:summarizeParticipantsForOpal(state.participants),
       tables:{count:tables.length,totalCapacity:tables.reduce((s,t)=>s+(Number(t.capacity)||0),0)},
       vendors:{count:vendors.length,totalAgreed:vendors.reduce((s,v)=>s+(Number(v.amount)||Number(v.agreedAmount)||0),0)},
-      wallet:{transactions:walletTx.length,balance:walletTx.reduce((s,t)=>s+(t.type==='expense'?-1:1)*(Number(t.amount)||0),0)}
+      wallet:{transactions:walletTx.length,balance:walletTx.reduce((s,t)=>s+(t.type==='expense'?-1:1)*(Number(t.amount)||0),0)},
+      payments:{count:payments.length,pendingTotal:payments.filter(p=>p.status==='pending').reduce((s,p)=>s+(Number(p.amount)||0),0),paidTotal:payments.filter(p=>p.status==='paid').reduce((s,p)=>s+(Number(p.amount)||0),0),payoutRequests:payments.filter(p=>p.direction==='out').length}
     }:null
   };
   return JSON.stringify(context).slice(0,7000);
@@ -724,7 +776,7 @@ function isClientUrl(){ return location.hash === '#client' || !!eventSlug(); }
 function authHeaders(){ return currentAdminToken ? {authorization:'Bearer '+currentAdminToken} : {}; }
 function clientAuthHeaders(){ return currentClientToken ? {authorization:'Bearer '+currentClientToken} : {}; }
 function currentEventId(){ return activeEventId || eventSlug() || eventSettings?.id || ''; }
-function collectEventState(){ return {eventSettings, participants:guests, hall, vendors, walletTx, savedAt:new Date().toISOString()}; }
+function collectEventState(){ return {eventSettings, participants:guests, hall, vendors, walletTx, payments, savedAt:new Date().toISOString()}; }
 async function syncEventStateNow(){
   if(suppressSync || !currentClientToken || !currentEventId()) return;
   try{ await fetch('/api/event-state',{method:'POST',headers:{'content-type':'application/json',...clientAuthHeaders()},body:JSON.stringify({eventId:currentEventId(),state:collectEventState()})}); }catch(e){}
@@ -759,6 +811,7 @@ async function loadRemoteEventState(){
       if(data.state.hall){ hall=data.state.hall; eventStorageSet(HALL_KEY,JSON.stringify(hall)); }
       if(Array.isArray(data.state.vendors)){ vendors=data.state.vendors; eventStorageSet(VENDOR_KEY,JSON.stringify(vendors)); }
       if(Array.isArray(data.state.walletTx)){ walletTx=data.state.walletTx; eventStorageSet(WALLET_KEY,JSON.stringify(walletTx)); }
+      if(Array.isArray(data.state.payments)){ payments=data.state.payments; eventStorageSet(PAYMENTS_KEY,JSON.stringify(payments)); }
       suppressSync=false;
       return true;
     }
@@ -1174,6 +1227,7 @@ function applyAdminEventToWorkspace(ev){
   hall = loadHall();
   vendors = loadVendors();
   walletTx = loadWalletTx();
+  payments = loadPayments();
   selectedVendorIndex = vendors.length ? 0 : null;
   selectedWhatsAppIndex = null;
   applyEventTheme();
@@ -1195,7 +1249,7 @@ async function clientLogin(){
   catch(e){ const ev=loadAdminEvents().find(x=>x.id===id); const localUser=ev ? eventLoginUsers(ev).find(u=>u.username===username && u.password===password) : null; if(ev && localUser){ sessionStorage.setItem('client_event_access_'+id,'1'); await enterClientMode(ev); } else { status.textContent=e.message; status.className='status bad-text'; } }
 }
 function clientLogout(){ const id=currentEventId()||eventSlug(); if(id){ sessionStorage.removeItem(CLIENT_SESSION_PREFIX+id); sessionStorage.removeItem('client_event_access_'+id); } currentClientToken=''; document.body.classList.remove('client-mode'); document.body.classList.add('client-auth-locked'); const pass=document.getElementById('clientPassword'); if(pass) pass.value=''; showPage('client-login'); }
-async function enterClientMode(ev){ document.body.classList.remove('admin-landing','admin-locked','client-auth-locked'); document.body.classList.add('client-mode'); applyAdminEventToWorkspace(ev); await loadRemoteEventState(); await loadPendingParticipants(); fillEventSettings(); render(); renderHall(); renderVendors(); renderWallet(); updateVendorStats(); renderWhatsAppGuests(); showPage('overview'); document.querySelectorAll('.nav-btn.admin-only').forEach(e=>e.remove()); scheduleEventStateSync(); }
+async function enterClientMode(ev){ document.body.classList.remove('admin-landing','admin-locked','client-auth-locked'); document.body.classList.add('client-mode'); applyAdminEventToWorkspace(ev); await loadRemoteEventState(); await loadPendingParticipants(); fillEventSettings(); render(); renderHall(); renderVendors(); renderWallet(); renderPayments(); updateVendorStats(); renderWhatsAppGuests(); showPage('overview'); document.querySelectorAll('.nav-btn.admin-only').forEach(e=>e.remove()); scheduleEventStateSync(); }
 async function bootMode(){
   setupAdminDateMin();
   renderCreateColorPalette();
@@ -1250,13 +1304,13 @@ function updateClientExpectedCount(){
   alert('מספר המשתתפים עודכן ✅');
 }
 function exportFullEventJSON(){
-  const data={eventSettings, participants:guests, hall, vendors, walletTx, exportedAt:new Date().toISOString()};
+  const data={eventSettings, participants:guests, hall, vendors, walletTx, payments, exportedAt:new Date().toISOString()};
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}); const a=document.createElement('a');
   a.href=URL.createObjectURL(blob); a.download='event-management-backup.json'; a.click(); URL.revokeObjectURL(a.href);
 }
 function importFullEventJSON(ev){
   const file=ev.target.files[0]; if(!file) return; const r=new FileReader();
-  r.onload=()=>{ try{ const data=JSON.parse(r.result); if(data.eventSettings) eventStorageSet(EVENT_KEY,JSON.stringify({...data.eventSettings,id:currentEventId()||data.eventSettings.id})); if(data.participants) eventStorageSet(STORAGE_KEY,JSON.stringify(data.participants)); if(data.hall) eventStorageSet(HALL_KEY,JSON.stringify(data.hall)); if(data.vendors) eventStorageSet(VENDOR_KEY,JSON.stringify(data.vendors)); if(data.walletTx) eventStorageSet(WALLET_KEY,JSON.stringify(data.walletTx)); location.reload(); }catch(e){ alert('קובץ גיבוי לא תקין'); } };
+  r.onload=()=>{ try{ const data=JSON.parse(r.result); if(data.eventSettings) eventStorageSet(EVENT_KEY,JSON.stringify({...data.eventSettings,id:currentEventId()||data.eventSettings.id})); if(data.participants) eventStorageSet(STORAGE_KEY,JSON.stringify(data.participants)); if(data.hall) eventStorageSet(HALL_KEY,JSON.stringify(data.hall)); if(data.vendors) eventStorageSet(VENDOR_KEY,JSON.stringify(data.vendors)); if(data.walletTx) eventStorageSet(WALLET_KEY,JSON.stringify(data.walletTx)); if(data.payments) eventStorageSet(PAYMENTS_KEY,JSON.stringify(data.payments)); location.reload(); }catch(e){ alert('קובץ גיבוי לא תקין'); } };
   r.readAsText(file,'utf-8');
 }
 
@@ -1437,15 +1491,63 @@ async function sendWhatsApp(){
 
 const VENDOR_KEY = 'dynamic_event_vendors_v1';
 const WALLET_KEY = 'dynamic_event_wallet_v1';
+const PAYMENTS_KEY = 'dynamic_event_payments_v1';
 let vendors = loadVendors();
 let selectedVendorIndex = vendors.length ? 0 : null;
 let walletTx = loadWalletTx();
+let payments = loadPayments();
 function nis(n){ return '₪' + (Number(n)||0).toLocaleString('he-IL'); }
 function loadVendors(){ try{ const v=eventStorageGet(VENDOR_KEY); if(v) return JSON.parse(v); }catch(e){} return []; }
-function saveVendors(){ eventStorageSet(VENDOR_KEY, JSON.stringify(vendors)); renderVendors(); updateVendorStats(); scheduleEventStateSync(); }
+function saveVendors(){ eventStorageSet(VENDOR_KEY, JSON.stringify(vendors)); renderVendors(); renderPayments(); updateVendorStats(); scheduleEventStateSync(); }
 function loadWalletTx(){ try{ const v=eventStorageGet(WALLET_KEY); if(v) return JSON.parse(v); }catch(e){} return []; }
-function saveWallet(){ eventStorageSet(WALLET_KEY, JSON.stringify(walletTx)); renderWallet(); updateVendorStats(); scheduleEventStateSync(); }
+function saveWallet(){ eventStorageSet(WALLET_KEY, JSON.stringify(walletTx)); renderWallet(); renderPayments(); updateVendorStats(); scheduleEventStateSync(); }
+function loadPayments(){ try{ const v=eventStorageGet(PAYMENTS_KEY); if(v) return JSON.parse(v); }catch(e){} return []; }
+function savePayments(){ eventStorageSet(PAYMENTS_KEY, JSON.stringify(payments)); renderPayments(); scheduleEventStateSync(); }
 function walletBalance(){ return walletTx.reduce((s,t)=>s+(t.type==='income'?1:-1)*(Number(t.amount)||0),0); }
+function paymentStatusLabel(status){ return ({pending:'ממתין לתשלום',paid:'שולם',failed:'נכשל',cancelled:'בוטל',payout_pending:'ממתין לאישור תשלום לספק',payout_paid:'שולם לספק'}[status]||status||'ממתין'); }
+function paymentStatusColor(status){ return status==='paid'||status==='payout_paid'?'var(--ok)':status==='failed'||status==='cancelled'?'var(--bad)':'var(--muted)'; }
+function createPaymentId(){ return 'pay_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7); }
+function createPaymentRequest(){
+  const amount=Number(document.getElementById('paymentAmount')?.value)||0;
+  const status=document.getElementById('paymentCreateStatus');
+  if(!amount){ alert('נא להזין סכום לתשלום'); return; }
+  const get=id=>document.getElementById(id)?.value.trim()||'';
+  const p={id:createPaymentId(),direction:'in',status:'pending',provider:'grow',providerStatus:'waiting_for_api_credentials',payerName:get('paymentPayerName'),payerPhone:get('paymentPayerPhone'),payerEmail:get('paymentPayerEmail'),amount,description:get('paymentDescription')||`תשלום עבור ${eventSettings.name||'אירוע'}`,method:get('paymentMethod')||'grow-link',notify:get('paymentNotify')||'whatsapp',eventId:currentEventId(),createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),paymentLink:''};
+  payments.unshift(p); savePayments();
+  ['paymentPayerName','paymentPayerPhone','paymentPayerEmail','paymentAmount','paymentDescription'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  if(status){ status.textContent='בקשת התשלום נוצרה. לינק משולם אמיתי יווצר אוטומטית לאחר חיבור פרטי Grow.'; status.className='status ok-text'; }
+}
+function paymentShareText(p){ const link=p.paymentLink||'[לינק משולם יופק לאחר חיבור API]'; return `שלום ${p.payerName||''}, מצורף קישור לתשלום עבור ${eventSettings.name||'האירוע'} בסך ${nis(p.amount)}.\n${p.description||''}\n${link}`; }
+function copyPaymentMessage(id){ const p=payments.find(x=>x.id===id); if(!p) return; copyText(paymentShareText(p)); }
+function openPaymentWhatsApp(id){ const p=payments.find(x=>x.id===id); if(!p) return; const phone=String(p.payerPhone||'').replace(/\D/g,''); if(!phone) return alert('אין מספר וואטסאפ בבקשת התשלום'); window.open(`https://wa.me/${phone}?text=${encodeURIComponent(paymentShareText(p))}`,'_blank'); }
+function markPaymentPaid(id){ const p=payments.find(x=>x.id===id); if(!p) return; if(p.status==='paid') return; if(!confirm(`לסמן שהתקבל תשלום של ${nis(p.amount)}? פעולה זו תוסיף הכנסה לארנק האירוע.`)) return; p.status='paid'; p.providerStatus='manual_confirmed_until_grow_webhook'; p.paidAt=new Date().toISOString(); p.updatedAt=p.paidAt; walletTx.unshift({date:p.paidAt,amount:Number(p.amount)||0,type:'income',note:`תשלום התקבל: ${p.payerName||''} · ${p.description||''}`,paymentId:p.id}); savePayments(); saveWallet(); }
+function cancelPaymentRequest(id){ const p=payments.find(x=>x.id===id); if(!p) return; if(!confirm('לבטל את בקשת התשלום?')) return; p.status='cancelled'; p.updatedAt=new Date().toISOString(); savePayments(); }
+function createPayoutRequest(){
+  const vendorId=document.getElementById('payoutVendorSelect')?.value||'';
+  const amount=Number(document.getElementById('payoutAmount')?.value)||0;
+  const note=document.getElementById('payoutNote')?.value.trim()||'';
+  const status=document.getElementById('payoutStatus');
+  if(!amount){ alert('נא להזין סכום לתשלום'); return; }
+  const vendor=vendorId===''?null:vendors[Number(vendorId)];
+  const p={id:createPaymentId(),direction:'out',status:'payout_pending',provider:'grow_payout_pending',vendorIndex:vendorId===''?null:Number(vendorId),vendorName:vendor?.name||'יעד אחר',amount,description:note||`תשלום לספק ${vendor?.name||''}`,eventId:currentEventId(),createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+  payments.unshift(p); savePayments();
+  if(status){ status.textContent='בקשת התשלום לספק נרשמה. העברה אמיתית תופעל רק אחרי חיבור payouts ואישור מפורש.'; status.className='status ok-text'; }
+  const a=document.getElementById('payoutAmount'), n=document.getElementById('payoutNote'); if(a) a.value=''; if(n) n.value='';
+}
+function markPayoutPaid(id){ const p=payments.find(x=>x.id===id); if(!p) return; if(p.status==='payout_paid') return; if(Number(p.amount)>walletBalance() && !confirm('הסכום גבוה מיתרת הארנק. לסמן בכל זאת?')) return; if(!confirm(`לסמן תשלום החוצה בסך ${nis(p.amount)} כבוצע?`)) return; p.status='payout_paid'; p.paidAt=new Date().toISOString(); p.updatedAt=p.paidAt; walletTx.unshift({date:p.paidAt,amount:Number(p.amount)||0,type:'expense',note:p.description||`תשלום לספק ${p.vendorName||''}`,paymentId:p.id}); if(p.vendorIndex!==null && vendors[p.vendorIndex]){ vendors[p.vendorIndex].paid=(Number(vendors[p.vendorIndex].paid)||0)+(Number(p.amount)||0); if(Number(vendors[p.vendorIndex].paid)>=Number(vendors[p.vendorIndex].agreed||0)) vendors[p.vendorIndex].status='שולם מלא'; saveVendors(); } savePayments(); saveWallet(); }
+function renderPayments(){
+  const set=(id,val)=>{ const el=document.getElementById(id); if(el) el.textContent=nis(val); };
+  set('paymentWalletBalance',walletBalance());
+  set('paymentPendingTotal',payments.filter(p=>p.direction!=='out'&&p.status==='pending').reduce((s,p)=>s+(Number(p.amount)||0),0));
+  set('paymentPaidTotal',payments.filter(p=>p.direction!=='out'&&p.status==='paid').reduce((s,p)=>s+(Number(p.amount)||0),0));
+  set('paymentPayoutTotal',payments.filter(p=>p.direction==='out'&&p.status==='payout_paid').reduce((s,p)=>s+(Number(p.amount)||0),0));
+  const growStatus=document.getElementById('growApiStatus'); if(growStatus) growStatus.textContent='ממתין לפרטי חיבור Grow / משולם';
+  const sel=document.getElementById('payoutVendorSelect'); if(sel) sel.innerHTML='<option value="">בחר ספק / יעד אחר</option>'+vendors.map((v,i)=>`<option value="${i}">${escapeHtml(v.name||'ספק ללא שם')} · יתרה ${nis((Number(v.agreed)||0)-(Number(v.paid)||0))}</option>`).join('');
+  const list=document.getElementById('paymentRequestsList');
+  if(list) list.innerHTML=payments.length?payments.map(p=>`<div class="vendor-item"><b>${escapeHtml(p.direction==='out'?'תשלום החוצה: '+(p.vendorName||'יעד'):(p.payerName||'משלם ללא שם'))}</b><div class="label">${escapeHtml(p.description||'')} · ${nis(p.amount)}</div><div class="label" style="color:${paymentStatusColor(p.status)}">${paymentStatusLabel(p.status)} · ${new Date(p.createdAt).toLocaleDateString('he-IL')}</div><div class="assistant-actions">${p.direction==='out'?`<button onclick="markPayoutPaid('${p.id}')">סמן שולם לספק</button>`:`<button onclick="copyPaymentMessage('${p.id}')">העתק הודעה</button><button onclick="openPaymentWhatsApp('${p.id}')">פתח וואטסאפ</button><button onclick="markPaymentPaid('${p.id}')">סמן שולם</button><button onclick="cancelPaymentRequest('${p.id}')">בטל</button>`}</div></div>`).join(''):'<span class="label">עדיין אין בקשות תשלום.</span>';
+  const walletBox=document.getElementById('paymentWalletTxList');
+  if(walletBox) walletBox.innerHTML=walletTx.length?walletTx.slice(0,40).map(t=>`<div class="wallet-row"><span>${new Date(t.date).toLocaleDateString('he-IL')} · ${escapeHtml(t.note||'')}</span><span class="money" style="color:${t.type==='income'?'var(--ok)':'var(--bad)'}">${t.type==='income'?'+':'-'}${nis(t.amount)}</span></div>`).join(''):'<span class="label">אין עדיין תנועות בארנק.</span>';
+}
 function newVendor(){ vendors.push({name:'ספק חדש',category:'אחר',contact:'',phone:'',email:'',contractUrl:'',agreed:0,paid:0,status:'פתוח',dueDate:'',contractText:'',notes:''}); selectedVendorIndex=vendors.length-1; saveVendors(); fillVendorForm(); }
 function currentVendor(){ return selectedVendorIndex===null ? null : vendors[selectedVendorIndex]; }
 function renderVendors(){
@@ -1633,8 +1735,9 @@ async function askEventAssistant(){
       if(data.state.hall){ hall=data.state.hall; eventStorageSet(HALL_KEY,JSON.stringify(hall)); }
       if(Array.isArray(data.state.vendors)){ vendors=data.state.vendors; eventStorageSet(VENDOR_KEY,JSON.stringify(vendors)); }
       if(Array.isArray(data.state.walletTx)){ walletTx=data.state.walletTx; eventStorageSet(WALLET_KEY,JSON.stringify(walletTx)); }
+      if(Array.isArray(data.state.payments)){ payments=data.state.payments; eventStorageSet(PAYMENTS_KEY,JSON.stringify(payments)); }
       suppressSync=false;
-      fillEventSettings(); render(); renderHall(); renderVendors(); renderWallet(); updateVendorStats(); renderWhatsAppGuests(); updateEventAssistantUi();
+      fillEventSettings(); render(); renderHall(); renderVendors(); renderWallet(); renderPayments(); updateVendorStats(); renderWhatsAppGuests(); updateEventAssistantUi();
     }
     if(data.whatsappSent && data.draft?.phone && data.draft?.message){ addLocalWaLog(data.draft.phone, 'out', data.draft.message); }
     if(Array.isArray(data.history)){ eventAssistantHistory=normalizeEventAssistantHistory(data.history); saveEventAssistantHistoryLocal(); renderEventAssistantHistory(); }
@@ -1649,6 +1752,11 @@ renderWhatsAppGuests();
 applyTemplate();
 initHallInputs();
 renderHall();
+renderVendors();
+fillVendorForm();
+renderWallet();
+renderPayments();
+updateVendorStats();
 renderAdminEvents();
 bootMode();
 if(adminResetToken()){
