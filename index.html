@@ -546,13 +546,22 @@ imma, 123456, אמא"></textarea><small>כל משתמש כאן יוכל להיכ
       <div>
         <h3 style="margin:0 0 8px;font-size:18px">יצירת בקשת תשלום</h3>
         <div class="form-grid">
-          <input id="paymentPayerName" placeholder="שם משלם / לקוח" />
+          <input id="paymentPayerName" placeholder="שם משלם / לקוח" oninput="fillPaymentTemplatePreview()" />
           <input id="paymentPayerPhone" placeholder="טלפון וואטסאפ" />
           <input id="paymentPayerEmail" type="email" placeholder="אימייל" />
-          <input id="paymentAmount" type="number" min="1" placeholder="סכום לתשלום" />
-          <input class="full" id="paymentDescription" placeholder="תיאור התשלום, לדוגמה: מקדמה לאירוע / תשלום אורח" />
+          <input id="paymentAmount" type="number" min="1" placeholder="סכום לתשלום" oninput="fillPaymentTemplatePreview()" />
+          <input class="full" id="paymentDescription" placeholder="תיאור התשלום, לדוגמה: מקדמה לאירוע / תשלום אורח" oninput="fillPaymentTemplatePreview()" />
           <select id="paymentMethod"><option value="grow-link">לינק משולם / Grow</option><option value="manual-bank">העברה ידנית / בנקאית</option><option value="cash">מזומן</option></select>
           <select id="paymentNotify"><option value="whatsapp">הכנת הודעת וואטסאפ</option><option value="email">הכנת מייל</option><option value="none">ללא הודעה</option></select>
+          <select class="full" id="paymentTemplate" onchange="fillPaymentTemplatePreview()">
+            <option value="warm">נוסח חם ומכבד</option>
+            <option value="installments">נוסח עם דגש על תשלומים ונוחות</option>
+            <option value="secure">נוסח עם דגש על אבטחה</option>
+            <option value="appreciation">נוסח השקעה והערכה</option>
+            <option value="short">נוסח קצר וישיר</option>
+            <option value="custom">נוסח מותאם אישית</option>
+          </select>
+          <textarea class="full" id="paymentMessagePreview" placeholder="נוסח ההודעה יופיע כאן ואפשר לערוך לפני יצירת הבקשה"></textarea>
           <button onclick="createPaymentRequest()">צור בקשת תשלום</button>
         </div>
         <div id="paymentCreateStatus" class="status"></div>
@@ -1507,17 +1516,49 @@ function walletBalance(){ return walletTx.reduce((s,t)=>s+(t.type==='income'?1:-
 function paymentStatusLabel(status){ return ({pending:'ממתין לתשלום',paid:'שולם',failed:'נכשל',cancelled:'בוטל',payout_pending:'ממתין לאישור תשלום לספק',payout_paid:'שולם לספק'}[status]||status||'ממתין'); }
 function paymentStatusColor(status){ return status==='paid'||status==='payout_paid'?'var(--ok)':status==='failed'||status==='cancelled'?'var(--bad)':'var(--muted)'; }
 function createPaymentId(){ return 'pay_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7); }
+const PAYMENT_MESSAGE_TEMPLATES={
+  warm:`שלום {name},\n\nאיזה כיף שאתם חלק מ{eventName}.\nמצורף קישור תשלום נוח ומאובטח עבור {description} בסך {amount}.\nאפשר לשלם בצורה פשוטה ובטוחה דרך משולם / Grow.\n\n{link}\n\nתודה רבה על השותפות והשמחה ❤️`,
+  installments:`שלום {name},\n\nמצורף קישור תשלום עבור {description} בסך {amount}.\nכדי שיהיה לכם הכי נוח, ניתן לשלם דרך הקישור בצורה מאובטחת, ובמידת האפשר לבחור תשלום בתשלומים לפי האפשרויות שיופיעו בעמוד התשלום.\n\n{link}\n\nתודה רבה, שמחים שאתם איתנו בשמחה 🙏`,
+  secure:`שלום {name},\n\nמצורף קישור תשלום מאובטח דרך מערכת משולם / Grow עבור {description} בסך {amount}.\nהמערכת מאובטחת, נוחה לשימוש, ומאפשרת לבצע את התשלום בצורה מסודרת ושקופה.\n\n{link}\n\nתודה רבה ❤️`,
+  appreciation:`שלום {name},\n\nשמחים מאוד שאתם חלק מ{eventName}. בעל השמחה השקיע הרבה מחשבה, זמן ומשאבים כדי ליצור אירוע נעים, מכבד ומשמח לכולם.\nאם נוח לכם להשתתף בתשלום דרך הקישור המצורף, זה מאוד יעזור וייתן תחושה טובה שיש דרך מסודרת להחזיר חלק מההשקעה.\n\nהסכום לתשלום: {amount}\nעבור: {description}\nאפשר לשלם בצורה מאובטחת, ובמידת האפשר גם בתשלומים.\n\n{link}\n\nתודה מכל הלב על ההבנה והשיתוף בשמחה 🙏`,
+  short:`שלום {name},\nמצורף קישור תשלום מאובטח עבור {description} בסך {amount}:\n{link}\nתודה רבה.`
+};
+function paymentTemplateName(){ return document.getElementById('paymentTemplate')?.value||'warm'; }
+function fillPaymentTemplatePreview(force=false){
+  const box=document.getElementById('paymentMessagePreview'); if(!box) return;
+  const key=paymentTemplateName();
+  if(key==='custom' && !force) return;
+  const tpl=PAYMENT_MESSAGE_TEMPLATES[key]||PAYMENT_MESSAGE_TEMPLATES.warm;
+  const amount=Number(document.getElementById('paymentAmount')?.value)||0;
+  const name=document.getElementById('paymentPayerName')?.value.trim()||'יקר/ה';
+  const description=document.getElementById('paymentDescription')?.value.trim()||`תשלום עבור ${eventSettings.name||'האירוע'}`;
+  box.value=renderPaymentMessageTemplate(tpl,{payerName:name,amount,description,paymentLink:'{link}'});
+}
+function renderPaymentMessageTemplate(tpl,p){
+  const link=p.paymentLink||'[לינק משולם יופק לאחר חיבור API]';
+  return String(tpl||PAYMENT_MESSAGE_TEMPLATES.warm)
+    .replaceAll('{name}',p.payerName||'יקר/ה')
+    .replaceAll('{eventName}',eventSettings.name||'האירוע')
+    .replaceAll('{amount}',nis(p.amount))
+    .replaceAll('{description}',p.description||`תשלום עבור ${eventSettings.name||'האירוע'}`)
+    .replaceAll('{link}',link);
+}
 function createPaymentRequest(){
   const amount=Number(document.getElementById('paymentAmount')?.value)||0;
   const status=document.getElementById('paymentCreateStatus');
   if(!amount){ alert('נא להזין סכום לתשלום'); return; }
   const get=id=>document.getElementById(id)?.value.trim()||'';
-  const p={id:createPaymentId(),direction:'in',status:'pending',provider:'grow',providerStatus:'waiting_for_api_credentials',payerName:get('paymentPayerName'),payerPhone:get('paymentPayerPhone'),payerEmail:get('paymentPayerEmail'),amount,description:get('paymentDescription')||`תשלום עבור ${eventSettings.name||'אירוע'}`,method:get('paymentMethod')||'grow-link',notify:get('paymentNotify')||'whatsapp',eventId:currentEventId(),createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),paymentLink:''};
+  const templateKey=paymentTemplateName();
+  let customMessage=get('paymentMessagePreview');
+  const base={payerName:get('paymentPayerName'),amount,description:get('paymentDescription')||`תשלום עבור ${eventSettings.name||'אירוע'}`,paymentLink:''};
+  if(!customMessage) customMessage=renderPaymentMessageTemplate(PAYMENT_MESSAGE_TEMPLATES[templateKey]||PAYMENT_MESSAGE_TEMPLATES.warm,base);
+  const p={id:createPaymentId(),direction:'in',status:'pending',provider:'grow',providerStatus:'waiting_for_api_credentials',payerName:base.payerName,payerPhone:get('paymentPayerPhone'),payerEmail:get('paymentPayerEmail'),amount,description:base.description,method:get('paymentMethod')||'grow-link',notify:get('paymentNotify')||'whatsapp',messageTemplate:templateKey,customMessage,eventId:currentEventId(),createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),paymentLink:''};
   payments.unshift(p); savePayments();
   ['paymentPayerName','paymentPayerPhone','paymentPayerEmail','paymentAmount','paymentDescription'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  fillPaymentTemplatePreview(true);
   if(status){ status.textContent='בקשת התשלום נוצרה. לינק משולם אמיתי יווצר אוטומטית לאחר חיבור פרטי Grow.'; status.className='status ok-text'; }
 }
-function paymentShareText(p){ const link=p.paymentLink||'[לינק משולם יופק לאחר חיבור API]'; return `שלום ${p.payerName||''}, מצורף קישור לתשלום עבור ${eventSettings.name||'האירוע'} בסך ${nis(p.amount)}.\n${p.description||''}\n${link}`; }
+function paymentShareText(p){ const tpl=p.customMessage || PAYMENT_MESSAGE_TEMPLATES[p.messageTemplate||'warm'] || PAYMENT_MESSAGE_TEMPLATES.warm; return renderPaymentMessageTemplate(tpl,p); }
 function copyPaymentMessage(id){ const p=payments.find(x=>x.id===id); if(!p) return; copyText(paymentShareText(p)); }
 function openPaymentWhatsApp(id){ const p=payments.find(x=>x.id===id); if(!p) return; const phone=String(p.payerPhone||'').replace(/\D/g,''); if(!phone) return alert('אין מספר וואטסאפ בבקשת התשלום'); window.open(`https://wa.me/${phone}?text=${encodeURIComponent(paymentShareText(p))}`,'_blank'); }
 function markPaymentPaid(id){ const p=payments.find(x=>x.id===id); if(!p) return; if(p.status==='paid') return; if(!confirm(`לסמן שהתקבל תשלום של ${nis(p.amount)}? פעולה זו תוסיף הכנסה לארנק האירוע.`)) return; p.status='paid'; p.providerStatus='manual_confirmed_until_grow_webhook'; p.paidAt=new Date().toISOString(); p.updatedAt=p.paidAt; walletTx.unshift({date:p.paidAt,amount:Number(p.amount)||0,type:'income',note:`תשלום התקבל: ${p.payerName||''} · ${p.description||''}`,paymentId:p.id}); savePayments(); saveWallet(); }
@@ -1756,6 +1797,7 @@ renderVendors();
 fillVendorForm();
 renderWallet();
 renderPayments();
+fillPaymentTemplatePreview(true);
 updateVendorStats();
 renderAdminEvents();
 bootMode();
