@@ -578,6 +578,19 @@ imma, 123456, אמא"></textarea><small>כל משתמש כאן יוכל להיכ
           <button onclick="createPayoutRequest()">רשום בקשת תשלום לספק</button>
         </div>
         <div id="payoutStatus" class="status"></div>
+        <h3 style="margin:18px 0 8px;font-size:18px">אוטומציית הודעות ותזכורות</h3>
+        <div class="note">המערכת מזהה בקשות תשלום ממתינות, בונה הודעות לפי התבנית שבחרת, ומנהלת תזכורות בלי לשלוח כפילויות. שליחה בפועל דורשת אישור מרוכז.</div>
+        <div class="form-grid">
+          <select id="paymentAutomationEnabled"><option value="yes">אוטומציה פעילה</option><option value="no">כבוי</option></select>
+          <input id="paymentReminderDays" type="number" min="1" value="3" placeholder="תזכורת כל כמה ימים" />
+          <input id="paymentMaxReminders" type="number" min="0" value="3" placeholder="מקסימום תזכורות" />
+          <select id="paymentAutomationAudience"><option value="pending">רק בקשות ממתינות</option><option value="all_unpaid">כל מי שלא שילם</option></select>
+          <button onclick="savePaymentAutomationSettings()">שמור חוקים</button>
+          <button class="secondary" onclick="renderPaymentAutomationQueue()">רענן תור הודעות</button>
+        </div>
+        <div class="toolbar"><button onclick="sendDuePaymentAutomationMessages()">שלח עכשיו את כל ההודעות שמגיעות לשליחה</button></div>
+        <div id="paymentAutomationStatus" class="status"></div>
+        <div id="paymentAutomationQueue" class="vendor-list" style="max-height:260px;overflow:auto"></div>
         <h3 style="margin:18px 0 8px;font-size:18px">תנועות ארנק אחרונות</h3>
         <div id="paymentWalletTxList" style="max-height:240px;overflow:auto"></div>
         <h3 style="margin:18px 0 8px;font-size:18px">סטטוס חיבור משולם</h3>
@@ -685,7 +698,8 @@ function summarizeSelectedEventLocalStateForOpal(eventId){
     hall:readJson(`dynamic_event_hall_v1${suffix}`,{}),
     vendors:readJson(`dynamic_event_vendors_v1${suffix}`,[]),
     walletTx:readJson(`dynamic_event_wallet_v1${suffix}`,[]),
-    payments:readJson(`dynamic_event_payments_v1${suffix}`,[])
+    payments:readJson(`dynamic_event_payments_v1${suffix}`,[]),
+    paymentAutomation:readJson(`dynamic_event_payment_automation_v1${suffix}`,defaultPaymentAutomationSettings())
   };
 }
 function eventSummaryForOpal(ev){
@@ -709,6 +723,7 @@ async function buildOpalLiveContext(){
   const vendors=Array.isArray(state.vendors)?state.vendors:[];
   const walletTx=Array.isArray(state.walletTx)?state.walletTx:[];
   const payments=Array.isArray(state.payments)?state.payments:[];
+  const automation=state.paymentAutomation||defaultPaymentAutomationSettings();
   const context={
     source:'live-admin-dashboard-context',
     note:'זהו Context חי שנוסף אוטומטית מהמערכת בזמן השאלה. אל תחשוף סיסמאות או טוקנים. אם נדרשת פעולה רגישה/שליחה/מחיקה/שינוי כספי — בקש אישור מפורש.',
@@ -721,7 +736,7 @@ async function buildOpalLiveContext(){
       tables:{count:tables.length,totalCapacity:tables.reduce((s,t)=>s+(Number(t.capacity)||0),0)},
       vendors:{count:vendors.length,totalAgreed:vendors.reduce((s,v)=>s+(Number(v.amount)||Number(v.agreedAmount)||0),0)},
       wallet:{transactions:walletTx.length,balance:walletTx.reduce((s,t)=>s+(t.type==='expense'?-1:1)*(Number(t.amount)||0),0)},
-      payments:{count:payments.length,pendingTotal:payments.filter(p=>p.status==='pending').reduce((s,p)=>s+(Number(p.amount)||0),0),paidTotal:payments.filter(p=>p.status==='paid').reduce((s,p)=>s+(Number(p.amount)||0),0),payoutRequests:payments.filter(p=>p.direction==='out').length}
+      payments:{count:payments.length,pendingCount:payments.filter(p=>p.status==='pending').length,paidTotal:payments.filter(p=>p.status==='paid').reduce((s,p)=>s+(Number(p.amount)||0),0),payoutRequests:payments.filter(p=>p.direction==='out').length,automation}
     }:null
   };
   return JSON.stringify(context).slice(0,7000);
@@ -784,8 +799,9 @@ function eventSlug(){ return new URLSearchParams(location.search).get('event'); 
 function isClientUrl(){ return location.hash === '#client' || !!eventSlug(); }
 function authHeaders(){ return currentAdminToken ? {authorization:'Bearer '+currentAdminToken} : {}; }
 function clientAuthHeaders(){ return currentClientToken ? {authorization:'Bearer '+currentClientToken} : {}; }
-function currentEventId(){ return activeEventId || eventSlug() || eventSettings?.id || ''; }
-function collectEventState(){ return {eventSettings, participants:guests, hall, vendors, walletTx, payments, savedAt:new Date().toISOString()}; }
+function eventAccessHeaders(){ return currentAdminToken ? authHeaders() : clientAuthHeaders(); }
+function currentEventId(){ return activeEventId || eventSlug() || eventSettings?.id || selectedAdminEventId || ''; }
+function collectEventState(){ return {eventSettings, participants:guests, hall, vendors, walletTx, payments, paymentAutomation, savedAt:new Date().toISOString()}; }
 async function syncEventStateNow(){
   if(suppressSync || !currentClientToken || !currentEventId()) return;
   try{ await fetch('/api/event-state',{method:'POST',headers:{'content-type':'application/json',...clientAuthHeaders()},body:JSON.stringify({eventId:currentEventId(),state:collectEventState()})}); }catch(e){}
@@ -821,6 +837,7 @@ async function loadRemoteEventState(){
       if(Array.isArray(data.state.vendors)){ vendors=data.state.vendors; eventStorageSet(VENDOR_KEY,JSON.stringify(vendors)); }
       if(Array.isArray(data.state.walletTx)){ walletTx=data.state.walletTx; eventStorageSet(WALLET_KEY,JSON.stringify(walletTx)); }
       if(Array.isArray(data.state.payments)){ payments=data.state.payments; eventStorageSet(PAYMENTS_KEY,JSON.stringify(payments)); }
+      if(data.state.paymentAutomation){ paymentAutomation={...defaultPaymentAutomationSettings(),...data.state.paymentAutomation}; eventStorageSet(PAYMENT_AUTOMATION_KEY,JSON.stringify(paymentAutomation)); }
       suppressSync=false;
       return true;
     }
@@ -1237,6 +1254,7 @@ function applyAdminEventToWorkspace(ev){
   vendors = loadVendors();
   walletTx = loadWalletTx();
   payments = loadPayments();
+  paymentAutomation = loadPaymentAutomationSettings();
   selectedVendorIndex = vendors.length ? 0 : null;
   selectedWhatsAppIndex = null;
   applyEventTheme();
@@ -1313,13 +1331,13 @@ function updateClientExpectedCount(){
   alert('מספר המשתתפים עודכן ✅');
 }
 function exportFullEventJSON(){
-  const data={eventSettings, participants:guests, hall, vendors, walletTx, payments, exportedAt:new Date().toISOString()};
+  const data={eventSettings, participants:guests, hall, vendors, walletTx, payments, paymentAutomation, exportedAt:new Date().toISOString()};
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}); const a=document.createElement('a');
   a.href=URL.createObjectURL(blob); a.download='event-management-backup.json'; a.click(); URL.revokeObjectURL(a.href);
 }
 function importFullEventJSON(ev){
   const file=ev.target.files[0]; if(!file) return; const r=new FileReader();
-  r.onload=()=>{ try{ const data=JSON.parse(r.result); if(data.eventSettings) eventStorageSet(EVENT_KEY,JSON.stringify({...data.eventSettings,id:currentEventId()||data.eventSettings.id})); if(data.participants) eventStorageSet(STORAGE_KEY,JSON.stringify(data.participants)); if(data.hall) eventStorageSet(HALL_KEY,JSON.stringify(data.hall)); if(data.vendors) eventStorageSet(VENDOR_KEY,JSON.stringify(data.vendors)); if(data.walletTx) eventStorageSet(WALLET_KEY,JSON.stringify(data.walletTx)); if(data.payments) eventStorageSet(PAYMENTS_KEY,JSON.stringify(data.payments)); location.reload(); }catch(e){ alert('קובץ גיבוי לא תקין'); } };
+  r.onload=()=>{ try{ const data=JSON.parse(r.result); if(data.eventSettings) eventStorageSet(EVENT_KEY,JSON.stringify({...data.eventSettings,id:currentEventId()||data.eventSettings.id})); if(data.participants) eventStorageSet(STORAGE_KEY,JSON.stringify(data.participants)); if(data.hall) eventStorageSet(HALL_KEY,JSON.stringify(data.hall)); if(data.vendors) eventStorageSet(VENDOR_KEY,JSON.stringify(data.vendors)); if(data.walletTx) eventStorageSet(WALLET_KEY,JSON.stringify(data.walletTx)); if(data.payments) eventStorageSet(PAYMENTS_KEY,JSON.stringify(data.payments)); if(data.paymentAutomation) eventStorageSet(PAYMENT_AUTOMATION_KEY,JSON.stringify(data.paymentAutomation)); location.reload(); }catch(e){ alert('קובץ גיבוי לא תקין'); } };
   r.readAsText(file,'utf-8');
 }
 
@@ -1485,7 +1503,7 @@ async function sendWhatsApp(){
   if(!confirm('לשלוח עכשיו וואטסאפ למספר ' + phone + '?')) return;
   status.textContent = 'שולח...';
   try{
-    const res = await fetch('/api/send-whatsapp', {method:'POST', headers:{'content-type':'application/json',...clientAuthHeaders()}, body:JSON.stringify({phone, message, eventId:currentEventId(), guestIndex:selectedWhatsAppIndex})});
+    const res = await fetch('/api/send-whatsapp', {method:'POST', headers:{'content-type':'application/json',...eventAccessHeaders()}, body:JSON.stringify({phone, message, eventId:currentEventId(), guestIndex:selectedWhatsAppIndex})});
     const data = await res.json();
     if(!res.ok || !data.ok) throw new Error(data.error || data.result?.message || 'שליחה נכשלה');
     addLocalWaLog(phone, 'out', message);
@@ -1501,17 +1519,31 @@ async function sendWhatsApp(){
 const VENDOR_KEY = 'dynamic_event_vendors_v1';
 const WALLET_KEY = 'dynamic_event_wallet_v1';
 const PAYMENTS_KEY = 'dynamic_event_payments_v1';
+const PAYMENT_AUTOMATION_KEY = 'dynamic_event_payment_automation_v1';
 let vendors = loadVendors();
 let selectedVendorIndex = vendors.length ? 0 : null;
 let walletTx = loadWalletTx();
 let payments = loadPayments();
+let paymentAutomation = loadPaymentAutomationSettings();
 function nis(n){ return '₪' + (Number(n)||0).toLocaleString('he-IL'); }
 function loadVendors(){ try{ const v=eventStorageGet(VENDOR_KEY); if(v) return JSON.parse(v); }catch(e){} return []; }
 function saveVendors(){ eventStorageSet(VENDOR_KEY, JSON.stringify(vendors)); renderVendors(); renderPayments(); updateVendorStats(); scheduleEventStateSync(); }
 function loadWalletTx(){ try{ const v=eventStorageGet(WALLET_KEY); if(v) return JSON.parse(v); }catch(e){} return []; }
 function saveWallet(){ eventStorageSet(WALLET_KEY, JSON.stringify(walletTx)); renderWallet(); renderPayments(); updateVendorStats(); scheduleEventStateSync(); }
 function loadPayments(){ try{ const v=eventStorageGet(PAYMENTS_KEY); if(v) return JSON.parse(v); }catch(e){} return []; }
-function savePayments(){ eventStorageSet(PAYMENTS_KEY, JSON.stringify(payments)); renderPayments(); scheduleEventStateSync(); }
+function savePayments(){ eventStorageSet(PAYMENTS_KEY, JSON.stringify(payments)); renderPayments(); renderPaymentAutomationQueue(); scheduleEventStateSync(); }
+function defaultPaymentAutomationSettings(){ return {enabled:true,reminderDays:3,maxReminders:3,audience:'pending'}; }
+function loadPaymentAutomationSettings(){ try{ const v=eventStorageGet(PAYMENT_AUTOMATION_KEY); if(v) return {...defaultPaymentAutomationSettings(),...JSON.parse(v)}; }catch(e){} return defaultPaymentAutomationSettings(); }
+function savePaymentAutomationSettings(){
+  paymentAutomation={enabled:document.getElementById('paymentAutomationEnabled')?.value!=='no',reminderDays:Math.max(1,Number(document.getElementById('paymentReminderDays')?.value)||3),maxReminders:Math.max(0,Number(document.getElementById('paymentMaxReminders')?.value)||0),audience:document.getElementById('paymentAutomationAudience')?.value||'pending'};
+  eventStorageSet(PAYMENT_AUTOMATION_KEY,JSON.stringify(paymentAutomation));
+  const s=document.getElementById('paymentAutomationStatus'); if(s){ s.textContent='חוקי האוטומציה נשמרו ✅'; s.className='status ok-text'; }
+  renderPaymentAutomationQueue(); scheduleEventStateSync();
+}
+function fillPaymentAutomationSettings(){
+  const set=(id,val)=>{ const el=document.getElementById(id); if(el) el.value=val; };
+  set('paymentAutomationEnabled',paymentAutomation.enabled?'yes':'no'); set('paymentReminderDays',paymentAutomation.reminderDays); set('paymentMaxReminders',paymentAutomation.maxReminders); set('paymentAutomationAudience',paymentAutomation.audience||'pending');
+}
 function walletBalance(){ return walletTx.reduce((s,t)=>s+(t.type==='income'?1:-1)*(Number(t.amount)||0),0); }
 function paymentStatusLabel(status){ return ({pending:'ממתין לתשלום',paid:'שולם',failed:'נכשל',cancelled:'בוטל',payout_pending:'ממתין לאישור תשלום לספק',payout_paid:'שולם לספק'}[status]||status||'ממתין'); }
 function paymentStatusColor(status){ return status==='paid'||status==='payout_paid'?'var(--ok)':status==='failed'||status==='cancelled'?'var(--bad)':'var(--muted)'; }
@@ -1560,6 +1592,56 @@ function createPaymentRequest(){
 function paymentShareText(p){ const tpl=p.customMessage || PAYMENT_MESSAGE_TEMPLATES[p.messageTemplate||'warm'] || PAYMENT_MESSAGE_TEMPLATES.warm; return renderPaymentMessageTemplate(tpl,p); }
 function copyPaymentMessage(id){ const p=payments.find(x=>x.id===id); if(!p) return; copyText(paymentShareText(p)); }
 function openPaymentWhatsApp(id){ const p=payments.find(x=>x.id===id); if(!p) return; const phone=String(p.payerPhone||'').replace(/\D/g,''); if(!phone) return alert('אין מספר וואטסאפ בבקשת התשלום'); window.open(`https://wa.me/${phone}?text=${encodeURIComponent(paymentShareText(p))}`,'_blank'); }
+function paymentReminderMessage(p){
+  const base=paymentShareText(p);
+  const n=Number(p.reminderCount)||0;
+  return n ? `תזכורת נעימה 🙏\n\n${base}` : base;
+}
+function paymentAutomationDueItems(){
+  if(!paymentAutomation.enabled) return [];
+  const now=Date.now(), day=24*60*60*1000;
+  return payments.filter(p=>p.direction!=='out' && p.status==='pending' && p.payerPhone).filter(p=>{
+    const sent=Number(p.automationSentCount)||0;
+    const reminders=Number(p.reminderCount)||0;
+    if(!sent) return true;
+    if(reminders>=Number(paymentAutomation.maxReminders||0)) return false;
+    const last=Date.parse(p.lastReminderAt||p.lastAutomationSentAt||p.createdAt||0)||0;
+    return now-last >= (Number(paymentAutomation.reminderDays)||3)*day;
+  });
+}
+function renderPaymentAutomationQueue(){
+  fillPaymentAutomationSettings();
+  const box=document.getElementById('paymentAutomationQueue'); if(!box) return;
+  const due=paymentAutomationDueItems();
+  const pending=payments.filter(p=>p.direction!=='out'&&p.status==='pending');
+  const status=document.getElementById('paymentAutomationStatus');
+  if(status && !status.textContent) status.textContent=`${due.length} הודעות מוכנות לשליחה מתוך ${pending.length} בקשות ממתינות.`;
+  box.innerHTML=due.length?due.map(p=>`<div class="vendor-item"><b>${escapeHtml(p.payerName||'ללא שם')}</b><div class="label">${escapeHtml(p.payerPhone||'')} · ${Number(p.automationSentCount)?'תזכורת #'+((Number(p.reminderCount)||0)+1):'הודעה ראשונה'}</div><div class="label">${escapeHtml((paymentReminderMessage(p)||'').slice(0,140))}...</div></div>`).join(''):'<span class="label">אין כרגע הודעות שמגיעות לשליחה. המערכת תציג כאן הודעות לפי החוקים שהוגדרו.</span>';
+}
+async function sendDuePaymentAutomationMessages(){
+  const due=paymentAutomationDueItems();
+  const status=document.getElementById('paymentAutomationStatus');
+  if(!due.length){ if(status){ status.textContent='אין הודעות שמגיעות לשליחה כרגע.'; status.className='status'; } return; }
+  if(!confirm(`לשלוח עכשיו ${due.length} הודעות וואטסאפ לפי חוקי האוטומציה?`)) return;
+  let ok=0, fail=0;
+  if(status){ status.textContent='שולח הודעות...'; status.className='status'; }
+  for(const p of due){
+    try{
+      const res=await fetch('/api/send-whatsapp',{method:'POST',headers:{'content-type':'application/json',...eventAccessHeaders()},body:JSON.stringify({eventId:currentEventId(),phone:p.payerPhone,message:paymentReminderMessage(p),paymentId:p.id})});
+      const data=await res.json().catch(()=>({}));
+      if(!res.ok||!data.ok) throw new Error(data.error||'שליחה נכשלה');
+      const now=new Date().toISOString();
+      p.automationSentCount=(Number(p.automationSentCount)||0)+1;
+      if(p.automationSentCount>1) p.reminderCount=(Number(p.reminderCount)||0)+1;
+      p.lastAutomationSentAt=now; p.lastReminderAt=now; p.updatedAt=now;
+      p.automationLog=[...(Array.isArray(p.automationLog)?p.automationLog:[]),{ts:now,type:p.automationSentCount>1?'reminder':'initial',ok:true}].slice(-20);
+      addLocalWaLog(p.payerPhone,'out',paymentReminderMessage(p)); ok++;
+      await new Promise(r=>setTimeout(r,900));
+    }catch(e){ p.automationLog=[...(Array.isArray(p.automationLog)?p.automationLog:[]),{ts:new Date().toISOString(),ok:false,error:e.message}].slice(-20); fail++; }
+  }
+  savePayments();
+  if(status){ status.textContent=`השליחה הסתיימה: ${ok} נשלחו, ${fail} נכשלו.`; status.className='status '+(fail?'bad-text':'ok-text'); }
+}
 function markPaymentPaid(id){ const p=payments.find(x=>x.id===id); if(!p) return; if(p.status==='paid') return; const paidAmount=Number(prompt('איזה סכום התקבל בפועל?', Number(p.amount)||''))||0; if(!paidAmount) return; if(!confirm(`לסמן שהתקבל תשלום של ${nis(paidAmount)}? פעולה זו תוסיף הכנסה לארנק האירוע.`)) return; p.amount=paidAmount; p.status='paid'; p.providerStatus='manual_confirmed_until_grow_webhook'; p.paidAt=new Date().toISOString(); p.updatedAt=p.paidAt; walletTx.unshift({date:p.paidAt,amount:paidAmount,type:'income',note:`תשלום התקבל: ${p.payerName||''} · ${p.description||''}`,paymentId:p.id}); savePayments(); saveWallet(); }
 function cancelPaymentRequest(id){ const p=payments.find(x=>x.id===id); if(!p) return; if(!confirm('לבטל את בקשת התשלום?')) return; p.status='cancelled'; p.updatedAt=new Date().toISOString(); savePayments(); }
 function createPayoutRequest(){
@@ -1776,6 +1858,7 @@ async function askEventAssistant(){
       if(Array.isArray(data.state.vendors)){ vendors=data.state.vendors; eventStorageSet(VENDOR_KEY,JSON.stringify(vendors)); }
       if(Array.isArray(data.state.walletTx)){ walletTx=data.state.walletTx; eventStorageSet(WALLET_KEY,JSON.stringify(walletTx)); }
       if(Array.isArray(data.state.payments)){ payments=data.state.payments; eventStorageSet(PAYMENTS_KEY,JSON.stringify(payments)); }
+      if(data.state.paymentAutomation){ paymentAutomation={...defaultPaymentAutomationSettings(),...data.state.paymentAutomation}; eventStorageSet(PAYMENT_AUTOMATION_KEY,JSON.stringify(paymentAutomation)); }
       suppressSync=false;
       fillEventSettings(); render(); renderHall(); renderVendors(); renderWallet(); renderPayments(); updateVendorStats(); renderWhatsAppGuests(); updateEventAssistantUi();
     }
@@ -1796,6 +1879,7 @@ renderVendors();
 fillVendorForm();
 renderWallet();
 renderPayments();
+renderPaymentAutomationQueue();
 fillPaymentTemplatePreview(true);
 updateVendorStats();
 renderAdminEvents();
