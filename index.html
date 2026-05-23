@@ -157,7 +157,9 @@
     }
 
     .native-select-hidden{position:absolute!important;opacity:0!important;pointer-events:none!important;width:1px!important;height:1px!important;overflow:hidden!important}
-    .custom-ddl{position:relative;width:100%;z-index:30}
+    .event-picker-card,.admin-panel,.admin-panel.active{position:relative;overflow:visible!important}.event-picker-card{z-index:80!important}.admin-event-list{position:relative;z-index:1}
+    .custom-ddl{position:relative;width:100%;z-index:90}
+    .custom-ddl.open{z-index:2147483000}
     .custom-ddl-button{
       width:100%;min-height:58px;border-radius:18px!important;padding:0 18px!important;
       display:flex;align-items:center;justify-content:space-between;gap:14px;text-align:right;cursor:pointer;
@@ -168,7 +170,7 @@
     .custom-ddl-button:hover,.custom-ddl.open .custom-ddl-button{border-color:rgba(216,176,122,.46)!important;background:rgba(242,237,232,.09)!important}
     .custom-ddl-arrow{color:var(--orma-gold);font-size:22px;transition:transform .18s ease}.custom-ddl.open .custom-ddl-arrow{transform:rotate(180deg)}
     .custom-ddl-menu{
-      position:fixed;top:180px;right:24px;left:24px;max-width:760px;margin:0 auto;max-height:min(68vh,520px);overflow:auto;z-index:2147483000;
+      position:absolute;top:calc(100% + 8px);right:0;left:0;max-width:none;margin:0;max-height:min(68vh,520px);overflow:auto;z-index:2147483000;
       background:rgba(15,17,16,.98)!important;border:1px solid rgba(216,176,122,.24)!important;border-radius:22px!important;
       box-shadow:0 34px 120px rgba(0,0,0,.72), inset 0 1px 0 rgba(255,255,255,.06)!important;
       backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);padding:10px!important;
@@ -177,7 +179,7 @@
     .custom-ddl-option:hover,.custom-ddl-option.active{background:rgba(216,176,122,.16)!important;color:#fff!important}
     .custom-ddl-option b{display:block;color:var(--orma-cream);font-size:16px}.custom-ddl-option small{display:block;color:var(--orma-muted);font-size:13px;margin-top:4px}
     .custom-ddl-empty{padding:14px;color:var(--orma-muted);text-align:center}
-    @media(max-width:760px){.custom-ddl-menu{top:120px;right:12px;left:12px;max-height:70vh}}
+    @media(max-width:760px){.custom-ddl-menu{top:calc(100% + 8px);right:0;left:0;max-height:62vh}.custom-ddl.open{margin-bottom:12px}.custom-ddl-option{padding:18px 16px!important}}
     .admin-locked .auth-shell.opening-hero:before{
       content:"";position:absolute;inset:0;z-index:-2;
       background:
