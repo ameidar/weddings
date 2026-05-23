@@ -309,10 +309,24 @@ async function pendingParticipantsApi(request, env) {
   if (!env.EVENTS_KV) return jsonResponse({ ok: false, error: 'Cloudflare KV binding EVENTS_KV is not configured' }, 501);
   const eventId = String(new URL(request.url).searchParams.get('eventId') || '').trim();
   if (!eventId) return jsonResponse({ ok: false, error: 'Missing eventId' }, 400);
+  const session = await requireEventAccess(request, env, eventId);
+  if (!session) return jsonResponse({ ok: false, error: 'Unauthorized' }, 401);
   const raw = await env.EVENTS_KV.get(EVENT_STATE_PREFIX + eventId);
   let state = null;
   try { state = raw ? JSON.parse(raw) : null; } catch { state = null; }
   return jsonResponse({ ok: true, eventId, pendingParticipants: Array.isArray(state?.pendingParticipants) ? state.pendingParticipants : [] });
+}
+
+function sanitizeEventStateForTenant(state, eventId) {
+  const src = state && typeof state === 'object' ? state : {};
+  const saved = { ...src, eventId, updatedAt: new Date().toISOString() };
+  saved.eventSettings = { ...(src.eventSettings && typeof src.eventSettings === 'object' ? src.eventSettings : {}), id: eventId };
+  for (const key of ['participants', 'vendors', 'walletTx', 'payments', 'pendingParticipants']) {
+    if (Array.isArray(saved[key])) saved[key] = saved[key].map(item => item && typeof item === 'object' ? { ...item, eventId } : item);
+  }
+  if (saved.hall && typeof saved.hall === 'object') saved.hall = { ...saved.hall, eventId };
+  if (saved.paymentAutomation && typeof saved.paymentAutomation === 'object') saved.paymentAutomation = { ...saved.paymentAutomation, eventId };
+  return saved;
 }
 
 async function eventStateApi(request, env) {
@@ -338,7 +352,7 @@ async function eventStateApi(request, env) {
   if (request.method === 'POST') {
     const state = body?.state;
     if (!state || typeof state !== 'object') return jsonResponse({ ok: false, error: 'Missing state' }, 400);
-    const saved = { ...state, eventId, updatedAt: new Date().toISOString() };
+    const saved = sanitizeEventStateForTenant(state, eventId);
     await env.EVENTS_KV.put(key, JSON.stringify(saved));
     return jsonResponse({ ok: true, eventId, state: saved });
   }
@@ -887,6 +901,9 @@ async function getWhatsAppHistory(request, env) {
     const apiToken = env.GREENAPI_API_TOKEN_INSTANCE;
     if (!idInstance || !apiToken) return jsonResponse({ ok: false, error: 'Green API is not configured' }, 500);
     const body = await request.json().catch(() => ({}));
+    const eventId = String(body.eventId || '').trim();
+    if (!eventId) return jsonResponse({ ok: false, error: 'Missing eventId' }, 400);
+    if (!(await requireEventAccess(request, env, eventId))) return jsonResponse({ ok: false, error: 'Unauthorized' }, 401);
     const chatId = normalizeChatId(body.chatId || body.phone);
     const count = Math.min(Math.max(Number(body.count) || 50, 1), 100);
     if (!chatId) return jsonResponse({ ok: false, error: 'Missing phone/chatId' }, 400);
@@ -910,7 +927,8 @@ async function sendWhatsApp(request, env) {
   try {
     const body = await request.json();
     const eventId = String(body.eventId || '').trim();
-    if (eventId && !(await requireEventAccess(request, env, eventId))) return jsonResponse({ ok: false, error: 'Unauthorized' }, 401);
+    if (!eventId) return jsonResponse({ ok: false, error: 'Missing eventId' }, 400);
+    if (!(await requireEventAccess(request, env, eventId))) return jsonResponse({ ok: false, error: 'Unauthorized' }, 401);
     const sent = await sendGreenApiMessage(env, body.chatId || body.phone, body.message);
     if (!sent.ok) return jsonResponse({ ok: false, error: sent.error, status: sent.status, result: sent.result }, sent.status && sent.status < 500 ? sent.status : 502);
     return jsonResponse({ ok: true, chatId: sent.chatId, result: sent.result });

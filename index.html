@@ -673,7 +673,8 @@ const CLIENT_SESSION_PREFIX = 'dynamic_event_client_session_v2_';
 const EVENT_KEY = 'dynamic_event_settings_v1';
 const STORAGE_KEY = 'dynamic_event_participants_v1';
 let activeEventId = eventSlug() || '';
-function eventStorageKey(base){ return activeEventId ? `${base}_${activeEventId}` : base; }
+function storageEventId(){ return activeEventId || eventSlug() || selectedAdminEventId || ''; }
+function eventStorageKey(base){ const id=storageEventId(); return `${base}_${id || 'no_event'}`; }
 function eventStorageGet(base){ return localStorage.getItem(eventStorageKey(base)); }
 function eventStorageSet(base,value){ localStorage.setItem(eventStorageKey(base), value); }
 function eventStorageRemove(base){ localStorage.removeItem(eventStorageKey(base)); }
@@ -802,12 +803,12 @@ function authHeaders(){ return currentAdminToken ? {authorization:'Bearer '+curr
 function clientAuthHeaders(){ return currentClientToken ? {authorization:'Bearer '+currentClientToken} : {}; }
 function eventAccessHeaders(){ return currentAdminToken ? authHeaders() : clientAuthHeaders(); }
 function currentEventId(){ return activeEventId || eventSlug() || eventSettings?.id || selectedAdminEventId || ''; }
-function collectEventState(){ return {eventSettings, participants:guests, hall, vendors, walletTx, payments, paymentAutomation, savedAt:new Date().toISOString()}; }
+function collectEventState(){ const id=currentEventId(); return {eventId:id,eventSettings:{...(eventSettings||{}),id}, participants:guests, hall, vendors, walletTx, payments:payments.map(p=>({...p,eventId:id})), paymentAutomation, savedAt:new Date().toISOString()}; }
 async function syncEventStateNow(){
-  if(suppressSync || !currentClientToken || !currentEventId()) return;
-  try{ await fetch('/api/event-state',{method:'POST',headers:{'content-type':'application/json',...clientAuthHeaders()},body:JSON.stringify({eventId:currentEventId(),state:collectEventState()})}); }catch(e){}
+  if(suppressSync || !currentEventId() || !(currentClientToken||currentAdminToken)) return;
+  try{ await fetch('/api/event-state',{method:'POST',headers:{'content-type':'application/json',...eventAccessHeaders()},body:JSON.stringify({eventId:currentEventId(),state:collectEventState()})}); }catch(e){}
 }
-function scheduleEventStateSync(){ if(suppressSync || !currentClientToken) return; clearTimeout(syncTimer); syncTimer=setTimeout(syncEventStateNow, 800); }
+function scheduleEventStateSync(){ if(suppressSync || !(currentClientToken||currentAdminToken)) return; clearTimeout(syncTimer); syncTimer=setTimeout(syncEventStateNow, 800); }
 function mergePendingParticipants(pending){
   if(!Array.isArray(pending)) return 0;
   const existingNames=new Set(guests.map(g=>String(g['שם מלא / שם לקוח']||'').trim().toLowerCase()).filter(Boolean));
@@ -818,7 +819,7 @@ function mergePendingParticipants(pending){
 async function loadPendingParticipants(){
   if(!currentEventId()) return 0;
   try{
-    const res=await fetch('/api/pending-participants?eventId='+encodeURIComponent(currentEventId()));
+    const res=await fetch('/api/pending-participants?eventId='+encodeURIComponent(currentEventId()),{headers:eventAccessHeaders()});
     const data=await res.json();
     if(res.ok && data.ok) return mergePendingParticipants(data.pendingParticipants);
   }catch(e){}
@@ -1062,6 +1063,7 @@ function chooseAdminEventFromDropdown(id){
   const selector=document.getElementById('adminEventSelector');
   if(selector) selector.value=id;
   localStorage.setItem('selected_admin_event_id', id);
+  const ev=loadAdminEvents().find(x=>x.id===id); if(ev) applyAdminEventToWorkspace(ev);
   closeAdminEventDropdown();
   renderAdminEvents();
   showAdminPanel('events');
@@ -1078,6 +1080,7 @@ function selectAdminEvent(id){
   const selector=document.getElementById('adminEventSelector');
   if(selector) selector.value=selectedAdminEventId;
   if(selectedAdminEventId) localStorage.setItem('selected_admin_event_id', selectedAdminEventId); else localStorage.removeItem('selected_admin_event_id');
+  const ev=loadAdminEvents().find(x=>x.id===selectedAdminEventId); if(ev) applyAdminEventToWorkspace(ev);
   renderAdminEvents();
 }
 function adminDesignPanelHtml(ev){
@@ -1467,7 +1470,7 @@ async function refreshWhatsAppHistory(){
   if(!phone){ status.textContent='בחר משתתף או הזן טלפון כדי לרענן לוג'; status.className='status full bad-text'; return; }
   status.textContent='מרענן לוג שיחה...'; status.className='status full';
   try{
-    const res=await fetch('/api/whatsapp-history',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({phone,count:50})});
+    const res=await fetch('/api/whatsapp-history',{method:'POST',headers:{'content-type':'application/json',...eventAccessHeaders()},body:JSON.stringify({eventId:currentEventId(),phone,count:50})});
     const data=await res.json();
     if(!res.ok||!data.ok) throw new Error(data.error || data.result?.message || 'לא ניתן לקבל היסטוריה');
     renderWhatsAppLog(data.messages||[]);
