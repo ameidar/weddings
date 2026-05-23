@@ -16,6 +16,7 @@ const EVENT_ASSISTANT_CHAT_PREFIX = 'event_assistant_chat_v1:';
 const ADMIN_CONFIG_KEY = 'admin_config_v1';
 const ADMIN_RESET_PREFIX = 'admin_password_reset_v1:';
 const MORNING_WEBHOOK_PREFIX = 'morning_webhook_v1:';
+const PAYMENT_SHORT_LINK_PREFIX = 'payment_short_link_v1:';
 
 function base64url(bytes) {
   let bin = '';
@@ -990,6 +991,7 @@ async function verifyPaymentChoiceToken(env, token) {
 }
 
 async function paymentChoiceLinkApi(request, env) {
+  if (!env.EVENTS_KV) return jsonResponse({ ok: false, error: 'Cloudflare KV binding EVENTS_KV is not configured' }, 501);
   const body = await request.json().catch(() => ({}));
   const eventId = String(body.eventId || '').trim();
   const paymentId = String(body.paymentId || '').trim();
@@ -997,7 +999,19 @@ async function paymentChoiceLinkApi(request, env) {
   if (!(await requireEventAccess(request, env, eventId))) return jsonResponse({ ok: false, error: 'Unauthorized' }, 401);
   const token = await signPaymentChoiceToken(env, { eventId, paymentId });
   const origin = new URL(request.url).origin;
-  return jsonResponse({ ok: true, url: `${origin}/pay?t=${encodeURIComponent(token)}` });
+  const shortCode = base64url(crypto.getRandomValues(new Uint8Array(6)));
+  await env.EVENTS_KV.put(PAYMENT_SHORT_LINK_PREFIX + shortCode, JSON.stringify({ token, eventId, paymentId, createdAt: new Date().toISOString() }), { expirationTtl: 60 * 60 * 24 * 90 });
+  return jsonResponse({ ok: true, url: `${origin}/p/${shortCode}`, longUrl: `${origin}/pay?t=${encodeURIComponent(token)}` });
+}
+
+async function paymentShortRedirect(request, env, code) {
+  if (!env.EVENTS_KV) return htmlResponse('<!doctype html><meta charset="utf-8"><body dir="rtl" style="font-family:Arial;padding:24px"><h2>שירות הקישורים אינו זמין כרגע</h2></body>', 501);
+  const clean = String(code || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 32);
+  const raw = clean ? await env.EVENTS_KV.get(PAYMENT_SHORT_LINK_PREFIX + clean) : '';
+  let data; try { data = raw ? JSON.parse(raw) : null; } catch { data = null; }
+  if (!data?.token) return htmlResponse('<!doctype html><meta charset="utf-8"><body dir="rtl" style="font-family:Arial;padding:24px"><h2>קישור התשלום לא תקין או שפג תוקפו</h2></body>', 404);
+  const url = new URL(request.url);
+  return Response.redirect(`${url.origin}/pay?t=${encodeURIComponent(data.token)}`, 302);
 }
 
 async function loadPaymentForChoice(env, eventId, paymentId) {
@@ -1125,6 +1139,7 @@ export default {
     if (url.pathname === '/api/rsvp' && request.method === 'POST') return rsvpSubmitApi(request, env);
     if (url.pathname === '/rsvp' && request.method === 'GET') return rsvpPage(request, env);
     if (url.pathname === '/pay' && request.method === 'GET') return paymentChoicePage(request, env);
+    if (url.pathname.startsWith('/p/') && request.method === 'GET') return paymentShortRedirect(request, env, url.pathname.split('/').filter(Boolean)[1]);
     if (url.pathname === '/api/payment-choice-link') {
       if (request.method !== 'POST') return jsonResponse({ ok: false, error: 'Method not allowed' }, 405);
       return paymentChoiceLinkApi(request, env);
