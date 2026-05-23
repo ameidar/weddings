@@ -1585,8 +1585,8 @@ function renderPaymentMessageTemplate(tpl,p){
 function morningRequiresPositiveAmount(method){ return method==='morning-link'; }
 function validateMorningAmount(method,amount,status){
   if(!morningRequiresPositiveAmount(method) || amount>0) return true;
-  const msg='Morning מחייבת סכום תשלום גדול מאפס כדי ליצור לינק. הזן סכום בבקשת התשלום ואז צור לינק.';
-  if(status){ status.textContent=msg; status.className='status bad-text'; } else alert(msg);
+  const msg='Morning מחייבת סכום גדול מאפס רק ברגע יצירת דף הסליקה. לבקשת מתנה ללא סכום המערכת תיצור דף בחירת סכום לפני Morning.';
+  if(status){ status.textContent=msg; status.className='status'; }
   return false;
 }
 async function createPaymentRequest(){
@@ -1599,18 +1599,30 @@ async function createPaymentRequest(){
   const base={payerName:get('paymentPayerName'),amount,description:get('paymentDescription')||`תשלום עבור ${eventSettings.name||'אירוע'}`,paymentLink};
   if(!customMessage) customMessage=renderPaymentMessageTemplate(PAYMENT_MESSAGE_TEMPLATES[templateKey]||PAYMENT_MESSAGE_TEMPLATES.warm,base);
   const method=get('paymentMethod')||'morning-link';
-  if(method==='morning-link' && !paymentLink && !validateMorningAmount(method,amount,status)) return;
   const p={id:createPaymentId(),direction:'in',status:'pending',provider:method==='morning-link'?'morning':'grow',providerStatus:paymentLink?'external_link_ready':'waiting_for_payment_link',payerName:base.payerName,payerPhone:get('paymentPayerPhone'),payerEmail:get('paymentPayerEmail'),amount,description:base.description,method,notify:get('paymentNotify')||'whatsapp',messageTemplate:templateKey,customMessage,eventId:currentEventId(),createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),paymentLink};
   payments.unshift(p); savePayments();
   ['paymentPayerName','paymentPayerPhone','paymentPayerEmail','paymentAmount','paymentDescription','paymentExternalLink'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   fillPaymentTemplatePreview(true);
-  if(status){ status.textContent=paymentLink?'בקשת התשלום נוצרה עם לינק התשלום שהודבק ✅':'בקשת התשלום נוצרה. מייצר לינק Morning מתוך המערכת...'; status.className='status'; }
-  if(method==='morning-link' && !paymentLink) await generateMorningPaymentLink(p.id);
+  if(status){ status.textContent=paymentLink?'בקשת התשלום נוצרה עם לינק התשלום שהודבק ✅':(amount>0?'בקשת התשלום נוצרה. מייצר לינק Morning מתוך המערכת...':'בקשת התשלום נוצרה. מייצר דף בחירת סכום מתנה...'); status.className='status'; }
+  if(method==='morning-link' && !paymentLink){ if(amount>0) await generateMorningPaymentLink(p.id); else await generatePaymentChoiceLink(p.id); }
+}
+async function generatePaymentChoiceLink(id){
+  const p=payments.find(x=>x.id===id); if(!p) return;
+  const status=document.getElementById('paymentCreateStatus')||document.getElementById('paymentAutomationStatus');
+  try{
+    const res=await fetch('/api/payment-choice-link',{method:'POST',headers:{'content-type':'application/json',...eventAccessHeaders()},body:JSON.stringify({eventId:currentEventId(),paymentId:p.id})});
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok||!data.ok) throw new Error(data.error||'יצירת דף בחירת סכום נכשלה');
+    p.paymentLink=data.url; p.provider='morning'; p.providerStatus='gift_amount_choice_ready'; p.updatedAt=new Date().toISOString();
+    const tpl=PAYMENT_MESSAGE_TEMPLATES[p.messageTemplate||'warm']||PAYMENT_MESSAGE_TEMPLATES.warm;
+    p.customMessage=renderPaymentMessageTemplate(tpl,p); savePayments();
+    if(status){ status.textContent='דף בחירת סכום מתנה נוצר ונשמר בבקשת התשלום ✅'; status.className='status ok-text'; }
+  }catch(e){ p.providerStatus='choice_link_failed'; p.providerError=e.message; p.updatedAt=new Date().toISOString(); savePayments(); if(status){ status.textContent='שגיאה ביצירת דף בחירת סכום: '+e.message; status.className='status bad-text'; } }
 }
 async function generateMorningPaymentLink(id){
   const p=payments.find(x=>x.id===id); if(!p) return;
   const status=document.getElementById('paymentCreateStatus')||document.getElementById('paymentAutomationStatus');
-  if(!validateMorningAmount('morning-link',Number(p.amount)||0,status)) return;
+  if(!validateMorningAmount('morning-link',Number(p.amount)||0,status)){ await generatePaymentChoiceLink(id); return; }
   try{
     if(status){ status.textContent='מייצר לינק תשלום ב-Morning...'; status.className='status'; }
     const res=await fetch('/api/morning/create-payment-link',{method:'POST',headers:{'content-type':'application/json',...eventAccessHeaders()},body:JSON.stringify({eventId:currentEventId(),paymentId:p.id,payerName:p.payerName,payerPhone:p.payerPhone,payerEmail:p.payerEmail,amount:Number(p.amount)||0,description:p.description,maxPayments:12})});

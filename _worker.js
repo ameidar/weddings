@@ -971,6 +971,73 @@ function safePaymentCustom(eventId, paymentId) {
   return JSON.stringify({ source: 'orma-event-system', eventId, paymentId });
 }
 
+async function signPaymentChoiceToken(env, claims) {
+  const payload = base64url(enc.encode(JSON.stringify({ ...claims, kind: 'payment-choice', exp: Date.now() + 1000 * 60 * 60 * 24 * 60 })));
+  const sig = await hmac(sessionSecret(env), payload);
+  return `${payload}.${sig}`;
+}
+
+async function verifyPaymentChoiceToken(env, token) {
+  if (!token || !String(token).includes('.')) return null;
+  const [payload, sig] = String(token).split('.');
+  const expected = await hmac(sessionSecret(env), payload);
+  if (!safeEqual(sig, expected)) return null;
+  try {
+    const json = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(payload.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0))));
+    if (json.kind !== 'payment-choice' || !json.eventId || !json.paymentId || json.exp < Date.now()) return null;
+    return json;
+  } catch { return null; }
+}
+
+async function paymentChoiceLinkApi(request, env) {
+  const body = await request.json().catch(() => ({}));
+  const eventId = String(body.eventId || '').trim();
+  const paymentId = String(body.paymentId || '').trim();
+  if (!eventId || !paymentId) return jsonResponse({ ok: false, error: 'Missing eventId or paymentId' }, 400);
+  if (!(await requireEventAccess(request, env, eventId))) return jsonResponse({ ok: false, error: 'Unauthorized' }, 401);
+  const token = await signPaymentChoiceToken(env, { eventId, paymentId });
+  const origin = new URL(request.url).origin;
+  return jsonResponse({ ok: true, url: `${origin}/pay?t=${encodeURIComponent(token)}` });
+}
+
+async function loadPaymentForChoice(env, eventId, paymentId) {
+  const raw = await env.EVENTS_KV?.get(EVENT_STATE_PREFIX + eventId);
+  let state; try { state = raw ? JSON.parse(raw) : {}; } catch { state = {}; }
+  const payment = Array.isArray(state.payments) ? state.payments.find(p => p?.id === paymentId) : null;
+  return { state, payment };
+}
+
+async function paymentChoicePage(request, env) {
+  const token = new URL(request.url).searchParams.get('t') || '';
+  const claims = await verifyPaymentChoiceToken(env, token);
+  if (!claims) return htmlResponse('<!doctype html><meta charset="utf-8"><body dir="rtl" style="font-family:Arial;padding:24px"><h2>קישור תשלום לא תקין או שפג תוקפו</h2></body>', 400);
+  const { state, payment } = await loadPaymentForChoice(env, claims.eventId, claims.paymentId);
+  const eventName = escapeHtmlServer(state?.eventSettings?.name || 'האירוע');
+  const payerName = escapeHtmlServer(payment?.payerName || 'אורח/ת יקר/ה');
+  return htmlResponse(`<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>בחירת סכום מתנה</title><style>body{font-family:Assistant,Arial,sans-serif;background:#171411;color:#f7efe6;margin:0}.box{max-width:520px;margin:28px auto;background:#211914;border:1px solid #d8b07a55;border-radius:24px;padding:24px;box-shadow:0 24px 80px #0008}h1{margin-top:0;color:#d8b07a}.chips{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}.chips button,.main{height:52px;border:0;border-radius:14px;background:#d8b07a;color:#1a0f08;font-weight:900;font-size:18px}.chips button{background:#30251d;color:#f7efe6;border:1px solid #d8b07a55}input{width:100%;box-sizing:border-box;height:56px;border-radius:14px;border:1px solid #d8b07a55;background:#110f0d;color:#fff;font-size:22px;padding:0 14px}.note{color:#c9b8a5;font-size:14px}.status{white-space:pre-wrap;margin-top:12px;color:#ffc7c2}</style></head><body><main class="box"><h1>בחירת סכום מתנה</h1><p>שלום ${payerName}, תודה שאתם חלק מ${eventName} ❤️</p><p class="note">בחרו את הסכום שנוח לכם לשלם. לאחר מכן תועברו לעמוד תשלום מאובטח של Morning, שבו יוצגו אפשרויות התשלום הזמינות.</p><input id="amount" type="number" min="1" step="1" placeholder="סכום בש״ח"><div class="chips">${[100,180,250,360,500,1000].map(n=>`<button onclick="amount.value=${n}">₪${n}</button>`).join('')}</div><button class="main" onclick="go()">המשך לתשלום מאובטח</button><div id="status" class="status"></div></main><script>const token=${JSON.stringify(token)};async function go(){const s=document.getElementById('status');const amount=Number(document.getElementById('amount').value)||0;if(amount<=0){s.textContent='נא להזין סכום גדול מאפס';return} s.textContent='מכין קישור תשלום מאובטח...';try{const r=await fetch('/api/morning/create-gift-link',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({token,amount})});const d=await r.json();if(!r.ok||!d.ok)throw new Error(d.error||'יצירת קישור נכשלה');location.href=d.url}catch(e){s.textContent='לא הצלחנו לפתוח תשלום: '+e.message}}</script></body></html>`);
+}
+
+async function createMorningPaymentForm(env, request, input) {
+  const amount = Number(input.amount) || 0;
+  if (amount <= 0) throw new Error('Morning מחייבת סכום תשלום גדול מאפס כדי ליצור לינק.');
+  const eventId = String(input.eventId || '').trim();
+  const paymentId = String(input.paymentId || '').trim() || `pay_${Date.now().toString(36)}`;
+  const origin = new URL(request.url).origin;
+  const description = String(input.description || 'תשלום לאירוע').trim().slice(0, 200);
+  const payerName = String(input.payerName || 'לקוח').trim().slice(0, 120);
+  const payerEmail = String(input.payerEmail || '').trim();
+  const payerPhone = cleanPhone(input.payerPhone || input.phone || '');
+  const maxPayments = Math.max(1, Math.min(Number(input.maxPayments) || Number(env.MORNING_MAX_PAYMENTS) || 12, 36));
+  const payload = { description, type: Number(env.MORNING_DOCUMENT_TYPE) || 320, lang: 'he', currency: 'ILS', vatType: Number(env.MORNING_VAT_TYPE) || 0, amount, maxPayments, group: Number(env.MORNING_PAYMENT_GROUP) || 100, client: { name: payerName, emails: payerEmail ? [payerEmail] : [], country: 'IL', phone: payerPhone, mobile: payerPhone, add: true }, income: [{ description, quantity: 1, price: amount, currency: 'ILS', vatType: Number(env.MORNING_INCOME_VAT_TYPE) || 0 }], remarks: String(input.remarks || `בקשת תשלום ${paymentId}`).slice(0, 500), successUrl: `${origin}/?payment=success&eventId=${encodeURIComponent(eventId)}&paymentId=${encodeURIComponent(paymentId)}`, failureUrl: `${origin}/?payment=failure&eventId=${encodeURIComponent(eventId)}&paymentId=${encodeURIComponent(paymentId)}`, notifyUrl: `${origin}/api/morning/webhook`, custom: safePaymentCustom(eventId, paymentId) };
+  if (env.MORNING_PLUGIN_ID) payload.pluginId = String(env.MORNING_PLUGIN_ID);
+  const token = await morningToken(env);
+  const upstream = await fetch(`${morningBaseUrl(env)}/payments/form`, { method: 'POST', headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' }, body: JSON.stringify(payload) });
+  const text = await upstream.text();
+  let data; try { data = text ? JSON.parse(text) : {}; } catch { data = { raw: text }; }
+  if (!upstream.ok || !data.url) throw new Error(data.errorMessage || data.message || text || `Morning payment link failed (${upstream.status})`);
+  return { ok: true, paymentId, url: data.url, provider: 'morning', providerStatus: 'payment_link_ready', morning: { errorCode: data.errorCode || 0 } };
+}
+
 async function createMorningPaymentLink(request, env) {
   try {
     const body = await request.json().catch(() => ({}));
@@ -978,54 +1045,24 @@ async function createMorningPaymentLink(request, env) {
     if (!eventId) return jsonResponse({ ok: false, error: 'Missing eventId' }, 400);
     const session = await requireEventAccess(request, env, eventId);
     if (!session) return jsonResponse({ ok: false, error: 'Unauthorized' }, 401);
-    const amount = Number(body.amount) || 0;
-    if (amount <= 0) return jsonResponse({ ok: false, error: 'Morning מחייבת סכום תשלום גדול מאפס כדי ליצור לינק.' }, 400);
-    const paymentId = String(body.paymentId || '').trim() || `pay_${Date.now().toString(36)}`;
-    const origin = new URL(request.url).origin;
-    const description = String(body.description || 'תשלום לאירוע').trim().slice(0, 200);
-    const payerName = String(body.payerName || 'לקוח').trim().slice(0, 120);
-    const payerEmail = String(body.payerEmail || '').trim();
-    const payerPhone = cleanPhone(body.payerPhone || body.phone || '');
-    const maxPayments = Math.max(1, Math.min(Number(body.maxPayments) || Number(env.MORNING_MAX_PAYMENTS) || 12, 36));
-    const payload = {
-      description,
-      type: Number(env.MORNING_DOCUMENT_TYPE) || 320,
-      lang: 'he',
-      currency: 'ILS',
-      vatType: Number(env.MORNING_VAT_TYPE) || 0,
-      maxPayments,
-      group: Number(env.MORNING_PAYMENT_GROUP) || 100,
-      client: {
-        name: payerName,
-        emails: payerEmail ? [payerEmail] : [],
-        country: 'IL',
-        phone: payerPhone,
-        mobile: payerPhone,
-        add: true,
-      },
-      remarks: String(body.remarks || `בקשת תשלום ${paymentId}`).slice(0, 500),
-      successUrl: `${origin}/?payment=success&eventId=${encodeURIComponent(eventId)}&paymentId=${encodeURIComponent(paymentId)}`,
-      failureUrl: `${origin}/?payment=failure&eventId=${encodeURIComponent(eventId)}&paymentId=${encodeURIComponent(paymentId)}`,
-      notifyUrl: `${origin}/api/morning/webhook`,
-      custom: safePaymentCustom(eventId, paymentId),
-    };
-    if (env.MORNING_PLUGIN_ID) payload.pluginId = String(env.MORNING_PLUGIN_ID);
-    payload.amount = amount;
-    payload.income = [{ description, quantity: 1, price: amount, currency: 'ILS', vatType: Number(env.MORNING_INCOME_VAT_TYPE) || 0 }];
-    const token = await morningToken(env);
-    const upstream = await fetch(`${morningBaseUrl(env)}/payments/form`, {
-      method: 'POST',
-      headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    const text = await upstream.text();
-    let data;
-    try { data = text ? JSON.parse(text) : {}; } catch { data = { raw: text }; }
-    if (!upstream.ok || !data.url) return jsonResponse({ ok: false, error: data.errorMessage || data.message || text || `Morning payment link failed (${upstream.status})`, morningStatus: upstream.status }, upstream.status >= 400 && upstream.status < 500 ? 400 : 502);
-    return jsonResponse({ ok: true, paymentId, url: data.url, provider: 'morning', providerStatus: 'payment_link_ready', morning: { errorCode: data.errorCode || 0 } });
+    return jsonResponse(await createMorningPaymentForm(env, request, body));
   } catch (err) {
     return jsonResponse({ ok: false, error: err.message || 'Morning payment link failed' }, 500);
   }
+}
+
+async function createMorningGiftLink(request, env) {
+  try {
+    const body = await request.json().catch(() => ({}));
+    const claims = await verifyPaymentChoiceToken(env, body.token || '');
+    if (!claims) return jsonResponse({ ok: false, error: 'קישור תשלום לא תקין או שפג תוקפו' }, 400);
+    const { state, payment } = await loadPaymentForChoice(env, claims.eventId, claims.paymentId);
+    if (!payment) return jsonResponse({ ok: false, error: 'בקשת התשלום לא נמצאה' }, 404);
+    const result = await createMorningPaymentForm(env, request, { ...payment, eventId: claims.eventId, paymentId: claims.paymentId, amount: Number(body.amount) || 0, description: payment.description || 'מתנה לאירוע' });
+    payment.chosenAmount = Number(body.amount) || 0; payment.lastGeneratedPaymentUrl = result.url; payment.providerStatus = 'guest_amount_selected'; payment.updatedAt = new Date().toISOString();
+    await env.EVENTS_KV?.put(EVENT_STATE_PREFIX + claims.eventId, JSON.stringify({ ...state, eventId: claims.eventId, updatedAt: new Date().toISOString() }));
+    return jsonResponse(result);
+  } catch (err) { return jsonResponse({ ok: false, error: err.message || 'יצירת לינק תשלום נכשלה' }, 500); }
 }
 
 function extractMorningCustom(body) {
@@ -1085,6 +1122,15 @@ export default {
     if (url.pathname === '/api/rsvp-link' && request.method === 'POST') return rsvpLinkApi(request, env);
     if (url.pathname === '/api/rsvp' && request.method === 'POST') return rsvpSubmitApi(request, env);
     if (url.pathname === '/rsvp' && request.method === 'GET') return rsvpPage(request, env);
+    if (url.pathname === '/pay' && request.method === 'GET') return paymentChoicePage(request, env);
+    if (url.pathname === '/api/payment-choice-link') {
+      if (request.method !== 'POST') return jsonResponse({ ok: false, error: 'Method not allowed' }, 405);
+      return paymentChoiceLinkApi(request, env);
+    }
+    if (url.pathname === '/api/morning/create-gift-link') {
+      if (request.method !== 'POST') return jsonResponse({ ok: false, error: 'Method not allowed' }, 405);
+      return createMorningGiftLink(request, env);
+    }
     if (url.pathname === '/api/send-whatsapp') {
       if (request.method !== 'POST') return jsonResponse({ ok: false, error: 'Method not allowed' }, 405);
       return sendWhatsApp(request, env);
