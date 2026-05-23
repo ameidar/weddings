@@ -979,6 +979,7 @@ async function createMorningPaymentLink(request, env) {
     const session = await requireEventAccess(request, env, eventId);
     if (!session) return jsonResponse({ ok: false, error: 'Unauthorized' }, 401);
     const amount = Number(body.amount) || 0;
+    if (amount <= 0) return jsonResponse({ ok: false, error: 'Morning מחייבת סכום תשלום גדול מאפס כדי ליצור לינק.' }, 400);
     const paymentId = String(body.paymentId || '').trim() || `pay_${Date.now().toString(36)}`;
     const origin = new URL(request.url).origin;
     const description = String(body.description || 'תשלום לאירוע').trim().slice(0, 200);
@@ -1009,10 +1010,8 @@ async function createMorningPaymentLink(request, env) {
       custom: safePaymentCustom(eventId, paymentId),
     };
     if (env.MORNING_PLUGIN_ID) payload.pluginId = String(env.MORNING_PLUGIN_ID);
-    if (amount > 0) {
-      payload.amount = amount;
-      payload.income = [{ description, quantity: 1, price: amount, currency: 'ILS', vatType: Number(env.MORNING_INCOME_VAT_TYPE) || 0 }];
-    }
+    payload.amount = amount;
+    payload.income = [{ description, quantity: 1, price: amount, currency: 'ILS', vatType: Number(env.MORNING_INCOME_VAT_TYPE) || 0 }];
     const token = await morningToken(env);
     const upstream = await fetch(`${morningBaseUrl(env)}/payments/form`, {
       method: 'POST',

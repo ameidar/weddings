@@ -551,7 +551,7 @@ imma, 123456, אמא"></textarea><small>כל משתמש כאן יוכל להיכ
           <input id="paymentPayerName" placeholder="שם משלם / לקוח" oninput="fillPaymentTemplatePreview()" />
           <input id="paymentPayerPhone" placeholder="טלפון וואטסאפ" />
           <input id="paymentPayerEmail" type="email" placeholder="אימייל" />
-          <input id="paymentAmount" type="number" min="0" placeholder="סכום יעד פנימי / אופציונלי — האורח בוחר סכום" oninput="fillPaymentTemplatePreview()" />
+          <input id="paymentAmount" type="number" min="0" placeholder="סכום לתשלום — Morning מחייב סכום גדול מאפס" oninput="fillPaymentTemplatePreview()" />
           <input class="full" id="paymentDescription" placeholder="תיאור התשלום, לדוגמה: מתנה / השתתפות בשמחה" oninput="fillPaymentTemplatePreview()" />
           <input class="full" id="paymentExternalLink" placeholder="הדבק כאן לינק תשלום מ-Morning / משולם" oninput="fillPaymentTemplatePreview()" />
           <select id="paymentMethod"><option value="morning-link">לינק Morning</option><option value="grow-link">לינק משולם / Grow</option><option value="manual-bank">העברה ידנית / בנקאית</option><option value="cash">מזומן</option></select>
@@ -1582,6 +1582,13 @@ function renderPaymentMessageTemplate(tpl,p){
     .replaceAll('{description}',p.description||`תשלום עבור ${eventSettings.name||'האירוע'}`)
     .replaceAll('{link}',link);
 }
+function morningRequiresPositiveAmount(method){ return method==='morning-link'; }
+function validateMorningAmount(method,amount,status){
+  if(!morningRequiresPositiveAmount(method) || amount>0) return true;
+  const msg='Morning מחייבת סכום תשלום גדול מאפס כדי ליצור לינק. הזן סכום בבקשת התשלום ואז צור לינק.';
+  if(status){ status.textContent=msg; status.className='status bad-text'; } else alert(msg);
+  return false;
+}
 async function createPaymentRequest(){
   const amount=Number(document.getElementById('paymentAmount')?.value)||0;
   const status=document.getElementById('paymentCreateStatus');
@@ -1592,6 +1599,7 @@ async function createPaymentRequest(){
   const base={payerName:get('paymentPayerName'),amount,description:get('paymentDescription')||`תשלום עבור ${eventSettings.name||'אירוע'}`,paymentLink};
   if(!customMessage) customMessage=renderPaymentMessageTemplate(PAYMENT_MESSAGE_TEMPLATES[templateKey]||PAYMENT_MESSAGE_TEMPLATES.warm,base);
   const method=get('paymentMethod')||'morning-link';
+  if(method==='morning-link' && !paymentLink && !validateMorningAmount(method,amount,status)) return;
   const p={id:createPaymentId(),direction:'in',status:'pending',provider:method==='morning-link'?'morning':'grow',providerStatus:paymentLink?'external_link_ready':'waiting_for_payment_link',payerName:base.payerName,payerPhone:get('paymentPayerPhone'),payerEmail:get('paymentPayerEmail'),amount,description:base.description,method,notify:get('paymentNotify')||'whatsapp',messageTemplate:templateKey,customMessage,eventId:currentEventId(),createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),paymentLink};
   payments.unshift(p); savePayments();
   ['paymentPayerName','paymentPayerPhone','paymentPayerEmail','paymentAmount','paymentDescription','paymentExternalLink'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
@@ -1602,6 +1610,7 @@ async function createPaymentRequest(){
 async function generateMorningPaymentLink(id){
   const p=payments.find(x=>x.id===id); if(!p) return;
   const status=document.getElementById('paymentCreateStatus')||document.getElementById('paymentAutomationStatus');
+  if(!validateMorningAmount('morning-link',Number(p.amount)||0,status)) return;
   try{
     if(status){ status.textContent='מייצר לינק תשלום ב-Morning...'; status.className='status'; }
     const res=await fetch('/api/morning/create-payment-link',{method:'POST',headers:{'content-type':'application/json',...eventAccessHeaders()},body:JSON.stringify({eventId:currentEventId(),paymentId:p.id,payerName:p.payerName,payerPhone:p.payerPhone,payerEmail:p.payerEmail,amount:Number(p.amount)||0,description:p.description,maxPayments:12})});
