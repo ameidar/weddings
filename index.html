@@ -1641,6 +1641,30 @@ async function generateMorningPaymentLink(id){
 function paymentShareText(p){ const tpl=p.customMessage || PAYMENT_MESSAGE_TEMPLATES[p.messageTemplate||'warm'] || PAYMENT_MESSAGE_TEMPLATES.warm; return renderPaymentMessageTemplate(tpl,p); }
 function copyPaymentMessage(id){ const p=payments.find(x=>x.id===id); if(!p) return; copyText(paymentShareText(p)); }
 function openPaymentWhatsApp(id){ const p=payments.find(x=>x.id===id); if(!p) return; const phone=String(p.payerPhone||'').replace(/\D/g,''); if(!phone) return alert('אין מספר וואטסאפ בבקשת התשלום'); window.open(`https://wa.me/${phone}?text=${encodeURIComponent(paymentShareText(p))}`,'_blank'); }
+function paymentRequestTitle(p){
+  if(p.direction==='out') return 'תשלום החוצה: '+(p.vendorName||'יעד');
+  if(p.payerName) return p.payerName;
+  return Number(p.amount)>0 ? 'בקשת תשלום כללית' : 'בקשת מתנה פתוחה';
+}
+function paymentLinkTypeLabel(p){
+  if(p.paymentLink && p.providerStatus==='gift_amount_choice_ready') return 'דף בחירת סכום מוכן לשליחה';
+  if(p.paymentLink) return 'לינק תשלום מוכן לשליחה';
+  if(p.method==='morning-link' && Number(p.amount)>0) return 'צריך ליצור לינק Morning';
+  if(p.method==='morning-link') return 'צריך ליצור דף בחירת סכום';
+  return 'ללא לינק תשלום';
+}
+function paymentNextStepLabel(p){
+  if(p.status==='paid') return 'הסתיים — התשלום סומן כשולם והאוטומציה לא תשלח תזכורות.';
+  if(p.status==='cancelled') return 'בקשה מבוטלת — לא לשלוח.';
+  if(!p.paymentLink && p.method==='morning-link') return Number(p.amount)>0 ? 'שלב הבא: לחץ “צור לינק Morning”, ואז שלח את ההודעה.' : 'שלב הבא: לחץ “צור דף מתנה”, ואז שלח את ההודעה.';
+  if(p.paymentLink) return 'שלב הבא: שלח לאורח בוואטסאפ או העתק הודעה. אחרי תשלום — המערכת/וובהוק יעדכנו, או שתסמן ידנית.';
+  return 'שלב הבא: העתק/שלח הודעה לפי הצורך.';
+}
+function paymentActionsHtml(p){
+  if(p.direction==='out') return `<button onclick="markPayoutPaid('${p.id}')">סמן תשלום לספק כבוצע</button>`;
+  const createBtn=!p.paymentLink&&p.method==='morning-link' ? (Number(p.amount)>0 ? `<button onclick="generateMorningPaymentLink('${p.id}')">צור לינק Morning</button>` : `<button onclick="generatePaymentChoiceLink('${p.id}')">צור דף מתנה</button>`) : '';
+  return `${createBtn}<button onclick="copyPaymentMessage('${p.id}')">העתק הודעה לשליחה</button><button onclick="openPaymentWhatsApp('${p.id}')">שלח/פתח וואטסאפ</button><button onclick="markPaymentPaid('${p.id}')">סמן שהתקבל תשלום</button><button onclick="cancelPaymentRequest('${p.id}')">בטל בקשה</button>`;
+}
 function paymentReminderMessage(p){
   const base=paymentShareText(p);
   const n=Number(p.reminderCount)||0;
@@ -1715,7 +1739,7 @@ function renderPayments(){
   const growStatus=document.getElementById('growApiStatus'); if(growStatus) growStatus.textContent='יצירת לינק Morning מתוך המערכת';
   const sel=document.getElementById('payoutVendorSelect'); if(sel) sel.innerHTML='<option value="">בחר ספק / יעד אחר</option>'+vendors.map((v,i)=>`<option value="${i}">${escapeHtml(v.name||'ספק ללא שם')} · יתרה ${nis((Number(v.agreed)||0)-(Number(v.paid)||0))}</option>`).join('');
   const list=document.getElementById('paymentRequestsList');
-  if(list) list.innerHTML=payments.length?payments.map(p=>`<div class="vendor-item"><b>${escapeHtml(p.direction==='out'?'תשלום החוצה: '+(p.vendorName||'יעד'):(p.payerName||'משלם ללא שם'))}</b><div class="label">${escapeHtml(p.description||'')} ${Number(p.amount)?'· יעד פנימי '+nis(p.amount):'· סכום לבחירת המשלם'}</div><div class="label" style="color:${paymentStatusColor(p.status)}">${paymentStatusLabel(p.status)} · ${new Date(p.createdAt).toLocaleDateString('he-IL')}</div><div class="assistant-actions">${p.direction==='out'?`<button onclick="markPayoutPaid('${p.id}')">סמן שולם לספק</button>`:`${!p.paymentLink&&p.method==='morning-link'?`<button onclick="generateMorningPaymentLink('${p.id}')">צור לינק Morning</button>`:''}<button onclick="copyPaymentMessage('${p.id}')">העתק הודעה</button><button onclick="openPaymentWhatsApp('${p.id}')">פתח וואטסאפ</button><button onclick="markPaymentPaid('${p.id}')">סמן שולם</button><button onclick="cancelPaymentRequest('${p.id}')">בטל</button>`}</div></div>`).join(''):'<span class="label">עדיין אין בקשות תשלום.</span>';
+  if(list) list.innerHTML=payments.length?payments.map(p=>`<div class="vendor-item"><b>${escapeHtml(paymentRequestTitle(p))}</b><div class="label">${escapeHtml(p.description||'בקשת השתתפות / מתנה')} · ${Number(p.amount)?'סכום מוגדר '+nis(p.amount):'האורח בוחר סכום'}</div><div class="label">${escapeHtml(paymentLinkTypeLabel(p))}${p.paymentLink?' · לינק קיים':''}</div><div class="label" style="color:${paymentStatusColor(p.status)}">${paymentStatusLabel(p.status)} · נוצר ${new Date(p.createdAt).toLocaleDateString('he-IL')}</div><div class="note" style="margin-top:8px">${escapeHtml(paymentNextStepLabel(p))}</div><div class="assistant-actions">${paymentActionsHtml(p)}</div></div>`).join(''):'<span class="label">עדיין אין בקשות תשלום.</span>';
   const walletBox=document.getElementById('paymentWalletTxList');
   if(walletBox) walletBox.innerHTML=walletTx.length?walletTx.slice(0,40).map(t=>`<div class="wallet-row"><span>${new Date(t.date).toLocaleDateString('he-IL')} · ${escapeHtml(t.note||'')}</span><span class="money" style="color:${t.type==='income'?'var(--ok)':'var(--bad)'}">${t.type==='income'?'+':'-'}${nis(t.amount)}</span></div>`).join(''):'<span class="label">אין עדיין תנועות בארנק.</span>';
 }
