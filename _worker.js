@@ -15,6 +15,7 @@ const EVENT_STATE_PREFIX = 'event_state_v1:';
 const EVENT_ASSISTANT_CHAT_PREFIX = 'event_assistant_chat_v1:';
 const ADMIN_CONFIG_KEY = 'admin_config_v1';
 const ADMIN_RESET_PREFIX = 'admin_password_reset_v1:';
+const MORNING_WEBHOOK_PREFIX = 'morning_webhook_v1:';
 
 function base64url(bytes) {
   let bin = '';
@@ -918,6 +919,138 @@ async function sendWhatsApp(request, env) {
   }
 }
 
+function morningBaseUrl(env) {
+  const explicit = String(env.MORNING_BASE_URL || '').trim();
+  if (explicit) return explicit.replace(/\/+$/, '');
+  return String(env.MORNING_ENV || 'sandbox').toLowerCase() === 'production'
+    ? 'https://api.greeninvoice.co.il/api/v1'
+    : 'https://sandbox.d.greeninvoice.co.il/api/v1';
+}
+
+async function morningToken(env) {
+  if (!env.MORNING_API_KEY_ID || !env.MORNING_API_KEY_SECRET) throw new Error('Morning API credentials are not configured');
+  const upstream = await fetch(`${morningBaseUrl(env)}/account/token`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ id: env.MORNING_API_KEY_ID, secret: env.MORNING_API_KEY_SECRET }),
+  });
+  const text = await upstream.text();
+  let data;
+  try { data = text ? JSON.parse(text) : {}; } catch { data = { raw: text }; }
+  if (!upstream.ok || !data.token) throw new Error(data.errorMessage || data.message || text || `Morning token failed (${upstream.status})`);
+  return data.token;
+}
+
+function cleanPhone(value) {
+  const digits = String(value || '').replace(/\D/g, '');
+  if (!digits) return '';
+  if (digits.startsWith('972')) return `+${digits}`;
+  if (digits.startsWith('0')) return `+972${digits.slice(1)}`;
+  return `+${digits}`;
+}
+
+function safePaymentCustom(eventId, paymentId) {
+  return JSON.stringify({ source: 'orma-event-system', eventId, paymentId });
+}
+
+async function createMorningPaymentLink(request, env) {
+  try {
+    const body = await request.json().catch(() => ({}));
+    const eventId = String(body.eventId || '').trim();
+    if (!eventId) return jsonResponse({ ok: false, error: 'Missing eventId' }, 400);
+    const session = await requireEventAccess(request, env, eventId);
+    if (!session) return jsonResponse({ ok: false, error: 'Unauthorized' }, 401);
+    const amount = Number(body.amount) || 0;
+    const paymentId = String(body.paymentId || '').trim() || `pay_${Date.now().toString(36)}`;
+    const origin = new URL(request.url).origin;
+    const description = String(body.description || 'תשלום לאירוע').trim().slice(0, 200);
+    const payerName = String(body.payerName || 'לקוח').trim().slice(0, 120);
+    const payerEmail = String(body.payerEmail || '').trim();
+    const payerPhone = cleanPhone(body.payerPhone || body.phone || '');
+    const maxPayments = Math.max(1, Math.min(Number(body.maxPayments) || Number(env.MORNING_MAX_PAYMENTS) || 12, 36));
+    const payload = {
+      description,
+      type: Number(env.MORNING_DOCUMENT_TYPE) || 320,
+      lang: 'he',
+      currency: 'ILS',
+      vatType: Number(env.MORNING_VAT_TYPE) || 0,
+      maxPayments,
+      group: Number(env.MORNING_PAYMENT_GROUP) || 100,
+      client: {
+        name: payerName,
+        emails: payerEmail ? [payerEmail] : [],
+        country: 'IL',
+        phone: payerPhone,
+        mobile: payerPhone,
+        add: true,
+      },
+      remarks: String(body.remarks || `בקשת תשלום ${paymentId}`).slice(0, 500),
+      successUrl: `${origin}/?payment=success&eventId=${encodeURIComponent(eventId)}&paymentId=${encodeURIComponent(paymentId)}`,
+      failureUrl: `${origin}/?payment=failure&eventId=${encodeURIComponent(eventId)}&paymentId=${encodeURIComponent(paymentId)}`,
+      notifyUrl: `${origin}/api/morning/webhook`,
+      custom: safePaymentCustom(eventId, paymentId),
+    };
+    if (env.MORNING_PLUGIN_ID) payload.pluginId = String(env.MORNING_PLUGIN_ID);
+    if (amount > 0) {
+      payload.amount = amount;
+      payload.income = [{ description, quantity: 1, price: amount, currency: 'ILS', vatType: Number(env.MORNING_INCOME_VAT_TYPE) || 0 }];
+    }
+    const token = await morningToken(env);
+    const upstream = await fetch(`${morningBaseUrl(env)}/payments/form`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const text = await upstream.text();
+    let data;
+    try { data = text ? JSON.parse(text) : {}; } catch { data = { raw: text }; }
+    if (!upstream.ok || !data.url) return jsonResponse({ ok: false, error: data.errorMessage || data.message || text || `Morning payment link failed (${upstream.status})`, morningStatus: upstream.status }, upstream.status >= 400 && upstream.status < 500 ? 400 : 502);
+    return jsonResponse({ ok: true, paymentId, url: data.url, provider: 'morning', providerStatus: 'payment_link_ready', morning: { errorCode: data.errorCode || 0 } });
+  } catch (err) {
+    return jsonResponse({ ok: false, error: err.message || 'Morning payment link failed' }, 500);
+  }
+}
+
+function extractMorningCustom(body) {
+  const raw = body?.custom || body?.Custom || body?.data?.custom || body?.transaction?.custom || '';
+  if (typeof raw === 'object' && raw) return raw;
+  try { return raw ? JSON.parse(String(raw)) : {}; } catch { return {}; }
+}
+
+async function morningWebhook(request, env) {
+  const text = await request.text();
+  let body;
+  try { body = text ? JSON.parse(text) : {}; } catch { body = { raw: text }; }
+  const custom = extractMorningCustom(body);
+  const eventId = String(custom.eventId || body.eventId || '').trim();
+  const paymentId = String(custom.paymentId || body.paymentId || body.paymentID || '').trim();
+  if (env.EVENTS_KV) {
+    await env.EVENTS_KV.put(MORNING_WEBHOOK_PREFIX + Date.now().toString(36) + ':' + crypto.randomUUID(), JSON.stringify({ receivedAt: new Date().toISOString(), eventId, paymentId, body }), { expirationTtl: 60 * 60 * 24 * 30 });
+    if (eventId && paymentId) {
+      const key = EVENT_STATE_PREFIX + eventId;
+      const rawState = await env.EVENTS_KV.get(key);
+      let state;
+      try { state = rawState ? JSON.parse(rawState) : null; } catch { state = null; }
+      const paidSignal = /paid|success|approved|complete|completed|שולם|אושר/i.test(JSON.stringify(body));
+      if (state && Array.isArray(state.payments) && paidSignal) {
+        const p = state.payments.find(x => x?.id === paymentId);
+        if (p && p.status !== 'paid') {
+          p.status = 'paid';
+          p.providerStatus = 'morning_webhook_paid';
+          p.paidAt = new Date().toISOString();
+          p.updatedAt = p.paidAt;
+          const paidAmount = Number(body.amount || body.sum || body.total || p.amount) || Number(p.amount) || 0;
+          if (paidAmount) p.amount = paidAmount;
+          state.walletTx = Array.isArray(state.walletTx) ? state.walletTx : [];
+          if (!state.walletTx.some(t => t.paymentId === paymentId)) state.walletTx.unshift({ date: p.paidAt, amount: paidAmount, type: 'income', note: `תשלום Morning התקבל: ${p.payerName || ''} · ${p.description || ''}`, paymentId });
+          await env.EVENTS_KV.put(key, JSON.stringify({ ...state, eventId, updatedAt: new Date().toISOString() }));
+        }
+      }
+    }
+  }
+  return jsonResponse({ ok: true });
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -938,6 +1071,14 @@ export default {
     if (url.pathname === '/api/send-whatsapp') {
       if (request.method !== 'POST') return jsonResponse({ ok: false, error: 'Method not allowed' }, 405);
       return sendWhatsApp(request, env);
+    }
+    if (url.pathname === '/api/morning/create-payment-link') {
+      if (request.method !== 'POST') return jsonResponse({ ok: false, error: 'Method not allowed' }, 405);
+      return createMorningPaymentLink(request, env);
+    }
+    if (url.pathname === '/api/morning/webhook') {
+      if (request.method !== 'POST') return jsonResponse({ ok: false, error: 'Method not allowed' }, 405);
+      return morningWebhook(request, env);
     }
     if (url.pathname === '/api/whatsapp-history') {
       if (request.method !== 'POST') return jsonResponse({ ok: false, error: 'Method not allowed' }, 405);

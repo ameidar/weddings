@@ -594,10 +594,10 @@ imma, 123456, אמא"></textarea><small>כל משתמש כאן יוכל להיכ
         <div id="paymentAutomationQueue" class="vendor-list" style="max-height:260px;overflow:auto"></div>
         <h3 style="margin:18px 0 8px;font-size:18px">תנועות ארנק אחרונות</h3>
         <div id="paymentWalletTxList" style="max-height:240px;overflow:auto"></div>
-        <h3 style="margin:18px 0 8px;font-size:18px">סטטוס חיבור משולם</h3>
+        <h3 style="margin:18px 0 8px;font-size:18px">סטטוס חיבור Morning</h3>
         <div class="client-detail-grid">
-          <div class="client-detail"><span class="label">מצב לינקים</span><br><b id="growApiStatus">עבודה עם לינק Morning ידני</b></div>
-          <div class="client-detail"><span class="label">Webhook עתידי</span><br><b>/api/payments/webhook</b></div>
+          <div class="client-detail"><span class="label">מצב לינקים</span><br><b id="growApiStatus">יצירת לינק Morning מתוך המערכת</b></div>
+          <div class="client-detail"><span class="label">Webhook לעדכון תשלום</span><br><b>/api/morning/webhook</b></div>
         </div>
       </div>
     </div>
@@ -1577,7 +1577,7 @@ function renderPaymentMessageTemplate(tpl,p){
     .replaceAll('{description}',p.description||`תשלום עבור ${eventSettings.name||'האירוע'}`)
     .replaceAll('{link}',link);
 }
-function createPaymentRequest(){
+async function createPaymentRequest(){
   const amount=Number(document.getElementById('paymentAmount')?.value)||0;
   const status=document.getElementById('paymentCreateStatus');
   const get=id=>document.getElementById(id)?.value.trim()||'';
@@ -1591,7 +1591,26 @@ function createPaymentRequest(){
   payments.unshift(p); savePayments();
   ['paymentPayerName','paymentPayerPhone','paymentPayerEmail','paymentAmount','paymentDescription','paymentExternalLink'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   fillPaymentTemplatePreview(true);
-  if(status){ status.textContent=paymentLink?'בקשת התשלום נוצרה עם לינק התשלום שהודבק ✅':'בקשת התשלום נוצרה. אפשר להדביק לינק Morning בהמשך ולשלוח.'; status.className='status ok-text'; }
+  if(status){ status.textContent=paymentLink?'בקשת התשלום נוצרה עם לינק התשלום שהודבק ✅':'בקשת התשלום נוצרה. מייצר לינק Morning מתוך המערכת...'; status.className='status'; }
+  if(method==='morning-link' && !paymentLink) await generateMorningPaymentLink(p.id);
+}
+async function generateMorningPaymentLink(id){
+  const p=payments.find(x=>x.id===id); if(!p) return;
+  const status=document.getElementById('paymentCreateStatus')||document.getElementById('paymentAutomationStatus');
+  try{
+    if(status){ status.textContent='מייצר לינק תשלום ב-Morning...'; status.className='status'; }
+    const res=await fetch('/api/morning/create-payment-link',{method:'POST',headers:{'content-type':'application/json',...eventAccessHeaders()},body:JSON.stringify({eventId:currentEventId(),paymentId:p.id,payerName:p.payerName,payerPhone:p.payerPhone,payerEmail:p.payerEmail,amount:Number(p.amount)||0,description:p.description,maxPayments:12})});
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok||!data.ok) throw new Error(data.error||'יצירת לינק נכשלה');
+    p.paymentLink=data.url; p.provider='morning'; p.providerStatus=data.providerStatus||'payment_link_ready'; p.updatedAt=new Date().toISOString();
+    const tpl=PAYMENT_MESSAGE_TEMPLATES[p.messageTemplate||'warm']||PAYMENT_MESSAGE_TEMPLATES.warm;
+    p.customMessage=renderPaymentMessageTemplate(tpl,p);
+    savePayments();
+    if(status){ status.textContent='לינק Morning נוצר ונשמר בבקשת התשלום ✅'; status.className='status ok-text'; }
+  }catch(e){
+    p.providerStatus='morning_link_failed'; p.providerError=e.message; p.updatedAt=new Date().toISOString(); savePayments();
+    if(status){ status.textContent='שגיאה ביצירת לינק Morning: '+e.message; status.className='status bad-text'; }
+  }
 }
 function paymentShareText(p){ const tpl=p.customMessage || PAYMENT_MESSAGE_TEMPLATES[p.messageTemplate||'warm'] || PAYMENT_MESSAGE_TEMPLATES.warm; return renderPaymentMessageTemplate(tpl,p); }
 function copyPaymentMessage(id){ const p=payments.find(x=>x.id===id); if(!p) return; copyText(paymentShareText(p)); }
@@ -1667,10 +1686,10 @@ function renderPayments(){
   const pendingEl=document.getElementById('paymentPendingTotal'); if(pendingEl) pendingEl.textContent=payments.filter(p=>p.direction!=='out'&&p.status==='pending').length;
   set('paymentPaidTotal',payments.filter(p=>p.direction!=='out'&&p.status==='paid').reduce((s,p)=>s+(Number(p.amount)||0),0));
   set('paymentPayoutTotal',payments.filter(p=>p.direction==='out'&&p.status==='payout_paid').reduce((s,p)=>s+(Number(p.amount)||0),0));
-  const growStatus=document.getElementById('growApiStatus'); if(growStatus) growStatus.textContent='עבודה עם לינק Morning ידני';
+  const growStatus=document.getElementById('growApiStatus'); if(growStatus) growStatus.textContent='יצירת לינק Morning מתוך המערכת';
   const sel=document.getElementById('payoutVendorSelect'); if(sel) sel.innerHTML='<option value="">בחר ספק / יעד אחר</option>'+vendors.map((v,i)=>`<option value="${i}">${escapeHtml(v.name||'ספק ללא שם')} · יתרה ${nis((Number(v.agreed)||0)-(Number(v.paid)||0))}</option>`).join('');
   const list=document.getElementById('paymentRequestsList');
-  if(list) list.innerHTML=payments.length?payments.map(p=>`<div class="vendor-item"><b>${escapeHtml(p.direction==='out'?'תשלום החוצה: '+(p.vendorName||'יעד'):(p.payerName||'משלם ללא שם'))}</b><div class="label">${escapeHtml(p.description||'')} ${Number(p.amount)?'· יעד פנימי '+nis(p.amount):'· סכום לבחירת המשלם'}</div><div class="label" style="color:${paymentStatusColor(p.status)}">${paymentStatusLabel(p.status)} · ${new Date(p.createdAt).toLocaleDateString('he-IL')}</div><div class="assistant-actions">${p.direction==='out'?`<button onclick="markPayoutPaid('${p.id}')">סמן שולם לספק</button>`:`<button onclick="copyPaymentMessage('${p.id}')">העתק הודעה</button><button onclick="openPaymentWhatsApp('${p.id}')">פתח וואטסאפ</button><button onclick="markPaymentPaid('${p.id}')">סמן שולם</button><button onclick="cancelPaymentRequest('${p.id}')">בטל</button>`}</div></div>`).join(''):'<span class="label">עדיין אין בקשות תשלום.</span>';
+  if(list) list.innerHTML=payments.length?payments.map(p=>`<div class="vendor-item"><b>${escapeHtml(p.direction==='out'?'תשלום החוצה: '+(p.vendorName||'יעד'):(p.payerName||'משלם ללא שם'))}</b><div class="label">${escapeHtml(p.description||'')} ${Number(p.amount)?'· יעד פנימי '+nis(p.amount):'· סכום לבחירת המשלם'}</div><div class="label" style="color:${paymentStatusColor(p.status)}">${paymentStatusLabel(p.status)} · ${new Date(p.createdAt).toLocaleDateString('he-IL')}</div><div class="assistant-actions">${p.direction==='out'?`<button onclick="markPayoutPaid('${p.id}')">סמן שולם לספק</button>`:`${!p.paymentLink&&p.method==='morning-link'?`<button onclick="generateMorningPaymentLink('${p.id}')">צור לינק Morning</button>`:''}<button onclick="copyPaymentMessage('${p.id}')">העתק הודעה</button><button onclick="openPaymentWhatsApp('${p.id}')">פתח וואטסאפ</button><button onclick="markPaymentPaid('${p.id}')">סמן שולם</button><button onclick="cancelPaymentRequest('${p.id}')">בטל</button>`}</div></div>`).join(''):'<span class="label">עדיין אין בקשות תשלום.</span>';
   const walletBox=document.getElementById('paymentWalletTxList');
   if(walletBox) walletBox.innerHTML=walletTx.length?walletTx.slice(0,40).map(t=>`<div class="wallet-row"><span>${new Date(t.date).toLocaleDateString('he-IL')} · ${escapeHtml(t.note||'')}</span><span class="money" style="color:${t.type==='income'?'var(--ok)':'var(--bad)'}">${t.type==='income'?'+':'-'}${nis(t.amount)}</span></div>`).join(''):'<span class="label">אין עדיין תנועות בארנק.</span>';
 }
