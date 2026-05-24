@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Event owner at center">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#17110c"/>
+      <stop offset="1" stop-color="#3a2818"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff2b8"/>
+      <stop offset="0.48" stop-color="#d8a847"/>
+      <stop offset="1" stop-color="#8f6422"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#bg)"/>
+  <circle cx="32" cy="32" r="21" fill="none" stroke="#d8c7a0" stroke-width="3" opacity="0.72"/>
+  <circle cx="32" cy="13" r="4.5" fill="#d8a847"/>
+  <circle cx="51" cy="32" r="4.5" fill="#d8c7a0"/>
+  <circle cx="32" cy="51" r="4.5" fill="#d8a847"/>
+  <circle cx="13" cy="32" r="4.5" fill="#d8c7a0"/>
+  <circle cx="32" cy="27" r="8" fill="url(#gold)"/>
+  <path d="M18 48c2.8-9 9-14 14-14s11.2 5 14 14" fill="url(#gold)"/>
+  <path d="M32 18l2.8 5.9 6.2.9-4.5 4.3 1.1 6.1L32 32.2l-5.6 3 1.1-6.1-4.5-4.3 6.2-.9L32 18z" fill="#fff4c4" opacity="0.95"/>
+</svg>
