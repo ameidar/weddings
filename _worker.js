@@ -887,6 +887,49 @@ async function clientLogin(request, env) {
   return jsonResponse({ ok: true, event: ev, user: { username: matchedUser.username, name: matchedUser.name }, token: await signSession(env, { role: 'client', eventId: id, username: matchedUser.username, name: matchedUser.name }) });
 }
 
+async function eventTeamApi(request, env) {
+  if (!env.EVENTS_KV) return jsonResponse({ ok: false, error: 'Cloudflare KV binding EVENTS_KV is not configured' }, 501);
+  if (request.method !== 'POST') return jsonResponse({ ok: false, error: 'Method not allowed' }, 405);
+  const body = await request.json().catch(() => ({}));
+  const eventId = String(body.eventId || '').trim();
+  if (!eventId) return jsonResponse({ ok: false, error: 'Missing eventId' }, 400);
+  const session = await requireEventAccess(request, env, eventId);
+  if (!session) return jsonResponse({ ok: false, error: 'Unauthorized' }, 401);
+  const memberIn = body.member && typeof body.member === 'object' ? body.member : {};
+  const username = String(memberIn.username || '').trim();
+  const password = String(memberIn.password || '').trim();
+  const name = String(memberIn.name || '').trim();
+  if (!username || !password || !name) return jsonResponse({ ok: false, error: 'Missing team member name/username/password' }, 400);
+  const member = {
+    id: String(memberIn.id || `team_${Date.now()}`),
+    name,
+    username,
+    password,
+    phone: String(memberIn.phone || '').trim(),
+    email: String(memberIn.email || '').trim(),
+    role: String(memberIn.role || 'אחר').trim(),
+    permission: String(memberIn.permission || 'view').trim(),
+    status: 'invited',
+    createdAt: String(memberIn.createdAt || new Date().toISOString()),
+    invitedBy: String(memberIn.invitedBy || session.name || session.username || ''),
+  };
+  const events = await loadEvents(env);
+  const ev = events?.find(x => x.id === eventId);
+  if (!ev) return jsonResponse({ ok: false, error: 'האירוע לא נמצא' }, 404);
+  if (eventClientUsers(ev).some(u => u.username.toLowerCase() === username.toLowerCase())) return jsonResponse({ ok: false, error: 'שם המשתמש כבר קיים באירוע' }, 409);
+  const updatedEvent = { ...ev, clientUsers: [...(Array.isArray(ev.clientUsers) ? ev.clientUsers : []), member], updatedAt: new Date().toISOString() };
+  await saveEvents(env, events.map(x => x.id === eventId ? updatedEvent : x));
+  const key = EVENT_STATE_PREFIX + eventId;
+  const raw = await env.EVENTS_KV.get(key);
+  let state;
+  try { state = raw ? JSON.parse(raw) : (body.state || {}); } catch { state = body.state || {}; }
+  if (!state || typeof state !== 'object') state = {};
+  const existing = Array.isArray(state.teamMembers) ? state.teamMembers : [];
+  const teamMembers = [member, ...existing.filter(m => m?.id !== member.id && String(m?.username || '').toLowerCase() !== username.toLowerCase())];
+  await env.EVENTS_KV.put(key, JSON.stringify({ ...state, eventId, teamMembers, updatedAt: new Date().toISOString() }));
+  return jsonResponse({ ok: true, eventId, member, teamMembers, event: updatedEvent });
+}
+
 function normalizeChatId(value) {
   let phone = String(value || '').trim();
   if (!phone) return '';
@@ -1156,6 +1199,7 @@ export default {
     if (url.pathname === '/api/event-assistant-history') return eventAssistantHistoryApi(request, env);
     if (url.pathname === '/api/event-actions') return eventActionsApi(request, env);
     if (url.pathname === '/api/event-state') return eventStateApi(request, env);
+    if (url.pathname === '/api/event-team') return eventTeamApi(request, env);
     if (url.pathname === '/api/pending-participants' && request.method === 'GET') return pendingParticipantsApi(request, env);
     if (url.pathname === '/api/rsvp-link' && request.method === 'POST') return rsvpLinkApi(request, env);
     if (url.pathname === '/api/rsvp' && request.method === 'POST') return rsvpSubmitApi(request, env);

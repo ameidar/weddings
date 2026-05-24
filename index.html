@@ -322,6 +322,7 @@
     <button class="nav-btn" data-target="seating" onclick="showPage('seating')">🪑 שולחנות ומפה</button>
     <button class="nav-btn" data-target="payments" onclick="showPage('payments')">💳 תשלומים וארנק</button>
     <button class="nav-btn" data-target="vendors" onclick="showPage('vendors')">🤝 ספקים וארנק</button>
+    <button class="nav-btn" data-target="team" onclick="showPage('team')">👥 צוות האירוע</button>
     <button class="nav-btn" data-target="legal" onclick="showPage('legal')">🔐 פרטיות ואמון</button>
     <button class="nav-btn client-only" onclick="clientLogout()">🚪 יציאה</button>
   </aside>
@@ -679,6 +680,30 @@ imma, 123456, אמא"></textarea><small>כל משתמש כאן יוכל להיכ
     </div>
   </section>
 
+  <section class="card page-section" data-page="team" style="margin-top:14px">
+    <h2 style="margin:0 0 10px;font-size:24px">צוות האירוע — הזמנות לקחת חלק בניהול</h2>
+    <div class="note">ב-iPlan בעל האירוע מחכה להזמנה מהאולם. אצלנו בעל האירוע מזמין את מי שצריך — משפחה, מפיק/ה, נציג אולם או ספק — והרשאות נשמרות סביב תיק האירוע שלו.</div>
+    <section class="grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));margin-top:12px">
+      <div class="card"><div class="stat" id="teamMembersCount">0</div><div class="label">חברי צוות</div></div>
+      <div class="card"><div class="stat" id="teamPendingCount">0</div><div class="label">הזמנות פעילות</div></div>
+      <div class="card"><div class="stat">בעל האירוע</div><div class="label">מרכז השליטה וההרשאות</div></div>
+    </section>
+    <div class="form-grid" style="margin-top:12px">
+      <input id="teamName" placeholder="שם מלא / תיאור, לדוגמה: אמא של הכלה" />
+      <input id="teamPhone" placeholder="וואטסאפ לשליחת פרטי כניסה" />
+      <input id="teamEmail" type="email" placeholder="אימייל, אופציונלי" />
+      <select id="teamRole"><option value="בן/בת זוג">בן/בת זוג</option><option value="משפחה">משפחה</option><option value="מפיק/ת אירוע">מפיק/ת אירוע</option><option value="נציג אולם">נציג אולם</option><option value="ספק">ספק</option><option value="צפייה בלבד">צפייה בלבד</option><option value="אחר">אחר</option></select>
+      <select id="teamPermission"><option value="full">ניהול מלא</option><option value="guests">מוזמנים ואישורי הגעה</option><option value="seating">שולחנות והושבה</option><option value="vendors">ספקים וחוזים</option><option value="payments">תשלומים וארנק</option><option value="view">צפייה בלבד</option></select>
+      <input id="teamUsername" placeholder="שם משתמש — אופציונלי" />
+      <input id="teamPassword" placeholder="סיסמה — אופציונלי, המערכת תיצור אם ריק" />
+      <button onclick="inviteTeamMember()">צור הזמנה לצוות האירוע</button>
+    </div>
+    <div class="note">בשלב הזה הרשאות מוצגות ומתועדות; התחברות נוצרת בפועל למשתמש נוסף באירוע. אכיפת הרשאות granular לכל כפתור תתווסף בשלב הבא.</div>
+    <div id="teamInviteStatus" class="status"></div>
+    <h3 style="margin:18px 0 8px;font-size:18px">חברי צוות והזמנות</h3>
+    <div id="teamMembersList" class="vendor-list" style="max-height:420px"></div>
+  </section>
+
   <section class="card page-section" data-page="legal" style="margin-top:14px">
     <h2 style="margin:0 0 10px;font-size:24px">תנאי שימוש, פרטיות ומרכז אמון</h2>
     <div class="note">נוסח תפעולי מובנה למערכת. אינו מחליף ייעוץ משפטי, אבל מגדיר ללקוח את כללי השימוש המרכזיים.</div>
@@ -889,7 +914,7 @@ function hasAcceptedLegalTerms(){ try{ const c=JSON.parse(localStorage.getItem(l
 function showLegalConsentIfNeeded(){ const modal=document.getElementById('legalConsentModal'); if(!modal) return; modal.classList.toggle('hidden', hasAcceptedLegalTerms()); }
 function acceptLegalTerms(){ const modal=document.getElementById('legalConsentModal'); const checked=document.getElementById('legalConsentCheckbox'); const status=document.getElementById('legalConsentStatus')||document.getElementById('legalStatus'); const modalVisible=modal && !modal.classList.contains('hidden'); if(modalVisible && checked && !checked.checked){ if(status){ status.textContent='צריך לסמן שקראת ואישרת כדי להמשיך.'; status.className='status bad-text'; } return; } const consent={version:LEGAL_TERMS_VERSION,eventId:currentEventId(),acceptedAt:new Date().toISOString(),userAgent:navigator.userAgent.slice(0,120)}; localStorage.setItem(legalConsentStorageKey(),JSON.stringify(consent)); modal?.classList.add('hidden'); if(status){ status.textContent='תנאי השימוש אושרו ✅'; status.className='status ok-text'; } scheduleEventStateSync(); }
 function requireLegalAccepted(){ if(hasAcceptedLegalTerms()) return true; showLegalConsentIfNeeded(); return false; }
-function collectEventState(){ const id=currentEventId(); let legalConsent=null; try{ legalConsent=JSON.parse(localStorage.getItem(legalConsentStorageKey())||'null'); }catch(e){} return {eventId:id,eventSettings:{...(eventSettings||{}),id}, participants:guests, hall, vendors, walletTx, payments:payments.map(p=>({...p,eventId:id})), paymentAutomation, legalConsent, savedAt:new Date().toISOString()}; }
+function collectEventState(){ const id=currentEventId(); let legalConsent=null; try{ legalConsent=JSON.parse(localStorage.getItem(legalConsentStorageKey())||'null'); }catch(e){} return {eventId:id,eventSettings:{...(eventSettings||{}),id}, participants:guests, hall, vendors, walletTx, payments:payments.map(p=>({...p,eventId:id})), paymentAutomation, teamMembers, legalConsent, savedAt:new Date().toISOString()}; }
 async function syncEventStateNow(){
   if(suppressSync || !currentEventId() || !(currentClientToken||currentAdminToken)) return;
   try{ await fetch('/api/event-state',{method:'POST',headers:{'content-type':'application/json',...eventAccessHeaders()},body:JSON.stringify({eventId:currentEventId(),state:collectEventState()})}); }catch(e){}
@@ -926,6 +951,7 @@ async function loadRemoteEventState(){
       if(Array.isArray(data.state.walletTx)){ walletTx=data.state.walletTx; eventStorageSet(WALLET_KEY,JSON.stringify(walletTx)); }
       if(Array.isArray(data.state.payments)){ payments=data.state.payments; eventStorageSet(PAYMENTS_KEY,JSON.stringify(payments)); }
       if(data.state.paymentAutomation){ paymentAutomation={...defaultPaymentAutomationSettings(),...data.state.paymentAutomation}; eventStorageSet(PAYMENT_AUTOMATION_KEY,JSON.stringify(paymentAutomation)); }
+      if(Array.isArray(data.state.teamMembers)){ teamMembers=data.state.teamMembers; eventStorageSet(TEAM_KEY,JSON.stringify(teamMembers)); }
       suppressSync=false;
       return true;
     }
@@ -1616,11 +1642,13 @@ const VENDOR_KEY = 'dynamic_event_vendors_v1';
 const WALLET_KEY = 'dynamic_event_wallet_v1';
 const PAYMENTS_KEY = 'dynamic_event_payments_v1';
 const PAYMENT_AUTOMATION_KEY = 'dynamic_event_payment_automation_v1';
+const TEAM_KEY = 'dynamic_event_team_v1';
 let vendors = loadVendors();
 let selectedVendorIndex = vendors.length ? 0 : null;
 let walletTx = loadWalletTx();
 let payments = loadPayments();
 let paymentAutomation = loadPaymentAutomationSettings();
+let teamMembers = loadTeamMembers();
 function nis(n){ return '₪' + (Number(n)||0).toLocaleString('he-IL'); }
 function loadVendors(){ try{ const v=eventStorageGet(VENDOR_KEY); if(v) return JSON.parse(v); }catch(e){} return []; }
 function saveVendors(){ eventStorageSet(VENDOR_KEY, JSON.stringify(vendors)); renderVendors(); renderPayments(); updateVendorStats(); scheduleEventStateSync(); }
@@ -1630,6 +1658,36 @@ function loadPayments(){ try{ const v=eventStorageGet(PAYMENTS_KEY); if(v) retur
 function savePayments(){ eventStorageSet(PAYMENTS_KEY, JSON.stringify(payments)); renderPayments(); renderPaymentAutomationQueue(); scheduleEventStateSync(); }
 function defaultPaymentAutomationSettings(){ return {enabled:true,reminderDays:3,maxReminders:3,audience:'pending'}; }
 function loadPaymentAutomationSettings(){ try{ const v=eventStorageGet(PAYMENT_AUTOMATION_KEY); if(v) return {...defaultPaymentAutomationSettings(),...JSON.parse(v)}; }catch(e){} return defaultPaymentAutomationSettings(); }
+function loadTeamMembers(){ try{ const v=eventStorageGet(TEAM_KEY); if(v) return JSON.parse(v); }catch(e){} return []; }
+function saveTeamMembers(){ eventStorageSet(TEAM_KEY,JSON.stringify(teamMembers)); renderTeamMembers(); scheduleEventStateSync(); }
+function teamPermissionLabel(p){ return ({full:'ניהול מלא',guests:'מוזמנים ואישורי הגעה',seating:'שולחנות והושבה',vendors:'ספקים וחוזים',payments:'תשלומים וארנק',view:'צפייה בלבד'}[p]||p||''); }
+function makeTeamUsername(name){ return makeClientUsername(name||'team')+'-'+Math.random().toString(36).slice(2,5); }
+function eventClientLinkById(id){ return `${location.origin}${location.pathname}?event=${encodeURIComponent(id||currentEventId())}#client`; }
+async function inviteTeamMember(){
+  const status=document.getElementById('teamInviteStatus'); if(status){ status.textContent='יוצר הזמנה...'; status.className='status'; }
+  const get=id=>document.getElementById(id)?.value.trim()||'';
+  const name=get('teamName'); if(!name){ if(status){ status.textContent='נא להזין שם לחבר הצוות'; status.className='status bad-text'; } return; }
+  const member={id:'team_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,6),name,phone:get('teamPhone'),email:get('teamEmail'),role:get('teamRole'),permission:get('teamPermission'),username:get('teamUsername')||makeTeamUsername(name),password:get('teamPassword')||makePassword(10),status:'invited',createdAt:new Date().toISOString(),invitedBy:eventSettings.owner||'בעל האירוע'};
+  if(teamMembers.some(m=>String(m.username||'').toLowerCase()===member.username.toLowerCase())){ if(status){ status.textContent='שם המשתמש כבר קיים בצוות האירוע'; status.className='status bad-text'; } return; }
+  const link=eventClientLinkById(currentEventId());
+  const shareText=`שלום ${member.name}, הוזמנת לקחת חלק בניהול האירוע ${eventSettings.name||''}.\nתפקיד: ${member.role}\nהרשאה: ${teamPermissionLabel(member.permission)}\nלינק כניסה: ${link}\nמשתמש: ${member.username}\nסיסמה: ${member.password}`;
+  try{
+    const res=await fetch('/api/event-team',{method:'POST',headers:{'content-type':'application/json',...eventAccessHeaders()},body:JSON.stringify({eventId:currentEventId(),member,state:collectEventState()})});
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok||!data.ok) throw new Error(data.error||'שמירת ההזמנה נכשלה');
+    teamMembers=data.teamMembers||[member,...teamMembers];
+  }catch(e){ if(!/כבר קיים|already exists|409/i.test(e.message||'')) teamMembers=[member,...teamMembers]; if(status){ status.textContent='ההזמנה לא סונכרנה לשרת: '+e.message; status.className='status bad-text'; } }
+  saveTeamMembers();
+  ['teamName','teamPhone','teamEmail','teamUsername','teamPassword'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  if(status){ status.innerHTML=`נוצרה הזמנה ✅ <button class="secondary" onclick="copyText('${jsArg(shareText)}')">העתק הודעת הזמנה</button>${member.phone?` <a target="_blank" href="https://wa.me/${member.phone.replace(/\D/g,'')}?text=${encodeURIComponent(shareText)}">שלח בוואטסאפ</a>`:''}`; status.className='status ok-text'; }
+}
+function removeTeamMember(id){ if(!confirm('להסיר את חבר הצוות מהתצוגה?')) return; teamMembers=teamMembers.filter(m=>m.id!==id); saveTeamMembers(); }
+function renderTeamMembers(){
+  const count=document.getElementById('teamMembersCount'); if(count) count.textContent=teamMembers.length;
+  const pending=document.getElementById('teamPendingCount'); if(pending) pending.textContent=teamMembers.filter(m=>m.status==='invited').length;
+  const box=document.getElementById('teamMembersList'); if(!box) return;
+  box.innerHTML=teamMembers.length?teamMembers.map(m=>`<div class="vendor-item"><b>${escapeHtml(m.name||'ללא שם')}</b> <span class="pill">${escapeHtml(m.role||'')}</span><div class="label">הרשאה: ${escapeHtml(teamPermissionLabel(m.permission))} · סטטוס: ${escapeHtml(m.status==='invited'?'הוזמן':'פעיל')}</div><div class="label">משתמש: ${escapeHtml(m.username||'')} · ${escapeHtml(m.phone||m.email||'אין פרטי קשר')}</div><div class="assistant-actions"><button onclick="copyText('${jsArg(`לינק כניסה: ${eventClientLinkById(currentEventId())}\nמשתמש: ${m.username}\nסיסמה: ${m.password}`)}')">העתק פרטי כניסה</button><button class="secondary" onclick="removeTeamMember('${m.id}')">הסר מהרשימה</button></div></div>`).join(''):'<span class="label">עדיין אין חברי צוות. בעל האירוע יכול להזמין כאן אנשים לקחת חלק בניהול.</span>';
+}
 function savePaymentAutomationSettings(){
   paymentAutomation={enabled:document.getElementById('paymentAutomationEnabled')?.value!=='no',reminderDays:Math.max(1,Number(document.getElementById('paymentReminderDays')?.value)||3),maxReminders:Math.max(0,Number(document.getElementById('paymentMaxReminders')?.value)||0),audience:document.getElementById('paymentAutomationAudience')?.value||'pending'};
   eventStorageSet(PAYMENT_AUTOMATION_KEY,JSON.stringify(paymentAutomation));
@@ -2078,6 +2136,7 @@ fillVendorForm();
 renderWallet();
 renderPayments();
 renderPaymentAutomationQueue();
+renderTeamMembers();
 fillPaymentTemplatePreview(true);
 updateWhatsAppLinkPolicy();
 updateVendorStats();
