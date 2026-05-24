@@ -17,6 +17,30 @@ const ADMIN_CONFIG_KEY = 'admin_config_v1';
 const ADMIN_RESET_PREFIX = 'admin_password_reset_v1:';
 const MORNING_WEBHOOK_PREFIX = 'morning_webhook_v1:';
 const PAYMENT_SHORT_LINK_PREFIX = 'payment_short_link_v1:';
+const APPROVED_MESSAGE_HOSTS = ['wedding.orma-ai.com','orma-ai.com','morning.co.il','greeninvoice.co.il','payboxapp.page.link','waze.com','ul.waze.com','google.com','maps.google.com','goo.gl'];
+
+function extractUrls(text) {
+  return String(text || '').match(/https?:\/\/[^\s<>"]+/g) || [];
+}
+
+function approvedMessageHosts(request) {
+  const host = new URL(request.url).hostname.toLowerCase();
+  return Array.from(new Set([host, ...APPROVED_MESSAGE_HOSTS].filter(Boolean).map(x => x.toLowerCase())));
+}
+
+function validateApprovedMessageLinks(request, message) {
+  const hosts = approvedMessageHosts(request);
+  const blocked = extractUrls(message).filter(raw => {
+    try {
+      const url = new URL(String(raw).replace(/[),.;]+$/, ''));
+      const host = url.hostname.toLowerCase();
+      return !hosts.some(allowed => host === allowed || host.endsWith('.' + allowed));
+    } catch {
+      return true;
+    }
+  });
+  return { ok: blocked.length === 0, blocked };
+}
 
 function base64url(bytes) {
   let bin = '';
@@ -779,12 +803,7 @@ async function handleEventAssistantWhatsApp(env, request, state, command, eventI
     message = String(custom || `היי ${targetName}, רציתי לעדכן אותך לגבי ${state.eventSettings?.name || 'האירוע'}. תודה רבה!`).trim();
   }
 
-  if (prepareOnly) return { changed:false, intent:'action', action:'prepare_whatsapp', needsConfirmation:true, draft:{ type:'whatsapp', name:targetName, phone, message }, answer:`הכנתי טיוטת וואטסאפ:\nאל: ${targetName} (${phone})\nהודעה: ${message}\n\nלא שלחתי בפועל.` };
-
-  const sent = await sendGreenApiMessage(env, phone, message);
-  if (!sent.ok) return { changed:false, intent:'action', action:'send_whatsapp', answer:`לא הצלחתי לשלוח וואטסאפ ל${targetName}: ${sent.error || sent.result?.message || 'שגיאת שליחה'}` };
-  appendGuestNote(found.guest, `נשלחה הודעת וואטסאפ${isRsvp ? ' לאישור הגעה' : ''} בתאריך ${new Date().toLocaleString('he-IL')}`);
-  return { changed:true, intent:'action', action:'send_whatsapp', whatsappSent:true, draft:{ type:'whatsapp', name:targetName, phone, message }, answer:`שלחתי וואטסאפ ל${targetName} ✅\n${isRsvp ? 'צירפתי קישור אישי לאישור הגעה.' : ''}` };
+  return { changed:false, intent:'action', action:prepareOnly?'prepare_whatsapp':'confirm_whatsapp', needsConfirmation:true, draft:{ type:'whatsapp', name:targetName, phone, message }, answer:`הכנתי טיוטת וואטסאפ לאישור לפני שליחה:\nאל: ${targetName} (${phone})\nהודעה: ${message}\n\nלא שלחתי בפועל. כדי לשלוח, יש לעבור למסך וואטסאפ, לסמן אישור הרשאה וללחוץ שליחה.` };
 }
 
 async function eventAssistantApi(request, env) {
@@ -930,6 +949,9 @@ async function sendWhatsApp(request, env) {
     const eventId = String(body.eventId || '').trim();
     if (!eventId) return jsonResponse({ ok: false, error: 'Missing eventId' }, 400);
     if (!(await requireEventAccess(request, env, eventId))) return jsonResponse({ ok: false, error: 'Unauthorized' }, 401);
+    if (body.userConfirmed !== true) return jsonResponse({ ok: false, error: 'נדרש אישור מפורש של המשתמש לפני שליחת וואטסאפ' }, 400);
+    const linkCheck = validateApprovedMessageLinks(request, body.message);
+    if (!linkCheck.ok) return jsonResponse({ ok: false, error: 'ההודעה כוללת קישורים לא מאושרים', blockedLinks: linkCheck.blocked }, 400);
     const sent = await sendGreenApiMessage(env, body.chatId || body.phone, body.message);
     if (!sent.ok) return jsonResponse({ ok: false, error: sent.error, status: sent.status, result: sent.result }, sent.status && sent.status < 500 ? sent.status : 502);
     return jsonResponse({ ok: true, chatId: sent.chatId, result: sent.result });

@@ -320,6 +320,7 @@
     <button class="nav-btn" data-target="seating" onclick="showPage('seating')">🪑 שולחנות ומפה</button>
     <button class="nav-btn" data-target="payments" onclick="showPage('payments')">💳 תשלומים וארנק</button>
     <button class="nav-btn" data-target="vendors" onclick="showPage('vendors')">🤝 ספקים וארנק</button>
+    <button class="nav-btn" data-target="legal" onclick="showPage('legal')">🔐 פרטיות ואמון</button>
     <button class="nav-btn client-only" onclick="clientLogout()">🚪 יציאה</button>
   </aside>
 <main>
@@ -328,6 +329,11 @@
     <div class="card"><div class="stat" id="confirmedGuests">0</div><div class="label">אישרו השתתפות</div></div>
     <div class="card"><div class="stat" id="paidGuests">0</div><div class="label">שילמו</div></div>
     <div class="card"><div class="stat" id="peopleCount">0</div><div class="label">סה״כ אנשים לפי כמויות</div></div>
+    <div class="card" style="grid-column:1/-1">
+      <h3 style="margin:0 0 8px;font-size:22px">מרכז אמון ושליטה</h3>
+      <div class="note">המערכת בנויה סביב בעל האירוע: הנתונים, האורחים, ההודעות והתשלומים נשארים בשליטתך. לפני שליחות וואטסאפ או פעולות רגישות נדרש אישור מפורש.</div>
+      <div class="toolbar"><button class="secondary" onclick="showPage('legal')">פתח תנאי שימוש ופרטיות</button><button class="secondary" onclick="exportFullEventJSON()">ייצוא כל נתוני האירוע</button></div>
+    </div>
     <div class="card client-only" style="grid-column:1/-1">
       <h3 style="margin:0 0 8px;font-size:22px">עדכון מספר משתתפים / מוזמנים</h3>
       <div class="toolbar" style="margin:0">
@@ -486,7 +492,11 @@ imma, 123456, אמא"></textarea><small>כל משתמש כאן יוכל להיכ
       </div>
       <div class="full">
         <label class="label">נוסח ההודעה</label>
-        <textarea id="waMessage"></textarea>
+        <textarea id="waMessage" oninput="updateWhatsAppLinkPolicy()"></textarea>
+      </div>
+      <div class="full" style="display:grid;gap:8px">
+        <label style="display:flex;gap:8px;align-items:flex-start"><input id="waConsent" type="checkbox" /> <span class="label">אני מאשר/ת שיש לי הרשאה לפנות לנמען הזה ושההודעה אינה ספאם או הטעיה.</span></label>
+        <div id="waLinkPolicy" class="note"></div>
       </div>
       <div class="toolbar full" style="margin:0">
         <button onclick="sendWhatsApp()">שלח וואטסאפ</button>
@@ -591,6 +601,7 @@ imma, 123456, אמא"></textarea><small>כל משתמש כאן יוכל להיכ
           <button onclick="savePaymentAutomationSettings()">שמור חוקים</button>
           <button class="secondary" onclick="renderPaymentAutomationQueue()">רענן תור הודעות</button>
         </div>
+        <label style="display:flex;gap:8px;align-items:flex-start;margin-top:10px"><input id="paymentAutomationConsent" type="checkbox" /> <span class="label">אני מאשר/ת שיש לי הרשאה לשלוח הודעות תשלום/תזכורת לנמענים, ושהקישורים בהודעות שייכים לדומיינים מאושרים.</span></label>
         <div class="toolbar"><button onclick="sendDuePaymentAutomationMessages()">שלח עכשיו את כל ההודעות שמגיעות לשליחה</button></div>
         <div id="paymentAutomationStatus" class="status"></div>
         <div id="paymentAutomationQueue" class="vendor-list" style="max-height:260px;overflow:auto"></div>
@@ -660,6 +671,37 @@ imma, 123456, אמא"></textarea><small>כל משתמש כאן יוכל להיכ
     </div>
   </section>
 
+  <section class="card page-section" data-page="legal" style="margin-top:14px">
+    <h2 style="margin:0 0 10px;font-size:24px">תנאי שימוש, פרטיות ומרכז אמון</h2>
+    <div class="note">נוסח תפעולי מובנה למערכת. אינו מחליף ייעוץ משפטי, אבל מגדיר ללקוח את כללי השימוש המרכזיים.</div>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr));margin-top:12px">
+      <div class="card"><b>הלקוח במרכז</b><div class="label">האירוע, הנתונים וההחלטות מנוהלים עבור בעל האירוע — לא עבור האולם או הספק.</div></div>
+      <div class="card"><b>שליטה בנתונים</b><div class="label">אפשר לייצא גיבוי מלא של האירוע: אורחים, שולחנות, ספקים, תשלומים והגדרות.</div></div>
+      <div class="card"><b>שליחה באישור</b><div class="label">וואטסאפ ותזכורות נשלחים רק לאחר אישור מפורש של המשתמש.</div></div>
+      <div class="card"><b>קישורים מאושרים</b><div class="label">המערכת חוסמת שליחת הודעות עם דומיינים לא מורשים כדי לצמצם ספאם ופישינג.</div></div>
+    </div>
+    <h3>תנאי שימוש מקוצרים</h3>
+    <ul>
+      <li>השימוש במערכת מיועד לניהול האירוע בלבד: מוזמנים, הודעות, שולחנות, ספקים, תשלומים ודוחות.</li>
+      <li>המשתמש אחראי לסודיות פרטי הכניסה ולכל פעולה שמתבצעת בחשבונו.</li>
+      <li>המשתמש אחראי לוודא שהמידע שהוא מזין נכון, עדכני ומותר לשימוש.</li>
+      <li>אסור להשתמש במערכת לספאם, התחזות, הטרדה, פישינג, איסוף מידע בלתי חוקי או פגיעה בזכויות.</li>
+      <li>הודעות וואטסאפ/מייל נשלחות רק לנמענים שהמשתמש רשאי לפנות אליהם.</li>
+      <li>קישורים בהודעות מוגבלים לדומיינים מאושרים: דומיין המערכת, דפי תשלום/מתנה, Waze/Google Maps ושירותים שאושרו ידנית.</li>
+      <li>תשלומים וסליקה מבוצעים דרך ספקים חיצוניים כגון Morning/משולם; ייתכנו עמלות סליקה ותנאים של ספק הסליקה.</li>
+      <li>תוכן ספקים, חוזים וקישורים חיצוניים הוא באחריות המשתמש או הספק הרלוונטי.</li>
+    </ul>
+    <h3>פרטיות ואבטחה</h3>
+    <ul>
+      <li>המערכת שומרת מידע הדרוש לניהול האירוע: פרטי אירוע, אורחים, טלפונים, סטטוסי הגעה, שולחנות, ספקים, תשלומים ולוג הודעות.</li>
+      <li>סיסמאות, טוקנים וסודות שירות אינם מוצגים בפרונטנד ואינם נשמרים בזיכרון העבודה של הסוכן.</li>
+      <li>המערכת משתמשת באחסון דפדפן ובשמירת מצב שרת לפי אירוע, כדי לבודד נתונים בין אירועים.</li>
+      <li>אין אבטחה מוחלטת; לכן נדרשת זהירות בשיתוף קישורים, הרשאות וסיסמאות.</li>
+    </ul>
+    <div class="toolbar"><button onclick="acceptLegalTerms()">אני מאשר/ת את תנאי השימוש</button><button class="secondary" onclick="exportFullEventJSON()">ייצוא כל נתוני האירוע</button></div>
+    <div id="legalStatus" class="status"></div>
+  </section>
+
   <section class="table-wrap page-section" data-page="guests" style="margin-top:14px">
     <table>
       <thead><tr id="head"></tr></thead>
@@ -668,12 +710,30 @@ imma, 123456, אמא"></textarea><small>כל משתמש כאן יוכל להיכ
   </section>
 </main>
 </div>
+<div id="legalConsentModal" class="hidden" style="position:fixed;inset:0;z-index:2147483600;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:18px">
+  <div class="card" style="max-width:760px;width:100%;max-height:86vh;overflow:auto">
+    <h2 style="margin-top:0">לפני שממשיכים — תנאי שימוש ופרטיות</h2>
+    <p class="label">כדי להגן עליך ועל האורחים, צריך לאשר שימוש אחראי במערכת: שליחת הודעות רק למי שמותר לפנות אליו, שימוש בקישורים מאושרים, ושמירה על פרטיות נתוני האירוע.</p>
+    <ul>
+      <li>הנתונים שייכים לאירוע שלך וניתנים לייצוא.</li>
+      <li>וואטסאפ/תזכורות דורשים אישור מפורש לפני שליחה.</li>
+      <li>תשלומים מתבצעים דרך ספק סליקה חיצוני וייתכנו עמלות.</li>
+      <li>אין להשתמש במערכת לספאם, התחזות או פגיעה בפרטיות.</li>
+    </ul>
+    <label style="display:flex;gap:8px;align-items:flex-start"><input id="legalConsentCheckbox" type="checkbox" /> <span>קראתי ואני מאשר/ת את תנאי השימוש והפרטיות.</span></label>
+    <div class="toolbar"><button onclick="acceptLegalTerms()">אישור והמשך</button><button class="secondary" onclick="document.getElementById('legalConsentModal')?.classList.add('hidden'); showPage('legal')">פתח פירוט מלא</button></div>
+    <div id="legalConsentStatus" class="status"></div>
+  </div>
+</div>
 <script>
 const ADMIN_EVENTS_KEY = 'dynamic_event_admin_events_v1';
 const ADMIN_SESSION_KEY = 'dynamic_event_admin_session_v2';
 const CLIENT_SESSION_PREFIX = 'dynamic_event_client_session_v2_';
 const EVENT_KEY = 'dynamic_event_settings_v1';
 const STORAGE_KEY = 'dynamic_event_participants_v1';
+const LEGAL_TERMS_VERSION = '2026-05-24-v1';
+const LEGAL_CONSENT_KEY = 'dynamic_event_legal_consent_v1';
+const APPROVED_LINK_HOSTS = ['wedding.orma-ai.com','orma-ai.com','morning.co.il','greeninvoice.co.il','payboxapp.page.link','waze.com','ul.waze.com','google.com','maps.google.com','goo.gl'];
 let activeEventId = eventSlug() || '';
 function storageEventId(){ return activeEventId || eventSlug() || selectedAdminEventId || ''; }
 function eventStorageKey(base){ const id=storageEventId(); return `${base}_${id || 'no_event'}`; }
@@ -805,7 +865,23 @@ function authHeaders(){ return currentAdminToken ? {authorization:'Bearer '+curr
 function clientAuthHeaders(){ return currentClientToken ? {authorization:'Bearer '+currentClientToken} : {}; }
 function eventAccessHeaders(){ return currentAdminToken ? authHeaders() : clientAuthHeaders(); }
 function currentEventId(){ return activeEventId || eventSlug() || eventSettings?.id || selectedAdminEventId || ''; }
-function collectEventState(){ const id=currentEventId(); return {eventId:id,eventSettings:{...(eventSettings||{}),id}, participants:guests, hall, vendors, walletTx, payments:payments.map(p=>({...p,eventId:id})), paymentAutomation, savedAt:new Date().toISOString()}; }
+function approvedLinkHosts(){ const current=location.hostname||''; return Array.from(new Set([current,...APPROVED_LINK_HOSTS].filter(Boolean).map(h=>h.toLowerCase()))); }
+function extractUrls(text){ return String(text||'').match(/https?:\/\/[^\s<>"]+/g) || []; }
+function isApprovedUrl(raw){
+  try{
+    const url=new URL(String(raw).replace(/[),.;]+$/,''));
+    const host=url.hostname.toLowerCase();
+    return approvedLinkHosts().some(allowed=>host===allowed || host.endsWith('.'+allowed));
+  }catch(e){ return false; }
+}
+function validateApprovedLinks(text){ const urls=extractUrls(text); const blocked=urls.filter(u=>!isApprovedUrl(u)); return {ok:!blocked.length, urls, blocked}; }
+function updateWhatsAppLinkPolicy(){ const box=document.getElementById('waLinkPolicy'); if(!box) return; const result=validateApprovedLinks(document.getElementById('waMessage')?.value||''); box.textContent=result.urls.length ? (result.ok ? 'כל הקישורים בהודעה שייכים לדומיינים מאושרים ✅' : 'קישורים לא מאושרים: '+result.blocked.join(', ')) : 'אין קישורים בהודעה. קישורי תשלום/ניווט מותרים רק מדומיינים מאושרים.'; box.className='note '+(result.ok?'':'bad-text'); }
+function legalConsentStorageKey(){ return eventStorageKey(LEGAL_CONSENT_KEY); }
+function hasAcceptedLegalTerms(){ try{ const c=JSON.parse(localStorage.getItem(legalConsentStorageKey())||'{}'); return c.version===LEGAL_TERMS_VERSION && c.acceptedAt; }catch(e){ return false; } }
+function showLegalConsentIfNeeded(){ const modal=document.getElementById('legalConsentModal'); if(!modal) return; modal.classList.toggle('hidden', hasAcceptedLegalTerms()); }
+function acceptLegalTerms(){ const modal=document.getElementById('legalConsentModal'); const checked=document.getElementById('legalConsentCheckbox'); const status=document.getElementById('legalConsentStatus')||document.getElementById('legalStatus'); const modalVisible=modal && !modal.classList.contains('hidden'); if(modalVisible && checked && !checked.checked){ if(status){ status.textContent='צריך לסמן שקראת ואישרת כדי להמשיך.'; status.className='status bad-text'; } return; } const consent={version:LEGAL_TERMS_VERSION,eventId:currentEventId(),acceptedAt:new Date().toISOString(),userAgent:navigator.userAgent.slice(0,120)}; localStorage.setItem(legalConsentStorageKey(),JSON.stringify(consent)); modal?.classList.add('hidden'); if(status){ status.textContent='תנאי השימוש אושרו ✅'; status.className='status ok-text'; } scheduleEventStateSync(); }
+function requireLegalAccepted(){ if(hasAcceptedLegalTerms()) return true; showLegalConsentIfNeeded(); return false; }
+function collectEventState(){ const id=currentEventId(); let legalConsent=null; try{ legalConsent=JSON.parse(localStorage.getItem(legalConsentStorageKey())||'null'); }catch(e){} return {eventId:id,eventSettings:{...(eventSettings||{}),id}, participants:guests, hall, vendors, walletTx, payments:payments.map(p=>({...p,eventId:id})), paymentAutomation, legalConsent, savedAt:new Date().toISOString()}; }
 async function syncEventStateNow(){
   if(suppressSync || !currentEventId() || !(currentClientToken||currentAdminToken)) return;
   try{ await fetch('/api/event-state',{method:'POST',headers:{'content-type':'application/json',...eventAccessHeaders()},body:JSON.stringify({eventId:currentEventId(),state:collectEventState()})}); }catch(e){}
@@ -1282,7 +1358,7 @@ async function clientLogin(){
   catch(e){ const ev=loadAdminEvents().find(x=>x.id===id); const localUser=ev ? eventLoginUsers(ev).find(u=>u.username===username && u.password===password) : null; if(ev && localUser){ sessionStorage.setItem('client_event_access_'+id,'1'); await enterClientMode(ev); } else { status.textContent=e.message; status.className='status bad-text'; } }
 }
 function clientLogout(){ const id=currentEventId()||eventSlug(); if(id){ sessionStorage.removeItem(CLIENT_SESSION_PREFIX+id); sessionStorage.removeItem('client_event_access_'+id); } currentClientToken=''; document.body.classList.remove('client-mode'); document.body.classList.add('client-auth-locked'); const pass=document.getElementById('clientPassword'); if(pass) pass.value=''; showPage('client-login'); }
-async function enterClientMode(ev){ document.body.classList.remove('admin-landing','admin-locked','client-auth-locked'); document.body.classList.add('client-mode'); applyAdminEventToWorkspace(ev); await loadRemoteEventState(); await loadPendingParticipants(); fillEventSettings(); render(); renderHall(); renderVendors(); renderWallet(); renderPayments(); updateVendorStats(); renderWhatsAppGuests(); showPage('overview'); document.querySelectorAll('.nav-btn.admin-only').forEach(e=>e.remove()); scheduleEventStateSync(); }
+async function enterClientMode(ev){ document.body.classList.remove('admin-landing','admin-locked','client-auth-locked'); document.body.classList.add('client-mode'); applyAdminEventToWorkspace(ev); await loadRemoteEventState(); await loadPendingParticipants(); fillEventSettings(); render(); renderHall(); renderVendors(); renderWallet(); renderPayments(); updateVendorStats(); renderWhatsAppGuests(); showPage('overview'); document.querySelectorAll('.nav-btn.admin-only').forEach(e=>e.remove()); showLegalConsentIfNeeded(); scheduleEventStateSync(); }
 async function bootMode(){
   setupAdminDateMin();
   renderCreateColorPalette();
@@ -1444,6 +1520,7 @@ function selectForWhatsApp(idx){
   renderWhatsAppGuests();
   applyTemplate();
   renderWhatsAppLog();
+  updateWhatsAppLinkPolicy();
   refreshWhatsAppHistory();
   document.getElementById('waStatus').textContent = '';
   document.getElementById('waGuest').scrollIntoView({behavior:'smooth', block:'center'});
@@ -1498,18 +1575,23 @@ async function applyTemplate(){
     msg = msg.replace('{{RSVP_LINK}}', link || '[לא ניתן ליצור קישור כרגע — ודאו שהאירוע שמור ושבחרתם משתתף]');
   }
   document.getElementById('waMessage').value = msg;
+  updateWhatsAppLinkPolicy();
 }
-function previewWhatsApp(){ applyTemplate(); }
+function previewWhatsApp(){ applyTemplate(); updateWhatsAppLinkPolicy(); }
 async function sendWhatsApp(){
   const status = document.getElementById('waStatus');
   status.className = 'status full';
   const phone = document.getElementById('waPhone').value.trim();
   const message = document.getElementById('waMessage').value.trim();
   if(!phone || !message){ status.textContent = 'חסר טלפון או נוסח הודעה'; status.classList.add('bad-text'); return; }
+  if(!requireLegalAccepted()){ status.textContent='צריך לאשר תנאי שימוש ופרטיות לפני שליחת הודעות.'; status.classList.add('bad-text'); return; }
+  if(!document.getElementById('waConsent')?.checked){ status.textContent='לפני שליחה צריך לאשר שיש הרשאה לפנות לנמען.'; status.classList.add('bad-text'); return; }
+  const linkCheck=validateApprovedLinks(message); updateWhatsAppLinkPolicy();
+  if(!linkCheck.ok){ status.textContent='נמצאו קישורים לא מאושרים בהודעה. נא להסיר או לאשר דומיין דרך האדמין: '+linkCheck.blocked.join(', '); status.classList.add('bad-text'); return; }
   if(!confirm('לשלוח עכשיו וואטסאפ למספר ' + phone + '?')) return;
   status.textContent = 'שולח...';
   try{
-    const res = await fetch('/api/send-whatsapp', {method:'POST', headers:{'content-type':'application/json',...eventAccessHeaders()}, body:JSON.stringify({phone, message, eventId:currentEventId(), guestIndex:selectedWhatsAppIndex})});
+    const res = await fetch('/api/send-whatsapp', {method:'POST', headers:{'content-type':'application/json',...eventAccessHeaders()}, body:JSON.stringify({phone, message, eventId:currentEventId(), guestIndex:selectedWhatsAppIndex, userConfirmed:true, termsVersion:LEGAL_TERMS_VERSION})});
     const data = await res.json();
     if(!res.ok || !data.ok) throw new Error(data.error || data.result?.message || 'שליחה נכשלה');
     addLocalWaLog(phone, 'out', message);
@@ -1640,7 +1722,7 @@ async function generateMorningPaymentLink(id){
 }
 function paymentShareText(p){ const tpl=p.customMessage || PAYMENT_MESSAGE_TEMPLATES[p.messageTemplate||'warm'] || PAYMENT_MESSAGE_TEMPLATES.warm; return renderPaymentMessageTemplate(tpl,p); }
 function copyPaymentMessage(id){ const p=payments.find(x=>x.id===id); if(!p) return; copyText(paymentShareText(p)); }
-function openPaymentWhatsApp(id){ const p=payments.find(x=>x.id===id); if(!p) return; const phone=String(p.payerPhone||'').replace(/\D/g,''); if(!phone) return alert('אין מספר וואטסאפ בבקשת התשלום'); window.open(`https://wa.me/${phone}?text=${encodeURIComponent(paymentShareText(p))}`,'_blank'); }
+function openPaymentWhatsApp(id){ const p=payments.find(x=>x.id===id); if(!p) return; const phone=String(p.payerPhone||'').replace(/\D/g,''); if(!phone) return alert('אין מספר וואטסאפ בבקשת התשלום'); const text=paymentShareText(p); const check=validateApprovedLinks(text); if(!check.ok) return alert('ההודעה כוללת קישורים לא מאושרים: '+check.blocked.join(', ')); if(!requireLegalAccepted()) return alert('צריך לאשר תנאי שימוש ופרטיות לפני שליחת הודעות.'); window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`,'_blank'); }
 function paymentRequestTitle(p){
   if(p.direction==='out') return 'תשלום החוצה: '+(p.vendorName||'יעד');
   if(p.payerName) return p.payerName;
@@ -1697,12 +1779,16 @@ async function sendDuePaymentAutomationMessages(){
   const due=paymentAutomationDueItems();
   const status=document.getElementById('paymentAutomationStatus');
   if(!due.length){ if(status){ status.textContent='אין הודעות שמגיעות לשליחה כרגע.'; status.className='status'; } return; }
+  if(!requireLegalAccepted()){ if(status){ status.textContent='צריך לאשר תנאי שימוש ופרטיות לפני שליחה מרוכזת.'; status.className='status bad-text'; } return; }
+  if(!document.getElementById('paymentAutomationConsent')?.checked){ if(status){ status.textContent='צריך לאשר שיש הרשאה לשלוח הודעות לנמענים לפני שליחה מרוכזת.'; status.className='status bad-text'; } return; }
+  const blocked=due.flatMap(p=>validateApprovedLinks(paymentReminderMessage(p)).blocked);
+  if(blocked.length){ if(status){ status.textContent='נמצאו קישורים לא מאושרים בהודעות: '+Array.from(new Set(blocked)).join(', '); status.className='status bad-text'; } return; }
   if(!confirm(`לשלוח עכשיו ${due.length} הודעות וואטסאפ לפי חוקי האוטומציה?`)) return;
   let ok=0, fail=0;
   if(status){ status.textContent='שולח הודעות...'; status.className='status'; }
   for(const p of due){
     try{
-      const res=await fetch('/api/send-whatsapp',{method:'POST',headers:{'content-type':'application/json',...eventAccessHeaders()},body:JSON.stringify({eventId:currentEventId(),phone:p.payerPhone,message:paymentReminderMessage(p),paymentId:p.id})});
+      const res=await fetch('/api/send-whatsapp',{method:'POST',headers:{'content-type':'application/json',...eventAccessHeaders()},body:JSON.stringify({eventId:currentEventId(),phone:p.payerPhone,message:paymentReminderMessage(p),paymentId:p.id,userConfirmed:true,termsVersion:LEGAL_TERMS_VERSION})});
       const data=await res.json().catch(()=>({}));
       if(!res.ok||!data.ok) throw new Error(data.error||'שליחה נכשלה');
       const now=new Date().toISOString();
@@ -1956,6 +2042,7 @@ renderWallet();
 renderPayments();
 renderPaymentAutomationQueue();
 fillPaymentTemplatePreview(true);
+updateWhatsAppLinkPolicy();
 updateVendorStats();
 renderAdminEvents();
 bootMode();
