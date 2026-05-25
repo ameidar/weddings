@@ -17,6 +17,7 @@ const ADMIN_CONFIG_KEY = 'admin_config_v1';
 const ADMIN_RESET_PREFIX = 'admin_password_reset_v1:';
 const MORNING_WEBHOOK_PREFIX = 'morning_webhook_v1:';
 const PAYMENT_SHORT_LINK_PREFIX = 'payment_short_link_v1:';
+const RSVP_SHORT_LINK_PREFIX = 'rsvp_short_link_v1:';
 const APPROVED_MESSAGE_HOSTS = ['wedding.orma-ai.com','orma-ai.com','morning.co.il','greeninvoice.co.il','payboxapp.page.link','waze.com','ul.waze.com','google.com','maps.google.com','goo.gl'];
 
 function extractUrls(text) {
@@ -263,7 +264,18 @@ async function signRsvpToken(env, payload) {
   return `${body}.${sig}`;
 }
 async function verifyRsvpToken(env, token) {
-  if (!token || !String(token).includes('.')) return null;
+  if (!token) return null;
+  if (!String(token).includes('.') && env.EVENTS_KV) {
+    const raw = await env.EVENTS_KV.get(RSVP_SHORT_LINK_PREFIX + String(token).trim());
+    if (raw) {
+      try {
+        const json = JSON.parse(raw);
+        if (json.exp && json.exp < Date.now()) return null;
+        return json;
+      } catch { return null; }
+    }
+    return null;
+  }
   const [body, sig] = String(token).split('.');
   const expected = await hmac(sessionSecret(env), body);
   if (!safeEqual(sig, expected)) return null;
@@ -291,14 +303,20 @@ async function rsvpLinkApi(request, env) {
   let state; try { state = raw ? JSON.parse(raw) : null; } catch { state = null; }
   const guest = state?.participants?.[guestIndex];
   if (!guest) return jsonResponse({ ok:false, error:'Guest not found' }, 404);
-  const token = await signRsvpToken(env, { eventId, guestIndex, phone: String(guest['טלפון וואטסאפ'] || ''), name: String(guest['שם מלא / שם לקוח'] || ''), exp: Date.now() + 1000*60*60*24*45 });
+  const claims = { eventId, guestIndex, phone: String(guest['טלפון וואטסאפ'] || ''), name: String(guest['שם מלא / שם לקוח'] || ''), exp: Date.now() + 1000*60*60*24*45 };
+  const token = await signRsvpToken(env, claims);
+  const bytes = new Uint8Array(5);
+  crypto.getRandomValues(bytes);
+  const code = base64url(bytes).slice(0, 7).toUpperCase();
+  await env.EVENTS_KV.put(RSVP_SHORT_LINK_PREFIX + code, JSON.stringify(claims), { expirationTtl: 60 * 60 * 24 * 45 });
   const url = new URL(request.url);
-  const link = `${url.origin}/rsvp?t=${encodeURIComponent(token)}`;
-  return jsonResponse({ ok:true, link });
+  const link = `${url.origin}/r/${encodeURIComponent(code)}`;
+  return jsonResponse({ ok:true, link, code, legacyLink: `${url.origin}/rsvp?t=${encodeURIComponent(token)}` });
 }
 async function rsvpPage(request, env) {
   const url = new URL(request.url);
-  const token = url.searchParams.get('t') || '';
+  const pathCode = url.pathname.startsWith('/r/') ? decodeURIComponent(url.pathname.split('/').filter(Boolean)[1] || '') : '';
+  const token = pathCode || url.searchParams.get('c') || url.searchParams.get('t') || '';
   const claims = await verifyRsvpToken(env, token);
   if (!claims?.eventId) return htmlResponse('<!doctype html><meta charset="utf-8"><body dir="rtl" style="font-family:Assistant,Arial,sans-serif;padding:24px"><h2>קישור אישור הגעה לא תקין או שפג תוקפו</h2></body>', 400);
   const raw = await env.EVENTS_KV?.get(EVENT_STATE_PREFIX + claims.eventId);
@@ -1218,7 +1236,7 @@ export default {
     if (url.pathname === '/api/pending-participants' && request.method === 'GET') return pendingParticipantsApi(request, env);
     if (url.pathname === '/api/rsvp-link' && request.method === 'POST') return rsvpLinkApi(request, env);
     if (url.pathname === '/api/rsvp' && request.method === 'POST') return rsvpSubmitApi(request, env);
-    if (url.pathname === '/rsvp' && request.method === 'GET') return rsvpPage(request, env);
+    if ((url.pathname === '/rsvp' || url.pathname.startsWith('/r/')) && request.method === 'GET') return rsvpPage(request, env);
     if (url.pathname === '/pay' && request.method === 'GET') return paymentChoicePage(request, env);
     if (url.pathname.startsWith('/p/') && request.method === 'GET') return paymentShortRedirect(request, env, url.pathname.split('/').filter(Boolean)[1]);
     if (url.pathname === '/api/payment-choice-link') {
