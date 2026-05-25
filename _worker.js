@@ -310,8 +310,9 @@ async function rsvpLinkApi(request, env) {
   const code = base64url(bytes).slice(0, 7).toUpperCase();
   await env.EVENTS_KV.put(RSVP_SHORT_LINK_PREFIX + code, JSON.stringify(claims), { expirationTtl: 60 * 60 * 24 * 45 });
   const url = new URL(request.url);
-  const link = `${url.origin}/r/${encodeURIComponent(code)}`;
-  return jsonResponse({ ok:true, link, code, legacyLink: `${url.origin}/rsvp?t=${encodeURIComponent(token)}` });
+  const publicOrigin = url.hostname.endsWith('.pages.dev') ? 'https://wedding.orma-ai.com' : url.origin;
+  const link = `${publicOrigin}/r/${encodeURIComponent(code)}`;
+  return jsonResponse({ ok:true, link, code, legacyLink: `${publicOrigin}/rsvp?t=${encodeURIComponent(token)}` });
 }
 async function rsvpPage(request, env) {
   const url = new URL(request.url);
