@@ -1094,7 +1094,8 @@ function formatCredentials(ev){
   return eventLoginUsers(ev).map((u,i)=>`${i+1}. משתמש: ${u.username} | סיסמה: ${u.password}${u.name?' | '+u.name:''}`).join('\n') + `\nלינק כניסה: ${link}`;
 }
 function jsArg(text){ return String(text||'').replaceAll('\\','\\\\').replaceAll("'","\\'").replaceAll('\n','\\n').replaceAll('\r',''); }
-function eventClientLink(ev){ return `${location.origin}${location.pathname}?event=${encodeURIComponent(ev.id)}#client`; }
+function publicAppOrigin(){ return location.hostname.endsWith('.pages.dev') ? 'https://wedding.orma-ai.com' : location.origin; }
+function eventClientLink(ev){ return `${publicAppOrigin()}${location.pathname}?event=${encodeURIComponent(ev.id)}#client`; }
 function eventLinkCard(ev, shareText='', opts={}){
   const link=eventClientLink(ev);
   const title=opts.title||'דף הלקוח מוכן';
@@ -1358,7 +1359,7 @@ async function adminResetClientPassword(id){
 }
 function adminOpenEvent(id){
   const ev=loadAdminEvents().find(x=>x.id===id); if(!ev) return;
-  const link=`${location.origin}${location.pathname}?event=${encodeURIComponent(ev.id)}#client`;
+  const link=`${publicAppOrigin()}${location.pathname}?event=${encodeURIComponent(ev.id)}#client`;
   window.open(link, '_blank', 'noopener');
 }
 function applyAdminEventToWorkspace(ev){
@@ -1667,7 +1668,7 @@ function loadTeamMembers(){ try{ const v=eventStorageGet(TEAM_KEY); if(v) return
 function saveTeamMembers(){ eventStorageSet(TEAM_KEY,JSON.stringify(teamMembers)); renderTeamMembers(); scheduleEventStateSync(); }
 function teamPermissionLabel(p){ return ({full:'ניהול מלא',guests:'מוזמנים ואישורי הגעה',seating:'שולחנות והושבה',vendors:'ספקים וחוזים',payments:'תשלומים וארנק',view:'צפייה בלבד'}[p]||p||''); }
 function makeTeamUsername(name){ return makeClientUsername(name||'team')+'-'+Math.random().toString(36).slice(2,5); }
-function eventClientLinkById(id){ return `${location.origin}${location.pathname}?event=${encodeURIComponent(id||currentEventId())}#client`; }
+function eventClientLinkById(id){ return `${publicAppOrigin()}${location.pathname}?event=${encodeURIComponent(id||currentEventId())}#client`; }
 async function inviteTeamMember(){
   const status=document.getElementById('teamInviteStatus'); if(status){ status.textContent='יוצר הזמנה...'; status.className='status'; }
   const get=id=>document.getElementById(id)?.value.trim()||'';
