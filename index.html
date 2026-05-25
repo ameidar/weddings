@@ -1528,13 +1528,18 @@ function renderWhatsAppGuests(){
 }
 const messageTemplates = {
   invite: g => `היי ${guestName(g)}, כאן צוות האירוע 😊
-נשמח לאישור השתתפות ב${eventSettings.name || 'אירוע'}${eventSettings.date ? ' בתאריך ' + formatEventDate() : ''}.
-כרגע רשום אצלנו: ${guestPartySize(g)} מגיעים.
-לאישור הגעה ועדכון כמות לחצו כאן:
+נשמח לאישור הגעה ל${eventSettings.name || 'אירוע'}${eventSettings.date ? ' בתאריך ' + formatEventDate() : ''}${eventSettings.venue ? ' ב' + eventSettings.venue : ''}.
+
+בקישור הבא אפשר לבחור:
+נגיע / אולי / לא נוכל להגיע
+ולעדכן את כמות המשתתפים בצורה מסודרת:
 {{RSVP_LINK}}
-תודה רבה!`,
+
+תודה רבה!`, 
   rsvpReminder: g => `היי ${guestName(g)}, תזכורת קצרה לגבי ${eventSettings.name || 'האירוע'} 😊
-עדיין לא קיבלנו אישור השתתפות, נשמח לעדכון בהקדם כולל כמה מגיעים.`,
+עדיין לא קיבלנו אישור הגעה.
+נשמח שתעדכנו בקישור אם תגיעו, אולי, או שלא תוכלו להגיע — ואם מגיעים, גם כמה משתתפים:
+{{RSVP_LINK}}`,
   payment: g => `היי ${guestName(g)}, תזכורת לתשלום עבור ${eventSettings.name || 'האירוע'} 😊
 ${g['לינק תשלום/אסמכתא'] ? 'קישור לתשלום: ' + g['לינק תשלום/אסמכתא'] : 'נשלח אליך קישור תשלום בהמשך.'}
 תודה רבה!`,
