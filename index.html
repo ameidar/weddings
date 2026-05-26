@@ -133,6 +133,7 @@
     .toolbar button.danger{background:rgba(249,112,102,.18)!important;color:#ffd8d4!important;border:1px solid rgba(249,112,102,.35)!important}
     .auth-shell{margin-top:42px!important}.login-box{padding:28px!important}.login-box h2:before{content:"✦ ";color:var(--orma-gold)}
     .table-wrap{background:rgba(15,17,16,.72)!important}table{color:var(--orma-cream)!important}th{background:#1b1411!important;color:var(--orma-gold)!important;border-color:rgba(242,237,232,.10)!important}td{border-color:rgba(242,237,232,.08)!important}tbody tr:nth-child(even){background:rgba(242,237,232,.025)!important}tbody tr:hover{background:rgba(216,176,122,.08)!important}td input,td select{background:rgba(255,255,255,.055)!important;color:var(--orma-cream)!important;border-color:rgba(242,237,232,.10)!important}
+    tbody tr.rsvp-row-confirmed{background:linear-gradient(90deg,rgba(18,183,106,.28),rgba(18,183,106,.12))!important;box-shadow:inset -5px 0 #12b76a!important}tbody tr.rsvp-row-declined{background:linear-gradient(90deg,rgba(240,68,56,.28),rgba(240,68,56,.12))!important;box-shadow:inset -5px 0 #f04438!important}tbody tr.rsvp-row-pending{background:linear-gradient(90deg,rgba(216,176,122,.22),rgba(216,176,122,.08))!important;box-shadow:inset -5px 0 var(--orma-gold)!important}tbody tr.rsvp-row-maybe{background:linear-gradient(90deg,rgba(247,144,9,.25),rgba(247,144,9,.10))!important;box-shadow:inset -5px 0 #f79009!important}tbody tr.rsvp-row-confirmed:hover{background:linear-gradient(90deg,rgba(18,183,106,.36),rgba(18,183,106,.17))!important}tbody tr.rsvp-row-declined:hover{background:linear-gradient(90deg,rgba(240,68,56,.36),rgba(240,68,56,.17))!important}tbody tr.rsvp-row-pending:hover{background:linear-gradient(90deg,rgba(216,176,122,.30),rgba(216,176,122,.13))!important}tbody tr.rsvp-row-maybe:hover{background:linear-gradient(90deg,rgba(247,144,9,.34),rgba(247,144,9,.15))!important}
     .badge.ok,.ok{background:rgba(129,199,180,.18)!important;color:#bdf6e8!important}.badge.warn,.warn{background:rgba(216,176,122,.16)!important;color:#f3d5aa!important}.badge.bad,.bad{background:rgba(249,112,102,.16)!important;color:#ffc7c2!important}.pill{background:rgba(216,176,122,.16)!important;color:var(--orma-gold)!important;border:1px solid rgba(216,176,122,.22)}
     .assistant-msg.user,.chat-msg.out{background:rgba(88,128,117,.72)!important;color:#fff!important;border:1px solid rgba(129,199,180,.25)!important}.assistant-msg.bot,.chat-msg.in,.bubble{background:rgba(42,31,24,.86)!important;color:var(--orma-cream)!important;border:1px solid rgba(216,176,122,.10)!important}.chat-msg.right .bubble{background:rgba(88,128,117,.86)!important}.chat-name,.chat-header{color:var(--orma-muted2)!important}
     .hall-map{background:rgba(15,17,16,.56)!important;border:1px dashed rgba(216,176,122,.25)!important}.hall-map.venue-map:before{background:rgba(15,17,16,.86)!important;color:var(--orma-muted)!important;border-color:rgba(216,176,122,.18)!important}.table-card{background:rgba(242,237,232,.92)!important;color:#1a0f08!important;border-color:rgba(216,176,122,.28)!important}.venue-map .table-card{background:rgba(242,237,232,.92)!important}.guest-chip{background:#efe7de!important;color:#1a0f08!important;border-color:#dac8b3!important}.guest-chip.unassigned{background:#fff5e8!important;border-color:#e7b06b!important}.stage-box{background:#1a0f08!important;border:1px solid rgba(216,176,122,.3)!important}.dance-box{background:rgba(129,199,180,.13)!important;color:#d8fff5!important;border-color:rgba(129,199,180,.25)!important}
@@ -1486,9 +1487,16 @@ function render(){
   const rows = guests.filter(g => (!rf || g['סטטוס אישור השתתפות']===rf) && (!pf || g['סטטוס תשלום']===pf) && (!q || Object.values(g).join(' ').toLowerCase().includes(q)) );
   document.getElementById('body').innerHTML = rows.map((g)=>{
     const idx = guests.indexOf(g);
-    return `<tr>${headers.map(h=>cell(idx,h,g[h]??'')).join('')}<td><button onclick="selectForWhatsApp(${idx})">וואטסאפ</button> <button class="danger" onclick="deleteRow(${idx})">מחק</button></td></tr>`;
+    return `<tr class="${rsvpRowClass(g)}">${headers.map(h=>cell(idx,h,g[h]??'')).join('')}<td><button onclick="selectForWhatsApp(${idx})">וואטסאפ</button> <button class="danger" onclick="deleteRow(${idx})">מחק</button></td></tr>`;
   }).join('');
   updateStats();
+}
+function rsvpRowClass(g){
+  const status = String(g?.['סטטוס אישור השתתפות'] || 'טרם נענה').trim();
+  if(status === 'אישר') return 'rsvp-row-confirmed';
+  if(status === 'לא מגיע') return 'rsvp-row-declined';
+  if(status === 'אולי') return 'rsvp-row-maybe';
+  return 'rsvp-row-pending';
 }
 function cell(idx,h,v){
   const cls = h==='מספר'||h==='כמות מוזמנים'||h==='שולחן / אזור'?'small':(h.includes('הערות')||h.includes('רגישויות')||h.includes('לינק')?'wide':'medium');
@@ -1496,7 +1504,7 @@ function cell(idx,h,v){
   const type = h==='סכום לתשלום'||h==='כמות מוזמנים'||h==='מספר'?'number':'text';
   return `<td class="${cls}"><input type="${type}" value="${escapeHtml(v)}" oninput="setVal(${idx},'${h}',this.value)" /></td>`;
 }
-function setVal(idx,h,v){ guests[idx][h]=v; save(); if(['כמות מוזמנים','שם מלא / שם לקוח','טלפון וואטסאפ','סטטוס אישור השתתפות','שולחן / אזור'].includes(h)){ renderHall(); renderWhatsAppGuests(); } }
+function setVal(idx,h,v){ guests[idx][h]=v; save(); if(h==='סטטוס אישור השתתפות') render(); if(['כמות מוזמנים','שם מלא / שם לקוח','טלפון וואטסאפ','סטטוס אישור השתתפות','שולחן / אזור'].includes(h)){ renderHall(); renderWhatsAppGuests(); } }
 function guestPartySize(i){ const g=typeof i==='number'?guests[i]:i; return Math.max(1, parseInt(g?.['כמות מוזמנים']) || 1); }
 function tableOccupancy(t){ return (t.guestIndexes||[]).reduce((sum,i)=>sum+guestPartySize(i),0); }
 function addRow(){ guests.push(emptyRow(guests.length+1)); save(); render(); renderHall(); renderWhatsAppGuests(); }
