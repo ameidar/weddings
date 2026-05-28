@@ -235,8 +235,8 @@
     body.client-mode .sidebar{background:#fff!important;border-left:1px solid var(--line)!important;box-shadow:none!important;backdrop-filter:none!important}
     body.client-mode .sidebar-title{color:var(--text)!important;font-size:16px!important;letter-spacing:0!important;text-transform:none!important}
     body.client-mode .nav-btn{background:#fff!important;color:var(--text)!important;border:1px solid transparent!important;border-radius:12px!important;box-shadow:none!important}
-    body.client-mode .nav-btn:hover{background:rgba(var(--event-accent-rgb),.08)!important;transform:none!important}
-    body.client-mode .nav-btn.active{background:var(--client-brand)!important;color:var(--client-on-brand,#fff)!important;border-color:transparent!important;box-shadow:0 8px 18px rgba(var(--event-accent-rgb),.18)!important}
+    body.client-mode .nav-btn:hover{background:rgba(var(--client-accent-rgb,115,87,255),.08)!important;transform:none!important}
+    body.client-mode .nav-btn.active{background:var(--client-brand)!important;color:var(--client-on-brand,#fff)!important;border-color:transparent!important;box-shadow:0 8px 18px rgba(var(--client-accent-rgb,115,87,255),.18)!important}
     body.client-mode .card,body.client-auth-locked .card,body.client-mode .login-box,body.client-auth-locked .login-box,body.client-mode .table-wrap,body.client-mode .event-picker-card,body.client-mode .admin-event-card,body.client-mode .client-admin-panel,body.client-mode .event-link-card,body.client-mode .wa-guest-list,body.client-mode .chat-log,body.client-mode .assistant-chat,body.client-mode .contract-box,body.client-mode .unassigned-box,body.client-mode .vendor-item,body.client-mode .wa-guest-item,body.client-mode .client-detail,body.client-mode .selected-event-empty{
       background:var(--card)!important;color:var(--text)!important;border:1px solid var(--line)!important;border-radius:14px!important;box-shadow:0 4px 14px rgba(16,24,40,.04)!important;backdrop-filter:none!important;
     }
@@ -251,7 +251,7 @@
     body.client-mode th{background:#f8fafc!important;color:#344054!important;border-color:var(--line)!important}body.client-mode td{border-color:#eef2f7!important}body.client-mode tbody tr:nth-child(even){background:#fcfcff!important}body.client-mode tbody tr:hover{background:#f5f3ff!important}
     body.client-mode .hall-map{background:#fbfbff!important;border:2px dashed #d0d5dd!important}.client-mode .table-card{background:#fff!important;color:var(--text)!important}.client-mode .guest-chip{background:#f2f4f7!important;color:var(--text)!important;border-color:#e4e7ec!important}.client-mode .guest-chip.unassigned{background:#fff7ed!important;border-color:#fed7aa!important}
     body.client-mode .assistant-msg.user,body.client-mode .chat-msg.out{background:var(--client-brand)!important;color:var(--client-on-brand,#fff)!important;border:0!important}.client-mode .assistant-msg.bot,.client-mode .chat-msg.in{background:#fff!important;color:var(--text)!important;border:1px solid var(--line)!important}
-    body.client-mode .pill{background:rgba(var(--event-accent-rgb),.10)!important;color:var(--client-brand)!important;border:1px solid rgba(var(--event-accent-rgb),.18)!important}.client-mode .money{color:var(--text)!important}
+    body.client-mode .pill{background:rgba(var(--client-accent-rgb,115,87,255),.10)!important;color:var(--client-brand)!important;border:1px solid rgba(var(--client-accent-rgb,115,87,255),.18)!important}.client-mode .money{color:var(--text)!important}
 
 
     /* Unified Assistant typography hierarchy */
@@ -1119,44 +1119,25 @@ function applyEventTheme(){
   const template=currentDesignTemplate();
   const color=normalizeBrandColor(eventSettings?.brandColor || template.brand);
   const dash=dashboardThemeFromTemplate(template,color);
-  document.documentElement.style.setProperty('--brand', color);
-  document.documentElement.style.setProperty('--orma-bg', dash.dark);
-  document.documentElement.style.setProperty('--orma-bg2', dash.deep);
-  document.documentElement.style.setProperty('--orma-warm', dash.deep);
-  document.documentElement.style.setProperty('--orma-surface', dash.surface);
-  document.documentElement.style.setProperty('--orma-surface2', dash.deep);
-  document.documentElement.style.setProperty('--orma-card', `rgba(${rgbString(dash.surface)},.86)`);
-  document.documentElement.style.setProperty('--orma-card2', `rgba(${rgbString(dash.deep)},.82)`);
-  document.documentElement.style.setProperty('--orma-cream', dash.cream);
-  document.documentElement.style.setProperty('--orma-muted', dash.muted);
-  document.documentElement.style.setProperty('--orma-muted2', dash.muted2);
-  document.documentElement.style.setProperty('--orma-line', dash.line);
-  document.documentElement.style.setProperty('--orma-gold', color);
-  document.documentElement.style.setProperty('--orma-teal', dash.secondary);
-  document.documentElement.style.setProperty('--orma-sage', dash.secondary);
-  document.documentElement.style.setProperty('--event-accent-rgb', rgbString(color));
-  document.documentElement.style.setProperty('--event-secondary-rgb', rgbString(dash.secondary));
-  document.documentElement.style.setProperty('--event-accent-glow', `rgba(${rgbString(color)},.22)`);
-  document.documentElement.style.setProperty('--event-secondary-glow', `rgba(${rgbString(dash.secondary)},.14)`);
-  document.documentElement.style.setProperty('--event-dashboard-bg', template.dashboard || `linear-gradient(135deg,${dash.dark} 0%,${dash.deep} 48%,${dash.surface} 100%)`);
-  document.documentElement.style.setProperty('--event-header-bg', template.header);
+  // Keep the admin dashboard on the fixed Orma management skin.
+  // Event colors are exposed through client-scoped variables only.
+  document.documentElement.style.removeProperty('--event-header-bg');
   document.body.style.setProperty('--client-brand', color);
   document.body.style.setProperty('--client-on-brand', readableTextOn(color));
+  document.body.style.setProperty('--client-accent-rgb', rgbString(color));
+  document.body.style.setProperty('--client-secondary-rgb', rgbString(dash.secondary));
   const clientHeaderBg=eventSettings?.invitationBackground ? `linear-gradient(135deg, rgba(0,0,0,.56), ${color}dd), url(${eventSettings.invitationBackground}) center/cover` : `linear-gradient(135deg, rgba(0,0,0,.38), rgba(0,0,0,.18)), ${template.header}`;
   const headerBg=template.header;
   const pageBg=eventSettings?.invitationBackground ? `linear-gradient(180deg, rgba(255,255,255,.88), rgba(255,255,255,.94)), url(${eventSettings.invitationBackground}) center/cover fixed` : template.page;
   document.body.style.setProperty('--client-page-bg', pageBg);
   document.body.style.setProperty('--client-header-bg', clientHeaderBg);
   const header=document.querySelector('header');
-  if(header && !(document.body.classList.contains('client-mode') || document.body.classList.contains('client-auth-locked'))) header.style.setProperty('background', headerBg, 'important');
+  if(header && !(document.body.classList.contains('client-mode') || document.body.classList.contains('client-auth-locked'))) header.style.removeProperty('background');
   document.body.classList.toggle('client-design-shell', !!eventSettings?.invitationBackground || !!eventSettings?.designTemplate);
-  document.body.style.setProperty('background', `radial-gradient(ellipse 70% 60% at 18% 8%, rgba(${rgbString(color)},.20), transparent 62%), radial-gradient(ellipse 50% 46% at 82% 12%, rgba(${rgbString(dash.secondary)},.13), transparent 60%), ${template.dashboard || pageBg}`, 'important');
-  if(eventSettings?.invitationBackground){
-    document.documentElement.style.setProperty('--event-watermark-bg', `linear-gradient(135deg,${dash.dark}ee,${dash.deep}cc), url(${eventSettings.invitationBackground}) center/cover`);
-    document.documentElement.style.setProperty('--event-watermark-opacity', '.22');
+  if(document.body.classList.contains('client-mode') || document.body.classList.contains('client-auth-locked')){
+    document.body.style.setProperty('background', pageBg, 'important');
   }else{
-    document.documentElement.style.setProperty('--event-watermark-bg', 'none');
-    document.documentElement.style.setProperty('--event-watermark-opacity', '0');
+    document.body.style.removeProperty('background');
   }
 }
 const EVENT_DESIGN_TEMPLATES=[
