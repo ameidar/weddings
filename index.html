@@ -236,7 +236,7 @@
     body.client-mode .sidebar-title{color:var(--text)!important;font-size:16px!important;letter-spacing:0!important;text-transform:none!important}
     body.client-mode .nav-btn{background:#fff!important;color:var(--text)!important;border:1px solid transparent!important;border-radius:12px!important;box-shadow:none!important}
     body.client-mode .nav-btn:hover{background:rgba(var(--event-accent-rgb),.08)!important;transform:none!important}
-    body.client-mode .nav-btn.active{background:rgba(var(--event-accent-rgb),.14)!important;color:var(--client-brand)!important;border-color:rgba(var(--event-accent-rgb),.28)!important;box-shadow:none!important}
+    body.client-mode .nav-btn.active{background:var(--client-brand)!important;color:var(--client-on-brand,#fff)!important;border-color:transparent!important;box-shadow:0 8px 18px rgba(var(--event-accent-rgb),.18)!important}
     body.client-mode .card,body.client-auth-locked .card,body.client-mode .login-box,body.client-auth-locked .login-box,body.client-mode .table-wrap,body.client-mode .event-picker-card,body.client-mode .admin-event-card,body.client-mode .client-admin-panel,body.client-mode .event-link-card,body.client-mode .wa-guest-list,body.client-mode .chat-log,body.client-mode .assistant-chat,body.client-mode .contract-box,body.client-mode .unassigned-box,body.client-mode .vendor-item,body.client-mode .wa-guest-item,body.client-mode .client-detail,body.client-mode .selected-event-empty{
       background:var(--card)!important;color:var(--text)!important;border:1px solid var(--line)!important;border-radius:14px!important;box-shadow:0 4px 14px rgba(16,24,40,.04)!important;backdrop-filter:none!important;
     }
@@ -246,12 +246,12 @@
     body.client-mode .stat{color:var(--text)!important;font-size:32px!important;letter-spacing:0!important}
     body.client-mode input,body.client-mode select,body.client-mode textarea,body.client-auth-locked input,body.client-auth-locked select,body.client-auth-locked textarea,body.client-mode td input,body.client-mode td select{background:#fff!important;color:var(--text)!important;border:1px solid var(--line)!important;border-radius:10px!important}
     body.client-mode input::placeholder,body.client-mode textarea::placeholder,body.client-auth-locked input::placeholder{color:#98a2b3!important}
-    body.client-mode .toolbar button,body.client-auth-locked .toolbar button{background:var(--brand)!important;color:#fff!important;border:0!important;box-shadow:none!important;border-radius:10px!important}
+    body.client-mode .toolbar button,body.client-auth-locked .toolbar button{background:var(--brand)!important;color:var(--client-on-brand,#fff)!important;border:0!important;box-shadow:none!important;border-radius:10px!important}
     body.client-mode .toolbar button.secondary,body.client-auth-locked .toolbar button.secondary,body.client-mode .event-link-actions button,body.client-mode .event-link-actions a,body.client-mode .share-actions button,body.client-mode .share-actions a,body.client-mode .assistant-actions button{background:#fff!important;color:var(--text)!important;border:1px solid var(--line)!important;box-shadow:none!important}
     body.client-mode th{background:#f8fafc!important;color:#344054!important;border-color:var(--line)!important}body.client-mode td{border-color:#eef2f7!important}body.client-mode tbody tr:nth-child(even){background:#fcfcff!important}body.client-mode tbody tr:hover{background:#f5f3ff!important}
     body.client-mode .hall-map{background:#fbfbff!important;border:2px dashed #d0d5dd!important}.client-mode .table-card{background:#fff!important;color:var(--text)!important}.client-mode .guest-chip{background:#f2f4f7!important;color:var(--text)!important;border-color:#e4e7ec!important}.client-mode .guest-chip.unassigned{background:#fff7ed!important;border-color:#fed7aa!important}
-    body.client-mode .assistant-msg.user,body.client-mode .chat-msg.out{background:#ede9fe!important;color:#312e81!important;border:0!important}.client-mode .assistant-msg.bot,.client-mode .chat-msg.in{background:#fff!important;color:var(--text)!important;border:1px solid var(--line)!important}
-    body.client-mode .pill{background:#ede9fe!important;color:#4c1d95!important;border:0!important}.client-mode .money{color:var(--text)!important}
+    body.client-mode .assistant-msg.user,body.client-mode .chat-msg.out{background:var(--client-brand)!important;color:var(--client-on-brand,#fff)!important;border:0!important}.client-mode .assistant-msg.bot,.client-mode .chat-msg.in{background:#fff!important;color:var(--text)!important;border:1px solid var(--line)!important}
+    body.client-mode .pill{background:rgba(var(--event-accent-rgb),.10)!important;color:var(--client-brand)!important;border:1px solid rgba(var(--event-accent-rgb),.18)!important}.client-mode .money{color:var(--text)!important}
 
 
     /* Unified Assistant typography hierarchy */
@@ -1109,6 +1109,7 @@ function normalizeBrandColor(value){ const c=String(value||'').trim(); return /^
 function hexToRgb(hex){ const c=normalizeBrandColor(hex).slice(1); return {r:parseInt(c.slice(0,2),16),g:parseInt(c.slice(2,4),16),b:parseInt(c.slice(4,6),16)}; }
 function rgbString(hex){ const {r,g,b}=hexToRgb(hex); return `${r},${g},${b}`; }
 function shadeHex(hex,percent){ const {r,g,b}=hexToRgb(hex); const t=percent<0?0:255; const p=Math.abs(percent)/100; const to=v=>Math.round((t-v)*p+v).toString(16).padStart(2,'0'); return `#${to(r)}${to(g)}${to(b)}`; }
+function readableTextOn(hex){ const {r,g,b}=hexToRgb(hex); const luminance=(0.299*r+0.587*g+0.114*b)/255; return luminance>0.62 ? '#111827' : '#ffffff'; }
 function dashboardThemeFromTemplate(template,color){
   const dark=shadeHex(color,-72), deep=shadeHex(color,-56), surface=shadeHex(color,-46), soft=shadeHex(color,88), secondary=template.secondary||shadeHex(color,28);
   return {dark,deep,surface,soft,secondary,cream:'#F8FAFC',muted:'rgba(248,250,252,.72)',muted2:'rgba(248,250,252,.50)',line:'rgba(248,250,252,.12)'};
@@ -1140,12 +1141,14 @@ function applyEventTheme(){
   document.documentElement.style.setProperty('--event-dashboard-bg', template.dashboard || `linear-gradient(135deg,${dash.dark} 0%,${dash.deep} 48%,${dash.surface} 100%)`);
   document.documentElement.style.setProperty('--event-header-bg', template.header);
   document.body.style.setProperty('--client-brand', color);
-  const headerBg=eventSettings?.invitationBackground ? `linear-gradient(135deg, ${template.overlay||'rgba(17,24,39,.82)'}, ${color}cc), url(${eventSettings.invitationBackground}) center/cover` : template.header;
+  document.body.style.setProperty('--client-on-brand', readableTextOn(color));
+  const clientHeaderBg=eventSettings?.invitationBackground ? `linear-gradient(135deg, rgba(0,0,0,.56), ${color}dd), url(${eventSettings.invitationBackground}) center/cover` : `linear-gradient(135deg, rgba(0,0,0,.38), rgba(0,0,0,.18)), ${template.header}`;
+  const headerBg=template.header;
   const pageBg=eventSettings?.invitationBackground ? `linear-gradient(180deg, rgba(255,255,255,.88), rgba(255,255,255,.94)), url(${eventSettings.invitationBackground}) center/cover fixed` : template.page;
   document.body.style.setProperty('--client-page-bg', pageBg);
-  document.body.style.setProperty('--client-header-bg', headerBg);
+  document.body.style.setProperty('--client-header-bg', clientHeaderBg);
   const header=document.querySelector('header');
-  if(header) header.style.setProperty('background', headerBg, 'important');
+  if(header && !(document.body.classList.contains('client-mode') || document.body.classList.contains('client-auth-locked'))) header.style.setProperty('background', headerBg, 'important');
   document.body.classList.toggle('client-design-shell', !!eventSettings?.invitationBackground || !!eventSettings?.designTemplate);
   document.body.style.setProperty('background', `radial-gradient(ellipse 70% 60% at 18% 8%, rgba(${rgbString(color)},.20), transparent 62%), radial-gradient(ellipse 50% 46% at 82% 12%, rgba(${rgbString(dash.secondary)},.13), transparent 60%), ${template.dashboard || pageBg}`, 'important');
   if(eventSettings?.invitationBackground){
