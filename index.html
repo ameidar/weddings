@@ -457,13 +457,16 @@ imma, 123456, אמא"></textarea><small>כל משתמש כאן יוכל להיכ
       <input id="search" placeholder="חיפוש שם / טלפון / הערות" oninput="render()" />
       <select id="rsvpFilter" onchange="render()"><option value="">כל סטטוסי ההגעה</option><option>טרם נענה</option><option>אישר</option><option>לא מגיע</option><option>אולי</option></select>
       <select id="payFilter" onchange="render()"><option value="">כל סטטוסי התשלום</option><option>טרם שולם</option><option>שולם</option><option>פטור/לא נדרש</option></select>
+      <select id="sideFilter" onchange="render()"><option value="">כל הצדדים</option><option>צד כלה</option><option>צד חתן</option><option>משותף</option><option>משפחה</option><option>חברים</option><option>עבודה</option><option>אחר</option></select>
+      <input id="inviterFilter" placeholder="סינון לפי גורם מזמין" oninput="render()" />
       <button onclick="addRow()">+ הוסף אורח</button>
       <button class="secondary" onclick="exportCSV()">ייצוא CSV</button>
       <button class="secondary" onclick="document.getElementById('importFile').click()">ייבוא CSV</button>
       <button class="danger" onclick="resetData()">איפוס</button>
       <input id="importFile" class="hidden" type="file" accept=".csv" onchange="importCSV(event)" />
     </div>
-    <div class="note">המידע נשמר בדפדפן שלך אוטומטית. כדי לגבות/להעביר — לחץ “ייצוא CSV”.</div>
+    <div class="note">המידע נשמר בדפדפן שלך אוטומטית. השדות “צד באירוע”, “גורם מזמין” ו“קרבה למזמין” מאפשרים לשלוח הזמנות בשם הכלה/החתן/הורים/חברים, ולתת לסוכן ה־AI להבין מי אחראי על כל מוזמן.</div>
+    <div id="relationshipSummary" class="note" style="margin-top:10px"></div>
   </section>
 
 
@@ -786,7 +789,8 @@ function summarizeParticipantsForOpal(participants){
   const list=Array.isArray(participants)?participants:[];
   const partySize=g=>Math.max(0,Number(g?.['כמות מוזמנים']||g?.['כמות מגיעים']||1)||1);
   const byStatus=list.reduce((acc,g)=>{ const s=String(g?.['סטטוס אישור השתתפות']||'טרם נענה'); acc[s]=(acc[s]||0)+partySize(g); return acc; },{});
-  return {רשומות:list.length,סהכ_אנשים:list.reduce((s,g)=>s+partySize(g),0),אישרו:byStatus['אישר']||0,לא_מגיעים:byStatus['לא מגיע']||0,טרם_נענו:byStatus['טרם נענה']||0};
+  const groupBy=(field)=>list.reduce((acc,g)=>{ const key=String(g?.[field]||'לא שויך').trim()||'לא שויך'; acc[key]=acc[key]||{רשומות:0,אנשים:0,אישרו:0,טרם_נענו:0,לא_מגיעים:0,אולי:0}; const size=partySize(g); const status=String(g?.['סטטוס אישור השתתפות']||'טרם נענה'); acc[key].רשומות+=1; acc[key].אנשים+=size; if(status==='אישר') acc[key].אישרו+=size; else if(status==='לא מגיע') acc[key].לא_מגיעים+=size; else if(status==='אולי') acc[key].אולי+=size; else acc[key].טרם_נענו+=size; return acc; },{});
+  return {רשומות:list.length,סהכ_אנשים:list.reduce((s,g)=>s+partySize(g),0),אישרו:byStatus['אישר']||0,לא_מגיעים:byStatus['לא מגיע']||0,טרם_נענו:byStatus['טרם נענה']||0,לפי_צד:groupBy('צד באירוע'),לפי_גורם_מזמין:groupBy('גורם מזמין')};
 }
 function summarizeSelectedEventLocalStateForOpal(eventId){
   const readJson=(key,fallback)=>{ try{return JSON.parse(localStorage.getItem(key)||'')||fallback;}catch(e){return fallback;} };
@@ -1459,14 +1463,16 @@ function importFullEventJSON(ev){
   r.readAsText(file,'utf-8');
 }
 
-const headers = ['מספר','שם מלא / שם לקוח','טלפון וואטסאפ','קבוצה','כמות מוזמנים','סטטוס אישור השתתפות','סכום לתשלום','סטטוס תשלום','לינק תשלום/אסמכתא','שולחן / אזור','מיקום/אזור באולם','העדפות/רגישויות מזון','לא להושיב ליד','הערות'];
+const headers = ['מספר','שם מלא / שם לקוח','טלפון וואטסאפ','קבוצה','צד באירוע','גורם מזמין','קרבה למזמין','נוסח פנייה','כמות מוזמנים','סטטוס אישור השתתפות','סכום לתשלום','סטטוס תשלום','לינק תשלום/אסמכתא','שולחן / אזור','מיקום/אזור באולם','העדפות/רגישויות מזון','לא להושיב ליד','הערות'];
 const selectOptions = {
   'סטטוס אישור השתתפות':['טרם נענה','אישר','לא מגיע','אולי'],
   'סטטוס תשלום':['טרם שולם','שולם','פטור/לא נדרש'],
-  'קבוצה':['','משפחה','חברים','עבודה','צד חתן','צד כלה','ילדים','ספקים','אחר']
+  'קבוצה':['','משפחה','חברים','עבודה','צד חתן','צד כלה','ילדים','ספקים','אחר'],
+  'צד באירוע':['','צד כלה','צד חתן','משותף','משפחה','חברים','עבודה','אחר'],
+  'נוסח פנייה':['אוטומטי לפי המזמין','בשם הכלה','בשם החתן','בשם הזוג','בשם הורי הכלה','בשם הורי החתן','בשם המשפחה','רשמי','חופשי']
 };
 let guests = loadData();
-function emptyRow(i){ return {'מספר':i,'שם מלא / שם לקוח':'','טלפון וואטסאפ':'','קבוצה':'','כמות מוזמנים':'1','סטטוס אישור השתתפות':'טרם נענה','סכום לתשלום':'','סטטוס תשלום':'טרם שולם','לינק תשלום/אסמכתא':'','שולחן / אזור':'','מיקום/אזור באולם':'','העדפות/רגישויות מזון':'','לא להושיב ליד':'','הערות':''}; }
+function emptyRow(i){ return {'מספר':i,'שם מלא / שם לקוח':'','טלפון וואטסאפ':'','קבוצה':'','צד באירוע':'','גורם מזמין':'','קרבה למזמין':'','נוסח פנייה':'אוטומטי לפי המזמין','כמות מוזמנים':'1','סטטוס אישור השתתפות':'טרם נענה','סכום לתשלום':'','סטטוס תשלום':'טרם שולם','לינק תשלום/אסמכתא':'','שולחן / אזור':'','מיקום/אזור באולם':'','העדפות/רגישויות מזון':'','לא להושיב ליד':'','הערות':''}; }
 function rowHasRealData(row){ return !!(row?.['שם מלא / שם לקוח'] || row?.['טלפון וואטסאפ'] || row?.['הערות'] || row?.['שולחן / אזור'] || row?.['לינק תשלום/אסמכתא']); }
 function reconcileGuestsWithExpected(expected){
   expected = Number(expected) || 100;
@@ -1484,12 +1490,24 @@ function render(){
   document.getElementById('head').innerHTML = headers.map(h=>`<th>${h}</th>`).join('') + '<th>פעולות</th>';
   const q = document.getElementById('search').value.trim().toLowerCase();
   const rf = document.getElementById('rsvpFilter').value, pf = document.getElementById('payFilter').value;
-  const rows = guests.filter(g => (!rf || g['סטטוס אישור השתתפות']===rf) && (!pf || g['סטטוס תשלום']===pf) && (!q || Object.values(g).join(' ').toLowerCase().includes(q)) );
+  const sf = document.getElementById('sideFilter')?.value||'';
+  const inviterQ = (document.getElementById('inviterFilter')?.value||'').trim().toLowerCase();
+  const rows = guests.filter(g => (!rf || g['סטטוס אישור השתתפות']===rf) && (!pf || g['סטטוס תשלום']===pf) && (!sf || g['צד באירוע']===sf || g['קבוצה']===sf) && (!inviterQ || String(g['גורם מזמין']||'').toLowerCase().includes(inviterQ)) && (!q || Object.values(g).join(' ').toLowerCase().includes(q)) );
   document.getElementById('body').innerHTML = rows.map((g)=>{
     const idx = guests.indexOf(g);
     return `<tr class="${rsvpRowClass(g)}">${headers.map(h=>cell(idx,h,g[h]??'')).join('')}<td><button onclick="selectForWhatsApp(${idx})">וואטסאפ</button> <button class="danger" onclick="deleteRow(${idx})">מחק</button></td></tr>`;
   }).join('');
   updateStats();
+  renderRelationshipSummary();
+}
+function renderRelationshipSummary(){
+  const box=document.getElementById('relationshipSummary'); if(!box) return;
+  const filled=guests.filter(g=>g['שם מלא / שם לקוח']||g['טלפון וואטסאפ']);
+  const countBy=(field)=>filled.reduce((acc,g)=>{ const key=String(g[field]||'לא שויך').trim()||'לא שויך'; acc[key]=(acc[key]||0)+guestPartySize(g); return acc; },{});
+  const side=countBy('צד באירוע');
+  const inviters=countBy('גורם מזמין');
+  const topInviters=Object.entries(inviters).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([k,v])=>`${escapeHtml(k)}: ${v}`).join(' · ');
+  box.innerHTML=`<b>שיוך מוזמנים:</b> ${Object.entries(side).map(([k,v])=>`${escapeHtml(k)}: ${v}`).join(' · ') || 'עדיין אין שיוכים'}${topInviters ? `<br><b>גורמים מזמינים מובילים:</b> ${topInviters}` : ''}`;
 }
 function rsvpRowClass(g){
   const status = String(g?.['סטטוס אישור השתתפות'] || 'טרם נענה').trim();
@@ -1499,12 +1517,12 @@ function rsvpRowClass(g){
   return 'rsvp-row-pending';
 }
 function cell(idx,h,v){
-  const cls = h==='מספר'||h==='כמות מוזמנים'||h==='שולחן / אזור'?'small':(h.includes('הערות')||h.includes('רגישויות')||h.includes('לינק')?'wide':'medium');
+  const cls = h==='מספר'||h==='כמות מוזמנים'||h==='שולחן / אזור'?'small':(h.includes('הערות')||h.includes('רגישויות')||h.includes('לינק')||h==='גורם מזמין'?'wide':'medium');
   if(selectOptions[h]) return `<td class="${cls}"><select onchange="setVal(${idx},'${h}',this.value)">${selectOptions[h].map(o=>`<option ${o===v?'selected':''}>${o}</option>`).join('')}</select></td>`;
   const type = h==='סכום לתשלום'||h==='כמות מוזמנים'||h==='מספר'?'number':'text';
   return `<td class="${cls}"><input type="${type}" value="${escapeHtml(v)}" oninput="setVal(${idx},'${h}',this.value)" /></td>`;
 }
-function setVal(idx,h,v){ guests[idx][h]=v; save(); if(h==='סטטוס אישור השתתפות') render(); if(['כמות מוזמנים','שם מלא / שם לקוח','טלפון וואטסאפ','סטטוס אישור השתתפות','שולחן / אזור'].includes(h)){ renderHall(); renderWhatsAppGuests(); } }
+function setVal(idx,h,v){ guests[idx][h]=v; save(); if(['סטטוס אישור השתתפות','צד באירוע','גורם מזמין'].includes(h)) render(); if(['כמות מוזמנים','שם מלא / שם לקוח','טלפון וואטסאפ','סטטוס אישור השתתפות','שולחן / אזור','צד באירוע','גורם מזמין','קרבה למזמין','נוסח פנייה'].includes(h)){ renderHall(); renderWhatsAppGuests(); } }
 function guestPartySize(i){ const g=typeof i==='number'?guests[i]:i; return Math.max(1, parseInt(g?.['כמות מוזמנים']) || 1); }
 function tableOccupancy(t){ return (t.guestIndexes||[]).reduce((sum,i)=>sum+guestPartySize(i),0); }
 function addRow(){ guests.push(emptyRow(guests.length+1)); save(); render(); renderHall(); renderWhatsAppGuests(); }
@@ -1533,11 +1551,34 @@ function renderWhatsAppGuests(){
   const box=document.getElementById('waGuestList'); if(!box) return;
   const q=(document.getElementById('waGuestSearch')?.value||'').trim().toLowerCase();
   const list=guests.map((g,i)=>({g,i})).filter(({g})=>g['שם מלא / שם לקוח'] || g['טלפון וואטסאפ']).filter(({g})=>!q || Object.values(g).join(' ').toLowerCase().includes(q));
-  box.innerHTML=list.length ? list.map(({g,i})=>`<div class="wa-guest-item ${i===selectedWhatsAppIndex?'active':''}" onclick="selectForWhatsApp(${i})"><b>${escapeHtml(guestName(g))}</b> <span class="pill">${guestPartySize(g)} מגיעים</span><div class="meta">${escapeHtml(g['טלפון וואטסאפ']||'אין טלפון')} · ${escapeHtml(g['סטטוס אישור השתתפות']||'')} · ${escapeHtml(g['שולחן / אזור']||'לא שובץ לשולחן')}</div></div>`).join('') : '<span class="label">לא נמצאו משתתפים עם שם או טלפון. הוסף משתתפים במסך “משתתפים”.</span>';
+  box.innerHTML=list.length ? list.map(({g,i})=>`<div class="wa-guest-item ${i===selectedWhatsAppIndex?'active':''}" onclick="selectForWhatsApp(${i})"><b>${escapeHtml(guestName(g))}</b> <span class="pill">${guestPartySize(g)} מגיעים</span><div class="meta">${escapeHtml(g['טלפון וואטסאפ']||'אין טלפון')} · ${escapeHtml(g['סטטוס אישור השתתפות']||'')} · ${escapeHtml(inviterMeta(g))} · ${escapeHtml(g['שולחן / אזור']||'לא שובץ לשולחן')}</div></div>`).join('') : '<span class="label">לא נמצאו משתתפים עם שם או טלפון. הוסף משתתפים במסך “משתתפים”.</span>';
 }
+function inviterMeta(g){ const parts=[g?.['צד באירוע'],g?.['גורם מזמין'],g?.['קרבה למזמין']].filter(Boolean); return parts.length ? parts.join(' · ') : 'ללא שיוך מזמין'; }
+function guestInviteContext(g){
+  const inviter=String(g?.['גורם מזמין']||'').trim();
+  const side=String(g?.['צד באירוע']||g?.['קבוצה']||'').trim();
+  const relation=String(g?.['קרבה למזמין']||'').trim();
+  const tone=String(g?.['נוסח פנייה']||'אוטומטי לפי המזמין').trim();
+  return {inviter,side,relation,tone,eventName:eventSettings.name||'האירוע',eventDate:eventSettings.date?formatEventDate():'',venue:eventSettings.venue||''};
+}
+function inviterOpening(g){
+  const c=guestInviteContext(g);
+  if(c.tone==='בשם הזוג') return `כאן ${eventSettings.owner||'בעלי השמחה'}`;
+  if(c.tone==='בשם הכלה') return 'כאן הכלה';
+  if(c.tone==='בשם החתן') return 'כאן החתן';
+  if(c.tone==='בשם הורי הכלה') return c.inviter ? `כאן ${c.inviter}, מהורי הכלה` : 'כאן הורי הכלה';
+  if(c.tone==='בשם הורי החתן') return c.inviter ? `כאן ${c.inviter}, מהורי החתן` : 'כאן הורי החתן';
+  if(c.tone==='בשם המשפחה') return c.inviter ? `כאן ${c.inviter} מהמשפחה` : 'כאן המשפחה';
+  if(c.tone==='רשמי') return `כאן צוות ${c.eventName}`;
+  if(c.inviter) return `כאן ${c.inviter}${c.relation ? ', ' + c.relation : ''}`;
+  if(c.side==='צד כלה') return 'כאן צד הכלה';
+  if(c.side==='צד חתן') return 'כאן צד החתן';
+  return 'כאן צוות האירוע';
+}
+function eventInviteLine(){ return `${eventSettings.name || 'האירוע'}${eventSettings.date ? ' בתאריך ' + formatEventDate() : ''}${eventSettings.venue ? ' ב' + eventSettings.venue : ''}`; }
 const messageTemplates = {
-  invite: g => `היי ${guestName(g)}, כאן צוות האירוע 😊
-נשמח לאישור הגעה ל${eventSettings.name || 'אירוע'}${eventSettings.date ? ' בתאריך ' + formatEventDate() : ''}${eventSettings.venue ? ' ב' + eventSettings.venue : ''}.
+  invite: g => `היי ${guestName(g)}, ${inviterOpening(g)} 😊
+נשמח לאישור הגעה ל${eventInviteLine()}.
 
 בקישור הבא אפשר לבחור:
 נגיע / אולי / לא נוכל להגיע
@@ -1545,11 +1586,12 @@ const messageTemplates = {
 {{RSVP_LINK}}
 
 תודה רבה!`, 
-  rsvpReminder: g => `היי ${guestName(g)}, תזכורת קצרה לגבי ${eventSettings.name || 'האירוע'} 😊
+  rsvpReminder: g => `היי ${guestName(g)}, ${inviterOpening(g)} עם תזכורת קצרה לגבי ${eventSettings.name || 'האירוע'} 😊
 עדיין לא קיבלנו אישור הגעה.
 נשמח שתעדכנו בקישור אם תגיעו, אולי, או שלא תוכלו להגיע — ואם מגיעים, גם כמה משתתפים:
 {{RSVP_LINK}}`,
-  payment: g => `היי ${guestName(g)}, תזכורת לתשלום עבור ${eventSettings.name || 'האירוע'} 😊
+  payment: g => `היי ${guestName(g)}, ${inviterOpening(g)} 😊
+לנוחותכם מצורף קישור מתנה/תשלום עבור ${eventSettings.name || 'האירוע'}.
 ${g['לינק תשלום/אסמכתא'] ? 'קישור לתשלום: ' + g['לינק תשלום/אסמכתא'] : 'נשלח אליך קישור תשלום בהמשך.'}
 תודה רבה!`,
   table: g => `היי ${guestName(g)}, עדכון לגבי ${eventSettings.name || 'האירוע'} 😊
@@ -1563,7 +1605,7 @@ function selectForWhatsApp(idx){
   showPage('whatsapp');
   selectedWhatsAppIndex = idx;
   const g = guests[idx];
-  document.getElementById('waGuest').value = `${guestName(g)} · ${guestPartySize(g)} מגיעים`;
+  document.getElementById('waGuest').value = `${guestName(g)} · ${guestPartySize(g)} מגיעים · ${inviterMeta(g)}`;
   document.getElementById('waPhone').value = g['טלפון וואטסאפ'] || '';
   renderWhatsAppGuests();
   applyTemplate();

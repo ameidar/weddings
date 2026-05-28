@@ -468,7 +468,8 @@ function eventAssistantStateSnapshot(state) {
   const assigned = participants.filter(g => g['שולחן / אזור']);
   const vendors = Array.isArray(state?.vendors) ? state.vendors : [];
   const walletTx = Array.isArray(state?.walletTx) ? state.walletTx : [];
-  return { settings: state?.eventSettings || {}, participants, vendors, walletTx, qty, totalPeople: participants.reduce((s,g)=>s+qty(g),0), confirmed, confirmedPeople: confirmed.reduce((s,g)=>s+qty(g),0), declined, declinedPeople: declined.reduce((s,g)=>s+qty(g),0), pending, pendingPeople: pending.reduce((s,g)=>s+qty(g),0), assigned };
+  const groupBy = field => participants.reduce((acc,g)=>{ const key=String(g?.[field] || 'לא שויך').trim() || 'לא שויך'; acc[key]=acc[key]||{records:0,people:0,pending:0,confirmed:0,declined:0}; acc[key].records+=1; acc[key].people+=qty(g); if(confirmed.includes(g)) acc[key].confirmed+=qty(g); else if(declined.includes(g)) acc[key].declined+=qty(g); else acc[key].pending+=qty(g); return acc; },{});
+  return { settings: state?.eventSettings || {}, participants, vendors, walletTx, qty, totalPeople: participants.reduce((s,g)=>s+qty(g),0), confirmed, confirmedPeople: confirmed.reduce((s,g)=>s+qty(g),0), declined, declinedPeople: declined.reduce((s,g)=>s+qty(g),0), pending, pendingPeople: pending.reduce((s,g)=>s+qty(g),0), assigned, bySide:groupBy('צד באירוע'), byInviter:groupBy('גורם מזמין') };
 }
 function eventAssistantName(state) { return String(state?.eventSettings?.assistantName || 'עוזר האירוע האישי').trim(); }
 function eventAssistantIntro(state) {
@@ -541,6 +542,19 @@ function normalizeTable(value) {
   return /^שולחן\s+/i.test(raw) ? raw : `שולחן ${raw.replace(/^table\s*/i, '').trim()}`;
 }
 
+function normalizeInvitationTone(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  if (/כלה/.test(raw) && /הור/.test(raw)) return 'בשם הורי הכלה';
+  if (/חתן/.test(raw) && /הור/.test(raw)) return 'בשם הורי החתן';
+  if (/כלה/.test(raw)) return 'בשם הכלה';
+  if (/חתן/.test(raw)) return 'בשם החתן';
+  if (/זוג|בעלי/.test(raw)) return 'בשם הזוג';
+  if (/משפחה/.test(raw)) return 'בשם המשפחה';
+  if (/רשמי/.test(raw)) return 'רשמי';
+  return raw;
+}
+
 function appendGuestNote(guest, note) {
   note = String(note || '').trim();
   if (!note) return;
@@ -564,6 +578,10 @@ function executeEventAction(state, action, payload = {}) {
   const rsvp = normalizeRsvp(payload.rsvp || payload.status || '');
   const phone = String(payload.phone || payload.whatsapp || '').trim();
   const note = String(payload.note || payload.notes || '').trim();
+  const side = String(payload.side || payload.eventSide || payload.guestSide || '').trim();
+  const inviter = String(payload.inviter || payload.invitedBy || payload.sender || payload.host || '').trim();
+  const relation = String(payload.relation || payload.relationship || payload.groupRelation || '').trim();
+  const invitationTone = normalizeInvitationTone(payload.invitationTone || payload.tone || payload.messageTone || '');
 
   if (type === 'get_summary') {
     return { ok:true, changed:false, intent:'query', answer: answerEventAssistantQuery(state, 'מצב האירוע') };
@@ -588,6 +606,10 @@ function executeEventAction(state, action, payload = {}) {
     guest['שם מלא / שם לקוח'] = name;
     guest['כמות מוזמנים'] = String(count);
     if (phone) guest['טלפון וואטסאפ'] = phone;
+    if (side) guest['צד באירוע'] = side;
+    if (inviter) guest['גורם מזמין'] = inviter;
+    if (relation) guest['קרבה למזמין'] = relation;
+    if (invitationTone) guest['נוסח פנייה'] = invitationTone;
     if (rsvp) guest['סטטוס אישור השתתפות'] = rsvp;
     if (table) guest['שולחן / אזור'] = normalizeTable(table);
     appendGuestNote(guest, note);
@@ -602,6 +624,10 @@ function executeEventAction(state, action, payload = {}) {
     const updates = [];
     if (count > 0) { found.guest['כמות מוזמנים'] = String(count); updates.push(`${count} מוזמנים`); }
     if (phone) { found.guest['טלפון וואטסאפ'] = phone; updates.push('טלפון'); }
+    if (side) { found.guest['צד באירוע'] = side; updates.push(`צד ${side}`); }
+    if (inviter) { found.guest['גורם מזמין'] = inviter; updates.push(`גורם מזמין ${inviter}`); }
+    if (relation) { found.guest['קרבה למזמין'] = relation; updates.push(`קרבה ${relation}`); }
+    if (invitationTone) { found.guest['נוסח פנייה'] = invitationTone; updates.push(`נוסח ${invitationTone}`); }
     if (rsvp) { found.guest['סטטוס אישור השתתפות'] = rsvp; updates.push(`סטטוס ${rsvp}`); }
     if (table) { found.guest['שולחן / אזור'] = normalizeTable(table); updates.push(found.guest['שולחן / אזור']); }
     if (note) { appendGuestNote(found.guest, note); updates.push(note); }
@@ -629,9 +655,11 @@ function executeEventAction(state, action, payload = {}) {
 function answerEventAssistantQuery(state, command) {
   const text = String(command || '');
   const snap = eventAssistantStateSnapshot(state);
+  const groupLines = obj => Object.entries(obj || {}).sort((a,b)=>b[1].people-a[1].people).map(([k,v])=>`- ${k}: ${v.people} אנשים (${v.records} רשומות), אישרו ${v.confirmed}, טרם ${v.pending}, לא מגיעים ${v.declined}`).join('\n');
   if (/שלום|היי|מי אתה|מי את|תציג/.test(text)) return eventAssistantIntro(state);
   if (/מה אתה יכול|מה אפשר|איך אתה עוזר|יכולות/.test(text)) return 'אפשר לשאול אותי: כמה אישרו הגעה, מי לא ענה, מי מגיע, איפה יושבת משפחה, מה מצב האירוע ומה המשימות. לפעולות שינוי כתבו במפורש: הוסף, עדכן, שבץ או הכן הודעת וואטסאפ.';
   if (/משימות|מה נשאר|צריך לעשות|עד האירוע/.test(text)) return eventAssistantTasks(state);
+  if (/צדדים|צד כלה|צד חתן|גורם מזמין|מזמינים|מי הזמין|אחראי/.test(text)) return `פילוח מוזמנים לפי צד:\n${groupLines(snap.bySide) || 'אין עדיין שיוך צדדים.'}\n\nפילוח לפי גורם מזמין:\n${groupLines(snap.byInviter) || 'אין עדיין גורמים מזמינים.'}`;
   if (/סיכום|מצב האירוע|סטטוס|איפה אנחנו עומדים/.test(text)) return `סיכום ${snap.settings.name || 'האירוע'}:\nמשתתפים: ${snap.participants.length} רשומות / ${snap.totalPeople} אנשים\nאישרו הגעה: ${snap.confirmed.length} רשומות / ${snap.confirmedPeople} אנשים\nטרם ענו: ${snap.pending.length} רשומות / ${snap.pendingPeople} אנשים\nלא מגיעים: ${snap.declined.length} רשומות / ${snap.declinedPeople} אנשים\nמשובצים לשולחנות: ${snap.assigned.length} רשומות\nספקים: ${snap.vendors.length}`;
   if (/כמה.*(אישרו|מאשרים|אישור|הגעה|מגיעים)|כמה אישור/.test(text)) return `כרגע אישרו הגעה ${snap.confirmed.length} רשומות / ${snap.confirmedPeople} אנשים מתוך ${snap.totalPeople}.\nטרם ענו: ${snap.pending.length} רשומות / ${snap.pendingPeople} אנשים.\nלא מגיעים: ${snap.declined.length} רשומות / ${snap.declinedPeople} אנשים.`;
   if (/כמה.*(לא אישרו|טרם|לא ענו|לא ענה)/.test(text)) return `כרגע טרם ענו ${snap.pending.length} רשומות / ${snap.pendingPeople} אנשים.`;
@@ -711,9 +739,9 @@ function eventAssistantAiState(state) {
     eventSettings: snap.settings,
     participants: snap.participants.map(g => ({
       name: g['שם מלא / שם לקוח'] || '', phone: g['טלפון וואטסאפ'] || '', count: g['כמות מוזמנים'] || '1',
-      rsvp: g['סטטוס אישור השתתפות'] || '', table: g['שולחן / אזור'] || '', notes: g['הערות'] || ''
+      rsvp: g['סטטוס אישור השתתפות'] || '', table: g['שולחן / אזור'] || '', side: g['צד באירוע'] || '', inviter: g['גורם מזמין'] || '', relation: g['קרבה למזמין'] || '', invitationTone: g['נוסח פנייה'] || '', notes: g['הערות'] || ''
     })).slice(0, 300),
-    totals: { people: snap.totalPeople, confirmedPeople: snap.confirmedPeople, pendingPeople: snap.pendingPeople, declinedPeople: snap.declinedPeople },
+    totals: { people: snap.totalPeople, confirmedPeople: snap.confirmedPeople, pendingPeople: snap.pendingPeople, declinedPeople: snap.declinedPeople, bySide:snap.bySide, byInviter:snap.byInviter },
     vendors: snap.vendors.map(v => ({ name:v.name, category:v.category, status:v.status, agreed:v.agreed, paid:v.paid })).slice(0, 80)
   }).slice(0, 60000);
 }
@@ -810,6 +838,24 @@ async function buildAssistantRsvpLink(env, request, eventId, guestIndex, guest) 
   return `${new URL(request.url).origin}/rsvp?t=${encodeURIComponent(token)}`;
 }
 
+function assistantInviterOpening(guest, state) {
+  const tone = String(guest?.['נוסח פנייה'] || '').trim();
+  const inviter = String(guest?.['גורם מזמין'] || '').trim();
+  const relation = String(guest?.['קרבה למזמין'] || '').trim();
+  const side = String(guest?.['צד באירוע'] || guest?.['קבוצה'] || '').trim();
+  if (tone === 'בשם הזוג') return `כאן ${state.eventSettings?.owner || 'בעלי השמחה'}`;
+  if (tone === 'בשם הכלה') return 'כאן הכלה';
+  if (tone === 'בשם החתן') return 'כאן החתן';
+  if (tone === 'בשם הורי הכלה') return inviter ? `כאן ${inviter}, מהורי הכלה` : 'כאן הורי הכלה';
+  if (tone === 'בשם הורי החתן') return inviter ? `כאן ${inviter}, מהורי החתן` : 'כאן הורי החתן';
+  if (tone === 'בשם המשפחה') return inviter ? `כאן ${inviter} מהמשפחה` : 'כאן המשפחה';
+  if (tone === 'רשמי') return `כאן צוות ${state.eventSettings?.name || 'האירוע'}`;
+  if (inviter) return `כאן ${inviter}${relation ? ', ' + relation : ''}`;
+  if (side === 'צד כלה') return 'כאן צד הכלה';
+  if (side === 'צד חתן') return 'כאן צד החתן';
+  return 'כאן צוות האירוע';
+}
+
 async function handleEventAssistantWhatsApp(env, request, state, command, eventId) {
   const text = String(command || '');
   const isWhatsAppRequest = /(וואטסאפ|הודעה|תזכורת|בקשה\s+לאישור\s+הגעה|אישור\s+הגעה)/.test(text);
@@ -829,7 +875,8 @@ async function handleEventAssistantWhatsApp(env, request, state, command, eventI
   let message = '';
   if (isRsvp) {
     const link = await buildAssistantRsvpLink(env, request, eventId, found.index, found.guest);
-    message = `היי ${targetName}, נשמח לדעת האם אתם מאשרים הגעה ל${state.eventSettings?.name || 'אירוע'}.
+    message = `היי ${targetName}, ${assistantInviterOpening(found.guest, state)} 😊
+נשמח לדעת האם אתם מאשרים הגעה ל${state.eventSettings?.name || 'אירוע'}.
 אפשר לעדכן כאן: ${link}
 תודה רבה!`;
   } else {
