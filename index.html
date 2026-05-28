@@ -484,6 +484,7 @@ imma, 123456, אמא"></textarea><small>כל משתמש כאן יוכל להיכ
     </div>
     <div id="guestColumnPicker" class="column-picker"></div>
     <div class="note">המידע נשמר בדפדפן שלך אוטומטית. השדות “צד באירוע”, “גורם מזמין” ו“קרבה למזמין” מאפשרים לשלוח הזמנות בשם הכלה/החתן/הורים/חברים, ולתת לסוכן ה־AI להבין מי אחראי על כל מוזמן.</div>
+    <div id="guestSearchStatus" class="note" style="margin-top:8px"></div>
     <div id="relationshipSummary" class="note" style="margin-top:10px"></div>
   </section>
 
@@ -1635,19 +1636,30 @@ function reconcileGuestsWithExpected(expected){
 }
 function loadData(){ try{ const saved=eventStorageGet(STORAGE_KEY); if(saved) return JSON.parse(saved); }catch(e){} return Array.from({length:(Number(eventSettings?.expected)||100)},(_,i)=>emptyRow(i+1)); }
 function save(){ eventStorageSet(STORAGE_KEY, JSON.stringify(guests)); updateStats(); scheduleEventStateSync(); }
+function normalizeGuestSearchText(value){ return String(value||'').toLowerCase().normalize('NFKD').replace(/[\u0591-\u05C7]/g,'').trim(); }
+function guestSearchBlob(g){ return headers.map(h=>g?.[h]??'').join(' '); }
+function guestMatchesSearch(g,q){
+  const clean=normalizeGuestSearchText(q); if(!clean) return true;
+  const blob=normalizeGuestSearchText(guestSearchBlob(g));
+  if(blob.includes(clean)) return true;
+  const qDigits=clean.replace(/\D/g,'');
+  return !!qDigits && String(g?.['טלפון וואטסאפ']||'').replace(/\D/g,'').includes(qDigits);
+}
 function render(){
   const shown=visibleGuestHeaders();
   document.getElementById('head').innerHTML = shown.map(h=>`<th data-col-name="${escapeHtml(h)}" style="width:${columnWidth(h)}px;min-width:${columnWidth(h)}px"><div class="th-inner"><span>${h}</span><span class="col-resizer" title="גרור לשינוי רוחב" onmousedown="startGuestColumnResize(event,'${h}')"></span></div></th>`).join('') + `<th data-col-name="פעולות" style="width:${columnWidth('פעולות')}px;min-width:${columnWidth('פעולות')}px"><div class="th-inner"><span>פעולות</span><span class="col-resizer" title="גרור לשינוי רוחב" onmousedown="startGuestColumnResize(event,'פעולות')"></span></div></th>`;
   renderGuestColumnPicker();
-  const q = document.getElementById('search').value.trim().toLowerCase();
-  const rf = document.getElementById('rsvpFilter').value, pf = document.getElementById('payFilter').value;
+  const q = document.getElementById('search')?.value || '';
+  const rf = document.getElementById('rsvpFilter')?.value||'', pf = document.getElementById('payFilter')?.value||'';
   const sf = document.getElementById('sideFilter')?.value||'';
   const inviterQ = (document.getElementById('inviterFilter')?.value||'').trim().toLowerCase();
-  const rows = guests.filter(g => (!rf || g['סטטוס אישור השתתפות']===rf) && (!pf || g['סטטוס תשלום']===pf) && (!sf || g['צד באירוע']===sf || g['קבוצה']===sf) && (!inviterQ || String(g['גורם מזמין']||'').toLowerCase().includes(inviterQ)) && (!q || Object.values(g).join(' ').toLowerCase().includes(q)) );
+  const rows = guests.filter(g => (!rf || g['סטטוס אישור השתתפות']===rf) && (!pf || g['סטטוס תשלום']===pf) && (!sf || g['צד באירוע']===sf || g['קבוצה']===sf) && (!inviterQ || normalizeGuestSearchText(g['גורם מזמין']).includes(inviterQ)) && guestMatchesSearch(g,q) );
   document.getElementById('body').innerHTML = rows.map((g)=>{
     const idx = guests.indexOf(g);
     return `<tr class="${rsvpRowClass(g)}">${shown.map(h=>cell(idx,h,g[h]??'')).join('')}<td data-col-name="פעולות" style="width:${columnWidth('פעולות')}px;min-width:${columnWidth('פעולות')}px"><button onclick="selectForWhatsApp(${idx})">וואטסאפ</button> <button class="danger" onclick="deleteRow(${idx})">מחק</button></td></tr>`;
   }).join('');
+  const searchStatus=document.getElementById('guestSearchStatus');
+  if(searchStatus){ const active=!!String(q||'').trim()||!!rf||!!pf||!!sf||!!inviterQ; searchStatus.textContent=active?`מוצגות ${rows.length} רשומות מתוך ${guests.length}`:''; }
   updateStats();
   renderRelationshipSummary();
 }
