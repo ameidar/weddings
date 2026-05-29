@@ -504,7 +504,7 @@ imma, 123456, אמא"></textarea><small>כל משתמש כאן יוכל להיכ
 
   <section class="card page-section" data-page="whatsapp" style="margin-top:14px">
     <h2 style="margin:0 0 10px;font-size:20px">שליחה ידנית / בדיקת הודעה</h2>
-    <div class="note">זהו כלי טכני לשליחה נקודתית ובדיקות. לבעל האירוע מומלץ לעבוד דרך “הזמנות והודעות”, “משתתפים” או “תשלומים וארנק”.</div>
+    <div class="note">זהו כלי טכני לשליחה נקודתית ובדיקות. לבעל האירוע מומלץ לעבוד דרך “הזמנות והודעות” או מתוך כרטיס המשתתף.</div>
     <div class="send-panel">
       <div class="full">
         <label class="label">בחר משתתף לשליחת הודעה</label>
@@ -588,8 +588,8 @@ imma, 123456, אמא"></textarea><small>כל משתמש כאן יוכל להיכ
     <div class="payments-hero">
       <div>
         <span class="payments-kicker">תשלומים וארנק אירוע</span>
-        <h2>תהליך פשוט: יוצרים לינק, שולחים הודעה, עוקבים אחרי הכסף</h2>
-        <p>מסך אחד ברור לניהול מתנות, בקשות תשלום, תזכורות וספקים — בלי לגרום לבעל האירוע להבין מושגים טכניים.</p>
+        <h2>תהליך פשוט: יוצרים דף תשלום, עורכים לינק, עוקבים אחרי הכסף</h2>
+        <p>מסך נקי לניהול דפי מתנה/תשלום, חיבור Morning, סטטוס סליקה וארנק. את ההודעות והתזכורות שולחים ממסך “הזמנות והודעות”.</p>
       </div>
       <div class="payments-focus-card">
         <div><span>יתרת ארנק זמינה</span><b id="paymentWalletBalance">₪0</b></div>
@@ -598,17 +598,17 @@ imma, 123456, אמא"></textarea><small>כל משתמש כאן יוכל להיכ
     </div>
 
     <div class="payments-steps">
-      <div class="payments-step"><span>1</span><b>מי משלם?</b><small>שם וטלפון וואטסאפ</small></div>
+      <div class="payments-step"><span>1</span><b>מי משלם?</b><small>שם ופרטי שיוך</small></div>
       <div class="payments-step"><span>2</span><b>לינק מתנה</b><small>Morning או לינק חיצוני</small></div>
-      <div class="payments-step"><span>3</span><b>שליחה</b><small>הודעה מוכנה לאישור</small></div>
-      <div class="payments-step"><span>4</span><b>מעקב</b><small>סטטוס, תזכורות וארנק</small></div>
+      <div class="payments-step"><span>3</span><b>ניהול לינק</b><small>העתקה, פתיחה ועריכה</small></div>
+      <div class="payments-step"><span>4</span><b>מעקב</b><small>סטטוס, סליקה וארנק</small></div>
     </div>
 
     <section class="payments-stats">
       <div class="payment-stat-card"><div class="stat" id="paymentPendingTotal">0</div><div class="label">בקשות פתוחות</div></div>
       <div class="payment-stat-card"><div class="stat" id="paymentPaidTotal">₪0</div><div class="label">התקבל מהאורחים</div></div>
       <div class="payment-stat-card"><div class="stat" id="paymentPayoutTotal">₪0</div><div class="label">שולם לספקים</div></div>
-      <div class="payment-stat-card"><div class="stat" id="paymentDueVisual">↗</div><div class="label">השלב הבא: לשלוח / להזכיר</div></div>
+      <div class="payment-stat-card"><div class="stat" id="paymentDueVisual">↗</div><div class="label">לינקים מוכנים לשימוש</div></div>
     </section>
 
     <div class="payment-workspace">
@@ -623,29 +623,18 @@ imma, 123456, אמא"></textarea><small>כל משתמש כאן יוכל להיכ
             <input id="paymentPayerEmail" type="email" placeholder="אימייל, אופציונלי" />
             <input id="paymentAmount" type="number" min="0" placeholder="סכום יעד פנימי, אפשר להשאיר 0" oninput="fillPaymentTemplatePreview()" />
           </div>
-          <input id="paymentDescription" placeholder="תיאור קצר: מתנה לחתונה / השתתפות בשמחה" oninput="fillPaymentTemplatePreview()" />
-          <input id="paymentExternalLink" placeholder="אופציונלי: הדבקת לינק Morning / משולם קיים" oninput="fillPaymentTemplatePreview()" />
-          <div class="payment-two">
-            <select id="paymentMethod"><option value="morning-link">דף מתנה / לינק Morning</option><option value="grow-link">לינק משולם / Grow</option><option value="manual-bank">העברה ידנית / בנקאית</option><option value="cash">מזומן</option></select>
-            <select id="paymentNotify"><option value="whatsapp">הכנת הודעת וואטסאפ</option><option value="email">הכנת מייל</option><option value="none">ללא הודעה</option></select>
-          </div>
-          <select id="paymentTemplate" onchange="fillPaymentTemplatePreview()">
-            <option value="warm">נוסח חם ומכבד</option>
-            <option value="installments">דגש על תשלומים ונוחות</option>
-            <option value="secure">דגש על אבטחה</option>
-            <option value="appreciation">השקעה והערכה</option>
-            <option value="short">קצר וישיר</option>
-            <option value="custom">נוסח מותאם אישית</option>
-          </select>
-          <textarea id="paymentMessagePreview" placeholder="תצוגת ההודעה לאורח — אפשר לערוך לפני יצירת הבקשה"></textarea>
-          <div class="payment-actions-row"><button onclick="createPaymentRequest()">צור בקשה והכן לינק</button><button class="secondary" onclick="fillPaymentTemplatePreview(true)">רענן נוסח</button></div>
+          <input id="paymentDescription" placeholder="שם/תיאור דף התשלום: מתנה לחתונה / השתתפות בשמחה" oninput="fillPaymentTemplatePreview()" />
+          <input id="paymentExternalLink" placeholder="אופציונלי: הדבקת לינק Morning / משולם קיים במקום יצירה אוטומטית" oninput="fillPaymentTemplatePreview()" />
+          <select id="paymentMethod"><option value="morning-link">דף מתנה / לינק Morning</option><option value="grow-link">לינק משולם / Grow</option><option value="manual-bank">העברה ידנית / בנקאית</option><option value="cash">מזומן</option></select>
+          <div class="note">כאן יוצרים ומנהלים את דף התשלום בלבד. שליחה לאורחים, תזכורות ונוסחי וואטסאפ מתבצעים דרך “הזמנות והודעות”.</div>
+          <div class="payment-actions-row"><button onclick="createPaymentRequest()">צור / הכן דף תשלום</button><button class="secondary" onclick="goToPaymentMessages()">עבור לשליחה בהזמנות והודעות</button></div>
         </div>
         <div id="paymentCreateStatus" class="status"></div>
       </section>
 
       <section class="payment-side-grid">
         <div class="payment-panel">
-          <div class="payment-panel-title"><div><h3>בקשות פעילות</h3><div class="note">כל בקשה מוצגת ככרטיס פעולה: לשלוח, להזכיר, לסמן כשולם או לבטל.</div></div><div class="emoji">📨</div></div>
+          <div class="payment-panel-title"><div><h3>דפי תשלום פעילים</h3><div class="note">כאן מנהלים לינקים, סטטוס תשלום וארנק. שליחה ותזכורות מתבצעות דרך “הזמנות והודעות”.</div></div><div class="emoji">🔗</div></div>
           <div id="paymentRequestsList" class="payment-mini-list"></div>
         </div>
       </section>
@@ -653,17 +642,12 @@ imma, 123456, אמא"></textarea><small>כל משתמש כאן יוכל להיכ
 
     <div class="payment-workspace">
       <section class="payment-panel payment-automation-box">
-        <div class="payment-panel-title"><div><h3>תזכורות חכמות</h3><div class="note">המערכת בונה תור הודעות רק לבקשות שממתינות, ומונעת כפילויות.</div></div><div class="emoji">🤖</div></div>
-        <div class="form-grid">
-          <select id="paymentAutomationEnabled"><option value="yes">אוטומציה פעילה</option><option value="no">כבוי</option></select>
-          <input id="paymentReminderDays" type="number" min="1" value="3" placeholder="תזכורת כל כמה ימים" />
-          <input id="paymentMaxReminders" type="number" min="0" value="3" placeholder="מקסימום תזכורות" />
-          <select id="paymentAutomationAudience"><option value="pending">רק בקשות ממתינות</option><option value="all_unpaid">כל מי שלא שילם</option></select>
+        <div class="payment-panel-title"><div><h3>שליחה ותזכורות</h3><div class="note">כדי לשמור על תפעול פשוט, כל התקשורת עם האורחים מרוכזת במסך אחד: “הזמנות והודעות”.</div></div><div class="emoji">📣</div></div>
+        <div class="payment-empty" style="text-align:right">
+          דף התשלומים אחראי על יצירת הלינקים, דף המתנה, סטטוס התשלום והארנק.
+          <br>שליחת בקשות מתנה, תזכורות ולוג הודעות נמצאים במרכז ההודעות.
         </div>
-        <label style="display:flex;gap:8px;align-items:flex-start;margin-top:10px"><input id="paymentAutomationConsent" type="checkbox" /> <span class="label">אני מאשר/ת שיש הרשאה לשלוח הודעות תשלום/תזכורת לנמענים.</span></label>
-        <div class="payment-actions-row"><button onclick="savePaymentAutomationSettings()">שמור חוקים</button><button class="secondary" onclick="renderPaymentAutomationQueue()">רענן תור</button><button class="secondary" onclick="sendDuePaymentAutomationMessages()">שלח את המוכנים</button></div>
-        <div id="paymentAutomationStatus" class="status"></div>
-        <div id="paymentAutomationQueue" class="payment-mini-list" style="margin-top:10px;max-height:260px"></div>
+        <div class="payment-actions-row"><button onclick="goToPaymentMessages()">פתח קמפיין מתנה / תשלום</button><button class="secondary" onclick="showPage('invitations'); renderCampaignCenter()">הזמנות והודעות</button></div>
       </section>
 
       <section class="payment-panel">
@@ -812,7 +796,7 @@ imma, 123456, אמא"></textarea><small>כל משתמש כאן יוכל להיכ
       <div>
         <span class="campaign-kicker">מרכז שליחת הזמנות</span>
         <h2>תהליך ברור לשליחת הזמנות, אישורי הגעה ומתנות</h2>
-        <p>בחרו קהל יעד, סוג הודעה, בדקו שהכול מוכן — ורק אז שולחים בצורה מבוקרת. ההודעות מותאמות אוטומטית לפי צד באירוע וגורם מזמין.</p>
+        <p>בחרו קהל יעד, סוג הודעה, בדקו שהכול מוכן — ורק אז שולחים בצורה מבוקרת. כאן מרוכזות גם בקשות מתנה/תשלום ותזכורות, כשהלינקים נוצרים במסך התשלומים.</p>
       </div>
       <div class="campaign-hero-card">
         <b id="campaignHeroReady">0 מוכנים לשליחה</b>
@@ -1990,6 +1974,9 @@ function campaignSelectedGuests(){
   const a=document.getElementById('campaignAudience')?.value||'pending_rsvp';
   const inviter=(document.getElementById('campaignInviter')?.value||'').trim().toLowerCase();
   const log=campaignLog();
+  if(a==='payment_pending'){
+    return payments.filter(p=>p.direction!=='out'&&p.status==='pending').map(p=>({g:{'שם מלא / שם לקוח':p.payerName||'אורח/ת יקר/ה','טלפון וואטסאפ':p.payerPhone||'','אימייל':p.payerEmail||'','לינק תשלום/אסמכתא':p.shortPaymentLink||p.paymentLink||'', 'גורם מזמין':eventSettings.owner||'', paymentId:p.id},i:-1,payment:p}));
+  }
   return guests.map((g,i)=>({g,i})).filter(({g})=>g['שם מלא / שם לקוח']||g['טלפון וואטסאפ']).filter(({g})=>{
     const side=String(g['צד באירוע']||g['קבוצה']||'');
     if(a==='pending_rsvp') return String(g['סטטוס אישור השתתפות']||'טרם נענה')==='טרם נענה';
@@ -1998,7 +1985,6 @@ function campaignSelectedGuests(){
     if(a==='side_bride') return side==='צד כלה';
     if(a==='side_groom') return side==='צד חתן';
     if(a==='by_inviter') return inviter && String(g['גורם מזמין']||'').toLowerCase().includes(inviter);
-    if(a==='payment_pending') return String(g['סטטוס תשלום']||'טרם שולם')!=='שולם';
     if(a==='missing_phone') return !g['טלפון וואטסאפ'];
     return true;
   });
@@ -2325,7 +2311,7 @@ async function createPaymentRequest(){
   const base={payerName:get('paymentPayerName'),amount,description:get('paymentDescription')||`תשלום עבור ${eventSettings.name||'אירוע'}`,paymentLink};
   if(!customMessage) customMessage=renderPaymentMessageTemplate(PAYMENT_MESSAGE_TEMPLATES[templateKey]||PAYMENT_MESSAGE_TEMPLATES.warm,base);
   const method=get('paymentMethod')||'morning-link';
-  const p={id:createPaymentId(),direction:'in',status:'pending',provider:method==='morning-link'?'morning':'grow',providerStatus:paymentLink?'external_link_ready':'waiting_for_payment_link',payerName:base.payerName,payerPhone:get('paymentPayerPhone'),payerEmail:get('paymentPayerEmail'),amount,description:base.description,method,notify:get('paymentNotify')||'whatsapp',messageTemplate:templateKey,customMessage,eventId:currentEventId(),createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),paymentLink};
+  const p={id:createPaymentId(),direction:'in',status:'pending',provider:method==='morning-link'?'morning':'grow',providerStatus:paymentLink?'external_link_ready':'waiting_for_payment_link',payerName:base.payerName,payerPhone:get('paymentPayerPhone'),payerEmail:get('paymentPayerEmail'),amount,description:base.description,method,notify:get('paymentNotify')||'messages',messageTemplate:templateKey,customMessage,eventId:currentEventId(),createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),paymentLink};
   payments.unshift(p); savePayments();
   ['paymentPayerName','paymentPayerPhone','paymentPayerEmail','paymentAmount','paymentDescription','paymentExternalLink'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   fillPaymentTemplatePreview(true);
@@ -2381,17 +2367,39 @@ function paymentLinkTypeLabel(p){
   return 'ללא לינק תשלום';
 }
 function paymentNextStepLabel(p){
-  if(p.status==='paid') return 'הסתיים — התשלום סומן כשולם והאוטומציה לא תשלח תזכורות.';
-  if(p.status==='cancelled') return 'בקשה מבוטלת — לא לשלוח.';
-  if(!p.paymentLink && p.method==='morning-link') return Number(p.amount)>0 ? 'שלב הבא: לחץ “צור לינק Morning”, ואז שלח את ההודעה.' : 'שלב הבא: לחץ “צור דף מתנה”, ואז שלח את ההודעה.';
-  if(p.paymentLink) return 'שלב הבא: שלח לאורח בוואטסאפ או העתק הודעה. אחרי תשלום — המערכת/וובהוק יעדכנו, או שתסמן ידנית.';
-  return 'שלב הבא: העתק/שלח הודעה לפי הצורך.';
+  if(p.status==='paid') return 'הסתיים — התשלום סומן כשולם והארנק עודכן.';
+  if(p.status==='cancelled') return 'בקשה מבוטלת — הלינק לא פעיל לתפעול.';
+  if(!p.paymentLink && p.method==='morning-link') return Number(p.amount)>0 ? 'שלב הבא: צור לינק Morning לדף התשלום.' : 'שלב הבא: צור דף מתנה שבו האורח בוחר סכום ותשלומים.';
+  if(p.paymentLink) return 'הלינק מוכן. אפשר להעתיק/לפתוח אותו כאן, ואת השליחה לאורחים לבצע דרך “הזמנות והודעות”.';
+  return 'שלב הבא: השלם לינק או סמן סטטוס תשלום לפי הצורך.';
+}
+function copyPaymentLink(id){ const p=payments.find(x=>x.id===id); if(!p) return; const link=p.shortPaymentLink||p.paymentLink||''; if(!link) return alert('עדיין אין לינק תשלום בבקשה הזו'); copyText(link); }
+function openPaymentLink(id){ const p=payments.find(x=>x.id===id); if(!p) return; const link=p.shortPaymentLink||p.paymentLink||''; if(!link) return alert('עדיין אין לינק תשלום בבקשה הזו'); window.open(link,'_blank'); }
+function editPaymentRequest(id){
+  const p=payments.find(x=>x.id===id); if(!p) return;
+  const payerName=prompt('שם משלם / כותרת דף התשלום', p.payerName||''); if(payerName===null) return;
+  const description=prompt('תיאור דף התשלום', p.description||''); if(description===null) return;
+  const amountRaw=prompt('סכום יעד פנימי. אפשר 0 למתנה פתוחה', Number(p.amount)||0); if(amountRaw===null) return;
+  const link=prompt('לינק תשלום חיצוני / קיים. השאר ריק כדי להשתמש בלינק שנוצר במערכת', p.shortPaymentLink||p.paymentLink||''); if(link===null) return;
+  p.payerName=payerName.trim(); p.description=description.trim()||p.description; p.amount=Math.max(0,Number(amountRaw)||0);
+  if(link.trim()){ p.paymentLink=link.trim(); p.shortPaymentLink=link.trim(); p.providerStatus='external_link_ready'; }
+  p.updatedAt=new Date().toISOString();
+  const tpl=PAYMENT_MESSAGE_TEMPLATES[p.messageTemplate||'warm']||PAYMENT_MESSAGE_TEMPLATES.warm;
+  p.customMessage=renderPaymentMessageTemplate(tpl,p);
+  savePayments();
+}
+function goToPaymentMessages(){
+  showPage('invitations');
+  const aud=document.getElementById('campaignAudience'); if(aud) aud.value='payment_pending';
+  const type=document.getElementById('campaignType'); if(type) type.value='payment';
+  renderCampaignCenter();
 }
 function paymentActionsHtml(p){
   if(p.direction==='out') return `<button onclick="markPayoutPaid('${p.id}')">סמן תשלום לספק כבוצע</button>`;
   const isGift=p.method==='morning-link' && Number(p.amount)<=0;
-  const createBtn=p.method==='morning-link' ? (isGift ? `<button onclick="generatePaymentChoiceLink('${p.id}')">${p.paymentLink?'קצר/חדש דף מתנה':'צור דף מתנה'}</button>` : (!p.paymentLink?`<button onclick="generateMorningPaymentLink('${p.id}')">צור לינק Morning</button>`:'')) : '';
-  return `${createBtn}<button onclick="copyPaymentMessage('${p.id}')">העתק הודעה לשליחה</button><button onclick="openPaymentWhatsApp('${p.id}')">שלח/פתח וואטסאפ</button><button onclick="markPaymentPaid('${p.id}')">סמן שהתקבל תשלום</button><button onclick="cancelPaymentRequest('${p.id}')">בטל בקשה</button>`;
+  const createBtn=p.method==='morning-link' ? (isGift ? `<button onclick="generatePaymentChoiceLink('${p.id}')">${p.paymentLink?'חדש/קצר דף מתנה':'צור דף מתנה'}</button>` : (!p.paymentLink?`<button onclick="generateMorningPaymentLink('${p.id}')">צור לינק Morning</button>`:'')) : '';
+  const linkBtns=p.paymentLink?`<button onclick="copyPaymentLink('${p.id}')">העתק לינק</button><button onclick="openPaymentLink('${p.id}')">פתח דף</button>`:'';
+  return `${createBtn}${linkBtns}<button onclick="editPaymentRequest('${p.id}')">ערוך פרטים</button><button onclick="goToPaymentMessages()">שליחה בהזמנות</button><button onclick="markPaymentPaid('${p.id}')">סמן שהתקבל תשלום</button><button onclick="cancelPaymentRequest('${p.id}')">בטל בקשה</button>`;
 }
 function paymentReminderMessage(p){
   const base=paymentShareText(p);
@@ -2468,7 +2476,7 @@ function renderPayments(){
   const pendingEl=document.getElementById('paymentPendingTotal'); if(pendingEl) pendingEl.textContent=payments.filter(p=>p.direction!=='out'&&p.status==='pending').length;
   set('paymentPaidTotal',payments.filter(p=>p.direction!=='out'&&p.status==='paid').reduce((s,p)=>s+(Number(p.amount)||0),0));
   set('paymentPayoutTotal',payments.filter(p=>p.direction==='out'&&p.status==='payout_paid').reduce((s,p)=>s+(Number(p.amount)||0),0));
-  const dueVisual=document.getElementById('paymentDueVisual'); if(dueVisual) dueVisual.textContent=paymentAutomationDueItems().length || '✓';
+  const dueVisual=document.getElementById('paymentDueVisual'); if(dueVisual) dueVisual.textContent=payments.filter(p=>p.direction!=='out'&&p.status==='pending'&&p.paymentLink).length || '✓';
   const growStatus=document.getElementById('growApiStatus'); if(growStatus) growStatus.textContent='יצירת לינק Morning מתוך המערכת';
   const sel=document.getElementById('payoutVendorSelect'); if(sel) sel.innerHTML='<option value="">בחר ספק / יעד אחר</option>'+vendors.map((v,i)=>`<option value="${i}">${escapeHtml(v.name||'ספק ללא שם')} · יתרה ${nis((Number(v.agreed)||0)-(Number(v.paid)||0))}</option>`).join('');
   const list=document.getElementById('paymentRequestsList');
