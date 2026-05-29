@@ -871,6 +871,25 @@ imma, 123456, אמא"></textarea><small>כל משתמש כאן יוכל להיכ
     <div id="legalConsentStatus" class="status"></div>
   </div>
 </div>
+<div id="guestWaModal" class="hidden" style="position:fixed;inset:0;z-index:2147483500;background:rgba(15,23,42,.58);display:flex;align-items:center;justify-content:center;padding:16px">
+  <div class="card" style="width:min(720px,100%);max-height:88vh;overflow:auto;border-radius:22px;box-shadow:0 24px 80px rgba(15,23,42,.28)">
+    <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px">
+      <div><h2 style="margin:0;font-size:26px">שליחת וואטסאפ למשתתף</h2><div id="quickWaGuestMeta" class="label" style="margin-top:4px">בחר משתתף</div></div>
+      <button class="secondary" style="border:1px solid var(--line);background:#fff;border-radius:12px;padding:9px 13px;font-weight:900;cursor:pointer" onclick="closeGuestWhatsAppModal()">✕ סגור</button>
+    </div>
+    <div class="form-grid">
+      <div><label class="label">טלפון וואטסאפ</label><input id="quickWaPhone" placeholder="05..." /></div>
+      <div><label class="label">סוג הודעה</label><select id="quickWaTemplate" onchange="applyQuickWhatsAppTemplate()"><option value="invite">הזמנה / אישור הגעה</option><option value="rsvpReminder">תזכורת לאישור הגעה</option><option value="payment">לינק מתנה / תשלום</option><option value="table">עדכון שולחן</option><option value="custom">הודעה חופשית</option></select></div>
+      <div class="full"><label class="label">נוסח ההודעה</label><textarea id="quickWaMessage" style="min-height:190px" oninput="updateQuickWhatsAppPolicy()"></textarea></div>
+      <div class="full" style="display:grid;gap:8px">
+        <label style="display:flex;gap:8px;align-items:flex-start"><input id="quickWaConsent" type="checkbox" /> <span class="label">אני מאשר/ת שיש הרשאה לפנות לנמען הזה ושההודעה אינה ספאם או הטעיה.</span></label>
+        <div id="quickWaPolicy" class="note"></div>
+      </div>
+      <div class="toolbar full" style="margin:0"><button onclick="sendQuickWhatsApp()">שלח עכשיו</button><button class="secondary" onclick="applyQuickWhatsAppTemplate()">רענן נוסח</button><button class="secondary" onclick="copyText(document.getElementById('quickWaMessage')?.value||'')">העתק נוסח</button></div>
+      <div id="quickWaStatus" class="status full"></div>
+    </div>
+  </div>
+</div>
 <script>
 const ADMIN_EVENTS_KEY = 'dynamic_event_admin_events_v1';
 const ADMIN_SESSION_KEY = 'dynamic_event_admin_session_v2';
@@ -1685,7 +1704,7 @@ function render(){
   const rows = guests.filter(g => (!rf || g['סטטוס אישור השתתפות']===rf) && (!pf || g['סטטוס תשלום']===pf) && (!sf || g['צד באירוע']===sf || g['קבוצה']===sf) && (!inviterQ || normalizeGuestSearchText(g['גורם מזמין']).includes(inviterQ)) && guestMatchesSearch(g,q) );
   document.getElementById('body').innerHTML = rows.map((g)=>{
     const idx = guests.indexOf(g);
-    return `<tr class="${rsvpRowClass(g)}">${shown.map(h=>cell(idx,h,g[h]??'')).join('')}<td data-col-name="פעולות" style="width:${columnWidth('פעולות')}px;min-width:${columnWidth('פעולות')}px"><button onclick="selectForWhatsApp(${idx})">וואטסאפ</button> <button class="danger" onclick="deleteRow(${idx})">מחק</button></td></tr>`;
+    return `<tr class="${rsvpRowClass(g)}">${shown.map(h=>cell(idx,h,g[h]??'')).join('')}<td data-col-name="פעולות" style="width:${columnWidth('פעולות')}px;min-width:${columnWidth('פעולות')}px"><button onclick="openGuestWhatsAppModal(${idx})">וואטסאפ</button> <button class="danger" onclick="deleteRow(${idx})">מחק</button></td></tr>`;
   }).join('');
   const searchStatus=document.getElementById('guestSearchStatus');
   if(searchStatus){ const active=!!String(q||'').trim()||!!rf||!!pf||!!sf||!!inviterQ; searchStatus.textContent=active?`מוצגות ${rows.length} רשומות מתוך ${guests.length}`:''; }
@@ -1802,6 +1821,62 @@ ${g['שולחן / אזור'] ? 'השולחן/אזור שלך: ' + g['שולחן 
   custom: g => document.getElementById('waMessage').value || `היי ${guestName(g)}, `
 };
 function guestName(g){ return (g && g['שם מלא / שם לקוח'] && g['שם מלא / שם לקוח'].trim()) || 'אורח/ת יקר/ה'; }
+function openGuestWhatsAppModal(idx){
+  selectedWhatsAppIndex=idx;
+  const g=guests[idx]||{};
+  const modal=document.getElementById('guestWaModal');
+  const set=(id,val)=>{ const el=document.getElementById(id); if(el) el.value=val||''; };
+  document.getElementById('quickWaGuestMeta').textContent=`${guestName(g)} · ${guestPartySize(g)} מגיעים · ${inviterMeta(g)}`;
+  set('quickWaPhone',g['טלפון וואטסאפ']||'');
+  set('quickWaTemplate','invite');
+  set('quickWaMessage','');
+  const consent=document.getElementById('quickWaConsent'); if(consent) consent.checked=false;
+  const status=document.getElementById('quickWaStatus'); if(status){ status.textContent=''; status.className='status full'; }
+  modal?.classList.remove('hidden');
+  applyQuickWhatsAppTemplate();
+}
+function closeGuestWhatsAppModal(){ document.getElementById('guestWaModal')?.classList.add('hidden'); }
+async function applyQuickWhatsAppTemplate(){
+  const kind=document.getElementById('quickWaTemplate')?.value||'invite';
+  const g=currentWhatsAppGuest();
+  let msg=(messageTemplates[kind]||messageTemplates.invite)(g);
+  const box=document.getElementById('quickWaMessage');
+  if(msg.includes('{{RSVP_LINK}}')){
+    if(box) box.value=msg.replace('{{RSVP_LINK}}','מכין קישור אישי...');
+    const link=await buildRsvpLink();
+    msg=msg.replace('{{RSVP_LINK}}',link||'[לא ניתן ליצור קישור כרגע — ודאו שהאירוע שמור ושבחרתם משתתף]');
+  }
+  if(box) box.value=msg;
+  updateQuickWhatsAppPolicy();
+}
+function updateQuickWhatsAppPolicy(){
+  const box=document.getElementById('quickWaPolicy'); if(!box) return;
+  const result=validateApprovedLinks(document.getElementById('quickWaMessage')?.value||'');
+  box.textContent=result.urls.length ? (result.ok ? 'כל הקישורים בהודעה שייכים לדומיינים מאושרים ✅' : 'קישורים לא מאושרים: '+result.blocked.join(', ')) : 'אין קישורים בהודעה.';
+  box.className='note '+(result.ok?'':'bad-text');
+}
+async function sendQuickWhatsApp(){
+  const status=document.getElementById('quickWaStatus');
+  if(status){ status.textContent=''; status.className='status full'; }
+  const phone=document.getElementById('quickWaPhone')?.value.trim()||'';
+  const message=document.getElementById('quickWaMessage')?.value.trim()||'';
+  if(!phone||!message){ if(status){ status.textContent='חסר טלפון או נוסח הודעה'; status.classList.add('bad-text'); } return; }
+  if(!requireLegalAccepted()){ if(status){ status.textContent='צריך לאשר תנאי שימוש ופרטיות לפני שליחת הודעות.'; status.classList.add('bad-text'); } return; }
+  if(!document.getElementById('quickWaConsent')?.checked){ if(status){ status.textContent='לפני שליחה צריך לאשר שיש הרשאה לפנות לנמען.'; status.classList.add('bad-text'); } return; }
+  const linkCheck=validateApprovedLinks(message); updateQuickWhatsAppPolicy();
+  if(!linkCheck.ok){ if(status){ status.textContent='נמצאו קישורים לא מאושרים בהודעה: '+linkCheck.blocked.join(', '); status.classList.add('bad-text'); } return; }
+  if(!confirm('לשלוח עכשיו וואטסאפ למספר '+phone+'?')) return;
+  if(status) status.textContent='שולח...';
+  try{
+    const res=await fetch('/api/send-whatsapp',{method:'POST',headers:{'content-type':'application/json',...eventAccessHeaders()},body:JSON.stringify({phone,message,eventId:currentEventId(),guestIndex:selectedWhatsAppIndex,userConfirmed:true,termsVersion:LEGAL_TERMS_VERSION})});
+    const data=await res.json();
+    if(res.status===401){ const id=currentEventId(); if(id){ sessionStorage.removeItem(CLIENT_SESSION_PREFIX+id); sessionStorage.removeItem('client_event_access_'+id); } currentClientToken=''; throw new Error('פג תוקף ההתחברות. נא להתחבר מחדש ואז לשלוח שוב.'); }
+    if(!res.ok||!data.ok) throw new Error(data.error||data.result?.message||'שליחה נכשלה');
+    addLocalWaLog(phone,'out',message);
+    if(status){ status.textContent='ההודעה נשלחה בהצלחה ✅'; status.classList.add('ok-text'); }
+    renderWhatsAppLog();
+  }catch(e){ if(status){ status.textContent='שגיאה בשליחה: '+e.message; status.classList.add('bad-text'); } }
+}
 function selectForWhatsApp(idx){
   showPage('whatsapp');
   selectedWhatsAppIndex = idx;
