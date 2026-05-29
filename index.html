@@ -1654,6 +1654,7 @@ function guestMatchesSearch(g,q){
   return !!qDigits && String(g?.['טלפון וואטסאפ']||'').replace(/\D/g,'').includes(qDigits);
 }
 function render(){
+  renderGuestDatalists();
   const shown=visibleGuestHeaders();
   document.getElementById('head').innerHTML = shown.map(h=>`<th data-col-name="${escapeHtml(h)}" style="width:${columnWidth(h)}px;min-width:${columnWidth(h)}px"><div class="th-inner"><span>${h}</span><span class="col-resizer" title="גרור לשינוי רוחב" onmousedown="startGuestColumnResize(event,'${h}')"></span></div></th>`).join('') + `<th data-col-name="פעולות" style="width:${columnWidth('פעולות')}px;min-width:${columnWidth('פעולות')}px"><div class="th-inner"><span>פעולות</span><span class="col-resizer" title="גרור לשינוי רוחב" onmousedown="startGuestColumnResize(event,'פעולות')"></span></div></th>`;
   renderGuestColumnPicker();
@@ -1687,12 +1688,20 @@ function rsvpRowClass(g){
   if(status === 'אולי') return 'rsvp-row-maybe';
   return 'rsvp-row-pending';
 }
+const defaultInviterOptions=['הכלה','החתן','הזוג','הורי הכלה','הורי החתן','משפחת הכלה','משפחת החתן','חברים של הכלה','חברים של החתן','עבודה','משותף'];
+const relationOptions=['משפחה','חבר/ה','עבודה','שכן/ה','אורח של ההורים','צד כלה','צד חתן','משותף','אחר'];
+function uniqueGuestOptions(field,defaults=[]){ const set=new Set(defaults.filter(Boolean)); guests.forEach(g=>{ const v=String(g?.[field]||'').trim(); if(v) set.add(v); }); return [...set]; }
+function renderGuestDatalists(){
+  const lists={guestInviterOptions:uniqueGuestOptions('גורם מזמין',defaultInviterOptions),guestRelationOptions:uniqueGuestOptions('קרבה למזמין',relationOptions)};
+  Object.entries(lists).forEach(([id,options])=>{ let el=document.getElementById(id); if(!el){ el=document.createElement('datalist'); el.id=id; document.body.appendChild(el); } el.innerHTML=options.map(o=>`<option value="${escapeHtml(o)}"></option>`).join(''); });
+}
 function cell(idx,h,v){
   const cls = h==='מספר'||h==='כמות מוזמנים'||h==='שולחן / אזור'?'small':(h.includes('הערות')||h.includes('רגישויות')||h.includes('לינק')||h==='גורם מזמין'?'wide':'medium');
   const style=`width:${columnWidth(h)}px;min-width:${columnWidth(h)}px`;
   if(selectOptions[h]) return `<td class="${cls}" data-col-name="${escapeHtml(h)}" style="${style}"><select onchange="setVal(${idx},'${h}',this.value)">${selectOptions[h].map(o=>`<option ${o===v?'selected':''}>${o}</option>`).join('')}</select></td>`;
   const type = h==='סכום לתשלום'||h==='כמות מוזמנים'||h==='מספר'?'number':'text';
-  return `<td class="${cls}" data-col-name="${escapeHtml(h)}" style="${style}"><input type="${type}" value="${escapeHtml(v)}" oninput="setVal(${idx},'${h}',this.value)" /></td>`;
+  const listAttr = h==='גורם מזמין' ? ' list="guestInviterOptions" placeholder="בחר או הקלד מזמין"' : (h==='קרבה למזמין' ? ' list="guestRelationOptions" placeholder="בחר או הקלד קרבה"' : '');
+  return `<td class="${cls}" data-col-name="${escapeHtml(h)}" style="${style}"><input type="${type}" value="${escapeHtml(v)}"${listAttr} oninput="setVal(${idx},'${h}',this.value)" /></td>`;
 }
 function setVal(idx,h,v){ guests[idx][h]=v; save(); if(['סטטוס אישור השתתפות','צד באירוע','גורם מזמין'].includes(h)) render(); if(['כמות מוזמנים','שם מלא / שם לקוח','טלפון וואטסאפ','סטטוס אישור השתתפות','שולחן / אזור','צד באירוע','גורם מזמין','קרבה למזמין','נוסח פנייה'].includes(h)){ renderHall(); renderWhatsAppGuests(); } }
 function guestPartySize(i){ const g=typeof i==='number'?guests[i]:i; return Math.max(1, parseInt(g?.['כמות מוזמנים']) || 1); }
