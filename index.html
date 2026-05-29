@@ -1533,6 +1533,17 @@ async function clientLogin(){
   catch(e){ const ev=loadAdminEvents().find(x=>x.id===id); const localUser=ev ? eventLoginUsers(ev).find(u=>u.username===username && u.password===password) : null; if(ev && localUser){ sessionStorage.setItem('client_event_access_'+id,'1'); await enterClientMode(ev); } else { status.textContent=e.message; status.className='status bad-text'; } }
 }
 function clientLogout(){ const id=currentEventId()||eventSlug(); if(id){ sessionStorage.removeItem(CLIENT_SESSION_PREFIX+id); sessionStorage.removeItem('client_event_access_'+id); } currentClientToken=''; document.body.classList.remove('client-mode'); document.body.classList.add('client-auth-locked'); const pass=document.getElementById('clientPassword'); if(pass) pass.value=''; showPage('client-login'); }
+async function validateClientSession(id){
+  if(!currentClientToken) return false;
+  try{
+    const res=await fetch('/api/auth/me',{headers:clientAuthHeaders()});
+    const data=await res.json().catch(()=>({}));
+    if(res.ok && data.ok && data.session?.role==='client' && data.session?.eventId===id) return true;
+  }catch(e){}
+  sessionStorage.removeItem(CLIENT_SESSION_PREFIX+id);
+  currentClientToken='';
+  return false;
+}
 async function enterClientMode(ev){ document.body.classList.remove('admin-landing','admin-locked','client-auth-locked'); document.body.classList.add('client-mode'); applyAdminEventToWorkspace(ev); await loadRemoteEventState(); await loadPendingParticipants(); fillEventSettings(); render(); renderHall(); renderVendors(); renderWallet(); renderPayments(); updateVendorStats(); renderWhatsAppGuests(); showPage('overview'); document.querySelectorAll('.nav-btn.admin-only').forEach(e=>e.remove()); showLegalConsentIfNeeded(); scheduleEventStateSync(); }
 async function bootMode(){
   setupAdminDateMin();
@@ -1544,7 +1555,8 @@ async function bootMode(){
     document.body.classList.add('client-mode','client-auth-locked');
     document.querySelectorAll('.nav-btn.admin-only').forEach(e=>e.remove());
     const id=eventSlug(); const ev=loadAdminEvents().find(x=>x.id===id); currentClientToken=sessionStorage.getItem(CLIENT_SESSION_PREFIX+id)||'';
-    if(ev && (currentClientToken||sessionStorage.getItem('client_event_access_'+id)==='1')) await enterClientMode(ev); else showPage('client-login');
+    const validClientToken=await validateClientSession(id);
+    if(ev && validClientToken) await enterClientMode(ev); else showPage('client-login');
     return;
   }
   if(await checkAdminSession()) await enterAdminMode(); else adminLogout();
@@ -2080,6 +2092,12 @@ async function sendWhatsApp(){
   try{
     const res = await fetch('/api/send-whatsapp', {method:'POST', headers:{'content-type':'application/json',...eventAccessHeaders()}, body:JSON.stringify({phone, message, eventId:currentEventId(), guestIndex:selectedWhatsAppIndex, userConfirmed:true, termsVersion:LEGAL_TERMS_VERSION})});
     const data = await res.json();
+    if(res.status===401){
+      const id=currentEventId();
+      if(id){ sessionStorage.removeItem(CLIENT_SESSION_PREFIX+id); sessionStorage.removeItem('client_event_access_'+id); }
+      currentClientToken='';
+      throw new Error('פג תוקף ההתחברות או שהעמוד פתוח עם הרשאה ישנה. נא להתחבר מחדש לדף הלקוח ואז לשלוח שוב.');
+    }
     if(!res.ok || !data.ok) throw new Error(data.error || data.result?.message || 'שליחה נכשלה');
     addLocalWaLog(phone, 'out', message);
     status.textContent = 'ההודעה נשלחה בהצלחה ✅';
