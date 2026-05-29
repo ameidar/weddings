@@ -341,7 +341,7 @@
     <button class="nav-btn admin-only client-hidden" data-target="event" onclick="showPage('event')">⚙️ הגדרת אירוע</button>
     <button class="nav-btn" data-target="guests" onclick="showPage('guests')">👥 משתתפים</button>
     <button class="nav-btn" data-target="invitations" onclick="showPage('invitations'); renderCampaignCenter()">📣 הזמנות והודעות</button>
-    <button class="nav-btn" data-target="whatsapp" onclick="showPage('whatsapp')">💬 וואטסאפ</button>
+    <button class="nav-btn admin-only client-hidden" data-target="whatsapp" onclick="showPage('whatsapp')">💬 שליחה ידנית / בדיקות</button>
     <button class="nav-btn" data-target="seating" onclick="showPage('seating')">🪑 שולחנות ומפה</button>
     <button class="nav-btn" data-target="payments" onclick="showPage('payments')">💳 תשלומים וארנק</button>
     <button class="nav-btn" data-target="vendors" onclick="showPage('vendors')">🤝 ספקים וארנק</button>
@@ -420,7 +420,7 @@
 לדוגמה:
 abba, 123456, אבא של חתן הבר מצווה
 imma, 123456, אמא"></textarea><small>כל משתמש כאן יוכל להיכנס לאותו דף לקוח ולנהל את האירוע.</small></div>
-        <div class="field"><label for="adminModules">מה הלקוח יקבל במערכת?</label><select id="adminModules"><option value="משתתפים, וואטסאפ, שולחנות, ספקים">מערכת מלאה: משתתפים, וואטסאפ, שולחנות וספקים</option><option value="משתתפים, וואטסאפ">רק משתתפים ושליחת וואטסאפ</option><option value="משתתפים, שולחנות">משתתפים וסידור שולחנות</option><option value="משתתפים">רק ניהול משתתפים</option></select><small>בחירה זו מתארת את החבילה/המודולים הפעילים ללקוח.</small></div>
+        <div class="field"><label for="adminModules">מה הלקוח יקבל במערכת?</label><select id="adminModules"><option value="משתתפים, הזמנות והודעות, שולחנות, ספקים">מערכת מלאה: משתתפים, הזמנות והודעות, שולחנות וספקים</option><option value="משתתפים, הזמנות והודעות">רק משתתפים והזמנות/אישורי הגעה</option><option value="משתתפים, שולחנות">משתתפים וסידור שולחנות</option><option value="משתתפים">רק ניהול משתתפים</option></select><small>בחירה זו מתארת את החבילה/המודולים הפעילים ללקוח.</small></div>
         <div class="field full"><label for="adminNotes">הערות אדמין / תכולה ללקוח</label><textarea id="adminNotes" placeholder="הערות פנימיות, בקשות מיוחדות, חבילת שירות וכו׳"></textarea></div>
         <div class="hint-card full">טיפ: לאחר יצירת האירוע תקבל כרטיס פעולה מסודר עם כפתור לפתיחת דף הלקוח, העתקת קישור ושליחת פרטי כניסה.</div>
       </div>
@@ -502,7 +502,8 @@ imma, 123456, אמא"></textarea><small>כל משתמש כאן יוכל להיכ
 
 
   <section class="card page-section" data-page="whatsapp" style="margin-top:14px">
-    <h2 style="margin:0 0 10px;font-size:20px">שליחת וואטסאפ למשתתף / לקוח</h2>
+    <h2 style="margin:0 0 10px;font-size:20px">שליחה ידנית / בדיקת הודעה</h2>
+    <div class="note">זהו כלי טכני לשליחה נקודתית ובדיקות. לבעל האירוע מומלץ לעבוד דרך “הזמנות והודעות”, “משתתפים” או “תשלומים וארנק”.</div>
     <div class="send-panel">
       <div class="full">
         <label class="label">בחר משתתף לשליחת הודעה</label>
@@ -808,6 +809,7 @@ imma, 123456, אמא"></textarea><small>כל משתמש כאן יוכל להיכ
           <button onclick="buildCampaignQueue()">בנה תור ושלח לי תצוגה מקדימה</button>
           <button class="secondary" onclick="sendCampaignQueue(10)">שלח בדיקה ל־10 הראשונים</button>
           <button class="secondary" onclick="copyCampaignSummary()">העתק סיכום קמפיין</button>
+          <button class="secondary" onclick="showPage('whatsapp'); renderWhatsAppGuests()">כלי שליחה ידנית</button>
         </div>
         <label class="campaign-consent"><input id="campaignConsent" type="checkbox" /> <span>אני מאשר/ת שיש הרשאה לשלוח הודעות לנמענים, ושהקישורים בהודעות שייכים לדומיינים מאושרים.</span></label>
         <div class="campaign-automation-card">
@@ -1265,7 +1267,7 @@ async function adminCreateEvent(){
   selectedAdminEventId=ev.id; localStorage.setItem('selected_admin_event_id', ev.id);
   showAdminPanel('events');
 }
-function clearAdminForm(){ ['adminEventName','adminOwner','adminClientEmail','adminClientPhone','adminDate','adminVenue','adminVenueAddress','adminVenueContactName','adminVenueContactPhone','adminVenueContactEmail','adminVenueNotes','adminExpected','adminPassword','adminExtraUsers','adminNotes'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; }); setAdminBrandColor('#7357ff'); const m=document.getElementById('adminModules'); if(m) m.value='משתתפים, וואטסאפ, שולחנות, ספקים'; setupAdminDateMin(); document.getElementById('adminCreatedBox').innerHTML=''; }
+function clearAdminForm(){ ['adminEventName','adminOwner','adminClientEmail','adminClientPhone','adminDate','adminVenue','adminVenueAddress','adminVenueContactName','adminVenueContactPhone','adminVenueContactEmail','adminVenueNotes','adminExpected','adminPassword','adminExtraUsers','adminNotes'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; }); setAdminBrandColor('#7357ff'); const m=document.getElementById('adminModules'); if(m) m.value='משתתפים, הזמנות והודעות, שולחנות, ספקים'; setupAdminDateMin(); document.getElementById('adminCreatedBox').innerHTML=''; }
 function adminLoadCurrentEvent(){ const set=(id,val)=>{ const el=document.getElementById(id); if(el) el.value=val||''; }; set('adminEventName',eventSettings.name); set('adminEventType',eventSettings.type); set('adminOwner',eventSettings.owner); set('adminDate',eventSettings.date); set('adminVenue',eventSettings.venue); set('adminBrandColor',normalizeBrandColor(eventSettings.brandColor)); set('adminExpected',eventSettings.expected); set('adminNotes',eventSettings.notes); if(!document.getElementById('adminPassword').value) document.getElementById('adminPassword').value=makePassword(10); }
 function renderAdminEvents(){
   const box=document.getElementById('adminEventsList'); if(!box) return;
