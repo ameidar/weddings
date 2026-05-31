@@ -680,12 +680,15 @@ imma, 123456, אמא"></textarea><small>כל משתמש כאן יוכל להיכ
           <input id="vendorPaid" type="number" placeholder="שולם עד עכשיו" oninput="saveVendorForm()" />
           <select id="vendorStatus" onchange="saveVendorForm()"><option>פתוח</option><option>חוזה נחתם</option><option>מקדמה שולמה</option><option>שולם מלא</option><option>לבירור</option></select>
           <input id="vendorDueDate" type="date" onchange="saveVendorForm()" />
+          <select id="vendorAvailabilityStatus" onchange="saveVendorForm()"><option value="unknown">זמינות לא נבדקה</option><option value="available">פנוי בתאריך האירוע</option><option value="busy">תפוס בתאריך האירוע</option><option value="maybe">דורש בדיקה מול הספק</option></select>
+          <input id="vendorCalendarUrl" placeholder="קישור יומן ספק iCal/Google/Outlook ציבורי לבדיקה" oninput="saveVendorForm()" />
           <textarea class="full" id="vendorContractText" placeholder="תקציר חוזה / תנאי תשלום / מה כלול" oninput="saveVendorForm()"></textarea>
           <textarea class="full" id="vendorNotes" placeholder="הערות" oninput="saveVendorForm()"></textarea>
         </div>
         <div class="toolbar">
           <button onclick="sendVendorWhatsApp()">שלח וואטסאפ לספק</button>
           <button class="secondary" onclick="emailVendor()">פתח מייל לספק</button>
+          <button class="secondary" onclick="checkVendorCalendarAvailability()">בדוק זמינות ביומן</button>
           <button class="secondary" onclick="openVendorContract()">פתח חוזה</button>
           <button class="secondary" onclick="recordVendorPayment()">רשום תשלום מהארנק</button>
           <button class="danger" onclick="deleteVendor()">מחק ספק</button>
@@ -2526,28 +2529,52 @@ function renderVendorCatalog(){
 }
 function vendorTemplate(category){
   const isVenue=category==='אולם / מתחם אירועים';
-  return {name:isVenue?(eventSettings.venue||'אולם / מתחם אירועים'):'ספק חדש - '+category,category,contact:isVenue?(eventSettings.venueContactName||''):'',phone:isVenue?(eventSettings.venueContactPhone||''):'',email:isVenue?(eventSettings.venueContactEmail||''):'',contractUrl:'',agreed:0,paid:0,status:'פתוח',dueDate:'',contractText:isVenue?[eventSettings.venueAddress?'כתובת: '+eventSettings.venueAddress:'',eventSettings.venueNotes?'הערות מקום: '+eventSettings.venueNotes:''].filter(Boolean).join('\n'):'',notes:''};
+  return {name:isVenue?(eventSettings.venue||'אולם / מתחם אירועים'):'ספק חדש - '+category,category,contact:isVenue?(eventSettings.venueContactName||''):'',phone:isVenue?(eventSettings.venueContactPhone||''):'',email:isVenue?(eventSettings.venueContactEmail||''):'',contractUrl:'',agreed:0,paid:0,status:'פתוח',dueDate:'',availabilityStatus:'unknown',calendarUrl:'',calendarLastChecked:'',calendarBusySummary:'',contractText:isVenue?[eventSettings.venueAddress?'כתובת: '+eventSettings.venueAddress:'',eventSettings.venueNotes?'הערות מקום: '+eventSettings.venueNotes:''].filter(Boolean).join('\n'):'',notes:''};
 }
 function addVendorFromCatalog(category){ vendors.push(vendorTemplate(category||'אחר')); selectedVendorIndex=vendors.length-1; saveVendors(); fillVendorForm(); const msg=document.getElementById('vendorStatusMsg'); if(msg){ msg.textContent='נפתח כרטיס ספק לקטגוריה: '+category+' ✅'; msg.className='status ok-text'; } }
 function newVendor(){ addVendorFromCatalog('אחר'); }
 function currentVendor(){ return selectedVendorIndex===null ? null : vendors[selectedVendorIndex]; }
+function vendorAvailabilityLabel(v){ return ({available:'פנוי',busy:'תפוס',maybe:'דורש בדיקה',unknown:'לא נבדק'}[v?.availabilityStatus]||'לא נבדק'); }
+function vendorAvailabilityClass(v){ return v?.availabilityStatus==='available'?'ok':v?.availabilityStatus==='busy'?'bad':v?.availabilityStatus==='maybe'?'warn':'warn'; }
 function renderVendors(){
   renderVendorCatalog();
   const box=document.getElementById('vendorList'); if(!box) return;
-  box.innerHTML = vendors.length ? vendors.map((v,i)=>`<div class="vendor-item ${i===selectedVendorIndex?'active':''}" onclick="selectVendor(${i})"><b>${escapeHtml(v.name||'ללא שם')}</b><div class="label">${escapeHtml(v.category||'')} · ${escapeHtml(v.status||'פתוח')}</div><div class="label">סוכם: ${nis(v.agreed)} · שולם: ${nis(v.paid)}</div></div>`).join('') : '<span class="label">עדיין אין ספקים. לחץ “ספק חדש” או בחר קטגוריה מהקטלוג.</span>';
+  box.innerHTML = vendors.length ? vendors.map((v,i)=>`<div class="vendor-item ${i===selectedVendorIndex?'active':''}" onclick="selectVendor(${i})"><b>${escapeHtml(v.name||'ללא שם')}</b> <span class="badge ${vendorAvailabilityClass(v)}">${escapeHtml(vendorAvailabilityLabel(v))}</span><div class="label">${escapeHtml(v.category||'')} · ${escapeHtml(v.status||'פתוח')}</div><div class="label">סוכם: ${nis(v.agreed)} · שולם: ${nis(v.paid)}${v.calendarLastChecked?' · יומן נבדק: '+new Date(v.calendarLastChecked).toLocaleString('he-IL'):''}</div></div>`).join('') : '<span class="label">עדיין אין ספקים. לחץ “ספק חדש” או בחר קטגוריה מהקטלוג.</span>';
 }
 function selectVendor(i){ selectedVendorIndex=i; renderVendors(); fillVendorForm(); }
-function fillVendorForm(){ const v=currentVendor()||{}; const set=(id,val)=>{ const el=document.getElementById(id); if(el) el.value=val??''; }; const category=v.category==='אולם'?'אולם / מתחם אירועים':(v.category||'אחר'); set('vendorName',v.name);set('vendorCategory',category);set('vendorContact',v.contact);set('vendorPhone',v.phone);set('vendorEmail',v.email);set('vendorContractUrl',v.contractUrl);set('vendorAgreed',v.agreed);set('vendorPaid',v.paid);set('vendorStatus',v.status||'פתוח');set('vendorDueDate',v.dueDate);set('vendorContractText',v.contractText);set('vendorNotes',v.notes); }
-function saveVendorForm(){ const v=currentVendor(); if(!v) return; const get=id=>document.getElementById(id)?.value||''; Object.assign(v,{name:get('vendorName'),category:get('vendorCategory'),contact:get('vendorContact'),phone:get('vendorPhone'),email:get('vendorEmail'),contractUrl:get('vendorContractUrl'),agreed:Number(get('vendorAgreed'))||0,paid:Number(get('vendorPaid'))||0,status:get('vendorStatus'),dueDate:get('vendorDueDate'),contractText:get('vendorContractText'),notes:get('vendorNotes')}); saveVendors(); }
+function fillVendorForm(){ const v=currentVendor()||{}; const set=(id,val)=>{ const el=document.getElementById(id); if(el) el.value=val??''; }; const category=v.category==='אולם'?'אולם / מתחם אירועים':(v.category||'אחר'); set('vendorName',v.name);set('vendorCategory',category);set('vendorContact',v.contact);set('vendorPhone',v.phone);set('vendorEmail',v.email);set('vendorContractUrl',v.contractUrl);set('vendorAgreed',v.agreed);set('vendorPaid',v.paid);set('vendorStatus',v.status||'פתוח');set('vendorDueDate',v.dueDate);set('vendorAvailabilityStatus',v.availabilityStatus||'unknown');set('vendorCalendarUrl',v.calendarUrl||'');set('vendorContractText',v.contractText);set('vendorNotes',v.notes); }
+function saveVendorForm(){ const v=currentVendor(); if(!v) return; const get=id=>document.getElementById(id)?.value||''; Object.assign(v,{name:get('vendorName'),category:get('vendorCategory'),contact:get('vendorContact'),phone:get('vendorPhone'),email:get('vendorEmail'),contractUrl:get('vendorContractUrl'),agreed:Number(get('vendorAgreed'))||0,paid:Number(get('vendorPaid'))||0,status:get('vendorStatus'),dueDate:get('vendorDueDate'),availabilityStatus:get('vendorAvailabilityStatus')||'unknown',calendarUrl:get('vendorCalendarUrl'),contractText:get('vendorContractText'),notes:get('vendorNotes')}); saveVendors(); }
 function deleteVendor(){ if(selectedVendorIndex===null) return; if(!confirm('למחוק את הספק?')) return; vendors.splice(selectedVendorIndex,1); selectedVendorIndex=vendors.length?0:null; saveVendors(); fillVendorForm(); }
 function updateVendorStats(){ const agreed=vendors.reduce((s,v)=>s+(Number(v.agreed)||0),0), paid=vendors.reduce((s,v)=>s+(Number(v.paid)||0),0); const set=(id,val)=>{ const el=document.getElementById(id); if(el) el.textContent=nis(val); }; set('walletBalance',walletBalance()); set('vendorTotalCommit',agreed); set('vendorTotalPaid',paid); set('vendorTotalDue',agreed-paid); }
 function addWalletTx(){ const amount=Number(document.getElementById('walletAmount').value)||0; if(!amount) return alert('נא להזין סכום'); walletTx.unshift({date:new Date().toISOString(),amount,type:document.getElementById('walletType').value,note:document.getElementById('walletNote').value||''}); document.getElementById('walletAmount').value=''; document.getElementById('walletNote').value=''; saveWallet(); }
 function renderWallet(){ const box=document.getElementById('walletTxList'); if(!box) return; box.innerHTML=walletTx.length?walletTx.slice(0,30).map(t=>`<div class="wallet-row"><span>${new Date(t.date).toLocaleDateString('he-IL')} · ${escapeHtml(t.note||'')}</span><span class="money" style="color:${t.type==='income'?'var(--ok)':'var(--bad)'}">${t.type==='income'?'+':'-'}${nis(t.amount)}</span></div>`).join(''):'<span class="label">אין תנועות בארנק.</span>'; }
+async function checkVendorCalendarAvailability(){
+  const v=currentVendor(); const msg=document.getElementById('vendorStatusMsg');
+  if(!v) return;
+  saveVendorForm();
+  if(!eventSettings.date){ alert('אין תאריך אירוע לבדיקה'); return; }
+  if(!v.calendarUrl){ alert('יש להדביק קישור יומן iCal/Google/Outlook ציבורי של הספק'); return; }
+  if(msg){ msg.textContent='בודק זמינות מול היומן...'; msg.className='status'; }
+  try{
+    const res=await fetch('/api/vendor-calendar-check',{method:'POST',headers:{'content-type':'application/json',...eventAccessHeaders()},body:JSON.stringify({eventId:currentEventId(),calendarUrl:v.calendarUrl,eventDate:eventSettings.date,vendorName:v.name})});
+    const data=await res.json();
+    if(!res.ok||!data.ok) throw new Error(data.error||'בדיקת יומן נכשלה');
+    v.availabilityStatus=data.available?'available':'busy';
+    v.calendarLastChecked=new Date().toISOString();
+    v.calendarBusySummary=(data.busyEvents||[]).map(e=>e.summary||'אירוע ביומן').join(' | ');
+    if(!data.available && v.status==='פתוח') v.status='לבירור';
+    saveVendors(); fillVendorForm();
+    if(msg){ msg.textContent=data.available?'היומן נראה פנוי בתאריך האירוע ✅':'נמצאה תפוסה ביומן בתאריך האירוע: '+(v.calendarBusySummary||'אירוע קיים'); msg.className='status '+(data.available?'ok-text':'bad-text'); }
+  }catch(e){
+    v.availabilityStatus='maybe'; v.calendarLastChecked=new Date().toISOString(); saveVendors(); fillVendorForm();
+    if(msg){ msg.textContent='לא ניתן לבדוק אוטומטית: '+e.message+' — מומלץ לוודא מול הספק ידנית.'; msg.className='status bad-text'; }
+  }
+}
 async function sendVendorWhatsApp(){ const v=currentVendor(); if(!v) return; const msg=`היי ${v.contact||v.name}, כאן מארגן האירוע לגבי האירוע ב-תאריך האירוע. רציתי לעדכן/לתאם איתך לגבי השירות שסגרנו. תודה!`; document.getElementById('waPhone').value=v.phone||''; document.getElementById('waMessage').value=msg; await sendWhatsApp(); }
 function emailVendor(){ const v=currentVendor(); if(!v?.email) return alert('אין אימייל לספק'); location.href=`mailto:${encodeURIComponent(v.email)}?subject=${encodeURIComponent('אירוע תאריך האירוע - תיאום')}&body=${encodeURIComponent('היי,\nרציתי לתאם איתך לגבי האירוע.\nתודה, מארגן האירוע')}`; }
 function openVendorContract(){ const v=currentVendor(); if(v?.contractUrl) window.open(v.contractUrl,'_blank'); else alert('לא הוזן קישור לחוזה. אפשר להדביק קישור Google Drive/Dropbox בשדה החוזה.'); }
 function recordVendorPayment(){ const v=currentVendor(); if(!v) return; const due=(Number(v.agreed)||0)-(Number(v.paid)||0); const amount=Number(prompt(`כמה לשלם/לרשום לספק? יתרה לפי חוזה: ${nis(due)}`, due>0?due:'')); if(!amount) return; if(amount>walletBalance() && !confirm('הסכום גבוה מיתרת הארנק. לרשום בכל זאת?')) return; v.paid=(Number(v.paid)||0)+amount; walletTx.unshift({date:new Date().toISOString(),amount,type:'expense',note:`תשלום לספק: ${v.name}`}); if(v.paid>=v.agreed) v.status='שולם מלא'; saveVendors(); saveWallet(); fillVendorForm(); document.getElementById('vendorStatusMsg').textContent='התשלום נרשם והארנק עודכן ✅'; document.getElementById('vendorStatusMsg').className='status ok-text'; }
-function exportVendorsCSV(){ const rows=[['שם ספק','קטגוריה','איש קשר','טלפון','אימייל','סכום שסוכם','שולם','יתרה','סטטוס','תאריך יעד','קישור חוזה','תקציר חוזה','הערות'],...vendors.map(v=>[v.name,v.category,v.contact,v.phone,v.email,v.agreed,v.paid,(Number(v.agreed)||0)-(Number(v.paid)||0),v.status,v.dueDate,v.contractUrl,v.contractText,v.notes])]; const csv=rows.map(r=>r.map(x=>`"${String(x??'').replaceAll('"','""')}"`).join(',')).join('\n'); const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='event_vendors.csv'; a.click(); URL.revokeObjectURL(a.href); }
+function exportVendorsCSV(){ const rows=[['שם ספק','קטגוריה','איש קשר','טלפון','אימייל','סכום שסוכם','שולם','יתרה','סטטוס','זמינות','תאריך יעד','קישור יומן','נבדק לאחרונה','קישור חוזה','תקציר חוזה','הערות'],...vendors.map(v=>[v.name,v.category,v.contact,v.phone,v.email,v.agreed,v.paid,(Number(v.agreed)||0)-(Number(v.paid)||0),v.status,vendorAvailabilityLabel(v),v.dueDate,v.calendarUrl,v.calendarLastChecked,v.contractUrl,v.contractText,v.notes])]; const csv=rows.map(r=>r.map(x=>`"${String(x??'').replaceAll('"','""')}"`).join(',')).join('\n'); const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='event_vendors.csv'; a.click(); URL.revokeObjectURL(a.href); }
 
 const HALL_KEY = 'dynamic_event_hall_v1';
 let hall = loadHall();

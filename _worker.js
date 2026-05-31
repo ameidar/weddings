@@ -1267,6 +1267,59 @@ async function morningWebhook(request, env) {
   return jsonResponse({ ok: true });
 }
 
+function unfoldIcsLines(text) {
+  return String(text || '').replace(/\r\n[ \t]/g, '').replace(/\n[ \t]/g, '').split(/\r?\n/);
+}
+function icsDateToComparable(value) {
+  const raw = String(value || '').trim();
+  const m = raw.match(/(\d{4})(\d{2})(\d{2})/);
+  return m ? `${m[1]}-${m[2]}-${m[3]}` : '';
+}
+function eventDateOverlaps(targetDate, startRaw, endRaw) {
+  const start = icsDateToComparable(startRaw);
+  const end = icsDateToComparable(endRaw) || start;
+  if (!start) return false;
+  return start <= targetDate && targetDate <= end;
+}
+function parseIcsBusyEvents(icsText, targetDate) {
+  const lines = unfoldIcsLines(icsText);
+  const events = [];
+  let cur = null;
+  for (const line of lines) {
+    if (line === 'BEGIN:VEVENT') cur = {};
+    else if (line === 'END:VEVENT') { if (cur) events.push(cur); cur = null; }
+    else if (cur) {
+      const idx = line.indexOf(':');
+      if (idx > -1) {
+        const key = line.slice(0, idx).split(';')[0].toUpperCase();
+        const val = line.slice(idx + 1).replace(/\\,/g, ',').replace(/\\n/g, ' ');
+        if (key === 'DTSTART') cur.start = val;
+        if (key === 'DTEND') cur.end = val;
+        if (key === 'SUMMARY') cur.summary = val;
+      }
+    }
+  }
+  return events.filter(e => eventDateOverlaps(targetDate, e.start, e.end)).slice(0, 10).map(e => ({ summary: e.summary || 'אירוע ביומן', start: e.start || '', end: e.end || '' }));
+}
+async function vendorCalendarCheckApi(request, env) {
+  const body = await request.json().catch(() => ({}));
+  const eventId = String(body.eventId || '').trim();
+  const calendarUrl = String(body.calendarUrl || '').trim();
+  const eventDate = String(body.eventDate || '').slice(0, 10);
+  if (!eventId || !calendarUrl || !/^\d{4}-\d{2}-\d{2}$/.test(eventDate)) return jsonResponse({ ok:false, error:'Missing eventId, calendarUrl or eventDate' }, 400);
+  const session = await requireEventAccess(request, env, eventId);
+  if (!session) return jsonResponse({ ok:false, error:'Unauthorized' }, 401);
+  let u;
+  try { u = new URL(calendarUrl); } catch { return jsonResponse({ ok:false, error:'קישור יומן לא תקין' }, 400); }
+  if (!['http:', 'https:'].includes(u.protocol)) return jsonResponse({ ok:false, error:'אפשר לבדוק רק קישורי יומן http/https' }, 400);
+  const upstream = await fetch(u.toString(), { headers: { 'accept':'text/calendar,text/plain,*/*' } });
+  if (!upstream.ok) return jsonResponse({ ok:false, error:'לא ניתן לקרוא את היומן. ודאו שזה קישור iCal ציבורי/משותף.' }, 502);
+  const text = await upstream.text();
+  if (!/BEGIN:VCALENDAR/i.test(text)) return jsonResponse({ ok:false, error:'הקישור לא נראה כמו קובץ iCal' }, 400);
+  const busyEvents = parseIcsBusyEvents(text.slice(0, 2_000_000), eventDate);
+  return jsonResponse({ ok:true, eventDate, available: busyEvents.length === 0, busyEvents, checkedAt: new Date().toISOString() });
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -1310,6 +1363,10 @@ export default {
     if (url.pathname === '/api/whatsapp-history') {
       if (request.method !== 'POST') return jsonResponse({ ok: false, error: 'Method not allowed' }, 405);
       return getWhatsAppHistory(request, env);
+    }
+    if (url.pathname === '/api/vendor-calendar-check') {
+      if (request.method !== 'POST') return jsonResponse({ ok: false, error: 'Method not allowed' }, 405);
+      return vendorCalendarCheckApi(request, env);
     }
     return env.ASSETS.fetch(request);
   }
