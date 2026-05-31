@@ -780,9 +780,9 @@ imma, 123456, אמא"></textarea><small>כל משתמש כאן יוכל להיכ
       <section class="card campaign-control-card">
         <h3>1. בחירת קמפיין</h3>
         <div class="campaign-form">
-          <label><span>קהל יעד</span><select id="campaignAudience" onchange="renderCampaignCenter()"><option value="pending_rsvp">מי שטרם אישר הגעה</option><option value="all_with_phone">כל המוזמנים עם טלפון</option><option value="not_invited">מי שעדיין לא קיבל הזמנה</option><option value="side_bride">צד כלה</option><option value="side_groom">צד חתן</option><option value="by_inviter">לפי גורם מזמין</option><option value="payment_pending">בקשות מתנה/תשלום ממתינות</option><option value="missing_phone">חסרי טלפון לטיפול</option></select></label>
+          <label><span>קהל יעד</span><select id="campaignAudience" onchange="renderCampaignCenter()"><option value="pending_rsvp">מי שטרם אישר / לא בטוח</option><option value="all_with_phone">כל המוזמנים עם טלפון</option><option value="not_invited">מי שעדיין לא קיבל הזמנה</option><option value="side_bride">צד כלה</option><option value="side_groom">צד חתן</option><option value="by_inviter">לפי גורם מזמין</option><option value="payment_pending">בקשות מתנה/תשלום ממתינות</option><option value="missing_phone">חסרי טלפון לטיפול</option></select></label>
           <label id="campaignInviterWrap"><span>גורם מזמין</span><input id="campaignInviter" placeholder="לדוגמה: אבי הכלה / החתן / עמי" oninput="renderCampaignCenter()" /></label>
-          <label><span>סוג הודעה</span><select id="campaignType" onchange="renderCampaignCenter()"><option value="invite">הזמנה + אישור הגעה</option><option value="rsvpReminder">תזכורת אישור הגעה</option><option value="payment">לינק מתנה / תשלום</option><option value="paymentReminder">תזכורת מתנה</option><option value="custom">הודעה מותאמת אישית</option></select></label>
+          <label><span>סוג הודעה</span><select id="campaignType" onchange="renderCampaignCenter()"><option value="invite">הזמנה + אישור הגעה</option><option value="rsvpReminder">תזכורת למי שלא ענה / לא בטוח</option><option value="payment">לינק מתנה / תשלום</option><option value="paymentReminder">תזכורת מתנה</option><option value="custom">הודעה מותאמת אישית</option></select></label>
           <label><span>מצב שליחה</span><select id="campaignDuplicateMode" onchange="renderCampaignCenter()"><option value="skip">דלג על מי שכבר קיבל הודעה מסוג זה</option><option value="include">כלול גם מי שכבר קיבל</option></select></label>
         </div>
         <label class="campaign-full"><span>נוסח מותאם אישית / פתיח נוסף</span><textarea id="campaignCustomText" placeholder="רשות: כתבו כאן נוסח חופשי. אם נשאר ריק, המערכת תשתמש בתבנית המקצועית לפי סוג הקמפיין והגורם המזמין." oninput="renderCampaignCenter()"></textarea></label>
@@ -798,7 +798,7 @@ imma, 123456, אמא"></textarea><small>כל משתמש כאן יוכל להיכ
           <p class="note">המערכת תבנה תור חכם לפי הכללים. השליחה בפועל נשארת באישור מפורש.</p>
           <div class="campaign-form">
             <label><span>הפעלה</span><select id="campaignAutoEnabled" onchange="saveCampaignAutomationFromUi()"><option value="true">פעילה</option><option value="false">כבויה</option></select></label>
-            <label><span>סוג תזכורת</span><select id="campaignAutoType" onchange="saveCampaignAutomationFromUi()"><option value="rsvpReminder">אישור הגעה</option><option value="paymentReminder">מתנה / תשלום</option></select></label>
+            <label><span>סוג תזכורת</span><select id="campaignAutoType" onchange="saveCampaignAutomationFromUi()"><option value="rsvpReminder">לא ענה / לא בטוח</option><option value="paymentReminder">מתנה / תשלום</option></select></label>
             <label><span>תזכורת כל כמה ימים</span><input id="campaignAutoDays" type="number" min="1" value="3" onchange="saveCampaignAutomationFromUi()" /></label>
             <label><span>מקסימום תזכורות לאורח</span><input id="campaignAutoMax" type="number" min="1" value="3" onchange="saveCampaignAutomationFromUi()" /></label>
           </div>
@@ -1782,15 +1782,25 @@ const messageTemplates = {
 נשמח לאישור הגעה ל${eventInviteLine()}.
 
 בקישור הבא אפשר לבחור:
-נגיע / אולי / לא נוכל להגיע
+נגיע / לא ידוע כרגע / לא נוכל להגיע
 ולעדכן את כמות המשתתפים בצורה מסודרת:
 {{RSVP_LINK}}
 
+אפשר גם להשיב כאן בוואטסאפ במספר:
+1/2/3... = מספר מגיעים
+0 = לא מגיעים
+לא ידוע = נזכיר בהמשך
+
 תודה רבה!`, 
   rsvpReminder: g => `היי ${guestName(g)}, ${inviterOpening(g)} עם תזכורת קצרה לגבי ${eventSettings.name || 'האירוע'} 😊
-עדיין לא קיבלנו אישור הגעה.
-נשמח שתעדכנו בקישור אם תגיעו, אולי, או שלא תוכלו להגיע — ואם מגיעים, גם כמה משתתפים:
-{{RSVP_LINK}}`,
+עדיין לא קיבלנו אישור הגעה סופי.
+נשמח שתעדכנו בקישור אם תגיעו, לא ידוע כרגע, או שלא תוכלו להגיע — ואם מגיעים, גם כמה משתתפים:
+{{RSVP_LINK}}
+
+אפשר גם להשיב כאן בוואטסאפ במספר:
+1/2/3... = מספר מגיעים
+0 = לא מגיעים
+לא ידוע = נזכיר בהמשך`,
   payment: g => `היי ${guestName(g)}, ${inviterOpening(g)} 😊
 לנוחותכם מצורף קישור מתנה/תשלום עבור ${eventSettings.name || 'האירוע'}.
 ${g['לינק תשלום/אסמכתא'] ? 'קישור לתשלום: ' + g['לינק תשלום/אסמכתא'] : 'נשלח אליך קישור תשלום בהמשך.'}
@@ -1879,6 +1889,37 @@ function normalizeHistoryMessage(m){
   const ts=m?.timestamp ? (String(m.timestamp).length<11 ? Number(m.timestamp)*1000 : Number(m.timestamp)) : Date.now();
   return {direction:outgoing?'out':'in',message:String(text||'[הודעה ללא טקסט]'),date:new Date(ts).toISOString(),source:'greenapi'};
 }
+function inferRsvpFromReplyText(text){
+  const raw=String(text||'').trim();
+  const clean=raw.replace(/[.,!?:;־–—]/g,' ').replace(/\s+/g,' ').trim().toLowerCase();
+  if(!clean || clean.length>80) return null;
+  const numMatch=clean.match(/^(?:אני|אנחנו|נגיע|מגיעים|מגיעות|מגיע)?\s*(\d{1,2})\s*(?:מגיעים|מגיעות|אורחים|אנשים)?$/);
+  if(numMatch){
+    const count=Math.max(0,Math.min(99,Number(numMatch[1])||0));
+    return count===0 ? {status:'לא מגיע',count:0,reason:'זוהתה תשובת 0'} : {status:'אישר',count,reason:`זוהתה תשובה מספרית: ${count}`};
+  }
+  if(/^(?:0|לא|לא מגיע|לא נגיע|לא נוכל|לא יכולים|לא יכול|לא מגיעים|לא מגיעות|לצערי לא|לא אוכל)$/.test(clean)) return {status:'לא מגיע',count:0,reason:'זוהתה תשובת אי הגעה'};
+  if(/לא\s*(?:יודע|יודעת|יודעים|ידוע)|כרגע|אולי|בהמשך|נעדכן|נעדכן בהמשך|עדיין לא/.test(clean)) return {status:'אולי',count:null,reason:'זוהתה תשובת לא ידוע כרגע'};
+  if(/^(?:כן|מגיע|מגיעה|מגיעים|נגיע|מאשר|מאשרת|מאשרים|אישור)$/.test(clean)) return {status:'אישר',count:null,reason:'זוהתה תשובת הגעה ללא כמות'};
+  return null;
+}
+function applyInferredRsvpFromMessages(messages, guestIndex=selectedWhatsAppIndex){
+  if(guestIndex===null || guestIndex===undefined || !guests[guestIndex]) return null;
+  const inbound=(messages||[]).map(normalizeHistoryMessage).filter(m=>m.direction==='in' && m.message && m.message!=='[הודעה ללא טקסט]').sort((a,b)=>new Date(b.date)-new Date(a.date));
+  for(const m of inbound){
+    const inferred=inferRsvpFromReplyText(m.message);
+    if(!inferred) continue;
+    const g=guests[guestIndex];
+    g['סטטוס אישור השתתפות']=inferred.status;
+    if(inferred.status==='אישר' && inferred.count) g['כמות מוזמנים']=String(inferred.count);
+    if(inferred.status==='לא מגיע') g['כמות מוזמנים']='0';
+    g['הערות'] = `${g['הערות'] ? g['הערות'] + ' | ' : ''}עודכן אוטומטית מתשובת וואטסאפ: ${inferred.reason}`;
+    save(); render(); renderHall(); renderWhatsAppGuests();
+    syncEventStateNow().catch(()=>{});
+    return {...inferred,message:m.message,date:m.date};
+  }
+  return null;
+}
 function renderWhatsAppLog(remoteMessages=null){
   const box=document.getElementById('waChatLog'); if(!box) return;
   const phone=document.getElementById('waPhone')?.value||currentWhatsAppGuest()?.['טלפון וואטסאפ']||'';
@@ -1900,7 +1941,8 @@ async function refreshWhatsAppHistory(){
     const data=await res.json();
     if(!res.ok||!data.ok) throw new Error(data.error || data.result?.message || 'לא ניתן לקבל היסטוריה');
     renderWhatsAppLog(data.messages||[]);
-    status.textContent='לוג השיחה עודכן ✅'; status.classList.add('ok-text');
+    const inferred=applyInferredRsvpFromMessages(data.messages||[]);
+    status.textContent=inferred ? `לוג השיחה עודכן ✅ וזוהתה תשובת RSVP: ${inferred.status}${inferred.count?` (${inferred.count})`:''}` : 'לוג השיחה עודכן ✅'; status.classList.add('ok-text');
   }catch(e){ status.textContent='לא ניתן לרענן לוג: '+e.message; status.classList.add('bad-text'); renderWhatsAppLog(); }
 }
 async function buildRsvpLink(){
@@ -1936,7 +1978,7 @@ function lastCampaignReminderAt(type,g,log=campaignLog()){ return log[campaignKe
 function daysSinceIso(iso){ if(!iso) return 9999; const t=Date.parse(iso); if(!t) return 9999; return Math.floor((Date.now()-t)/86400000); }
 function campaignKey(type,g){ return `${currentEventId()||'event'}:${type}:${String(g?.['טלפון וואטסאפ']||guestName(g)||'').replace(/\D/g,'')||guestName(g)}`; }
 function campaignTypeLabel(type){ return ({invite:'הזמנה + אישור הגעה',rsvpReminder:'תזכורת אישור הגעה',payment:'לינק מתנה / תשלום',paymentReminder:'תזכורת מתנה',custom:'הודעה מותאמת אישית'}[type]||type); }
-function campaignAudienceLabel(a){ return ({pending_rsvp:'מי שטרם אישר הגעה',all_with_phone:'כל המוזמנים עם טלפון',not_invited:'מי שעדיין לא קיבל הזמנה',side_bride:'צד כלה',side_groom:'צד חתן',by_inviter:'לפי גורם מזמין',payment_pending:'בקשות מתנה/תשלום ממתינות',missing_phone:'חסרי טלפון לטיפול'}[a]||a); }
+function campaignAudienceLabel(a){ return ({pending_rsvp:'מי שטרם אישר / לא בטוח',all_with_phone:'כל המוזמנים עם טלפון',not_invited:'מי שעדיין לא קיבל הזמנה',side_bride:'צד כלה',side_groom:'צד חתן',by_inviter:'לפי גורם מזמין',payment_pending:'בקשות מתנה/תשלום ממתינות',missing_phone:'חסרי טלפון לטיפול'}[a]||a); }
 function campaignSelectedGuests(){
   const a=document.getElementById('campaignAudience')?.value||'pending_rsvp';
   const inviter=(document.getElementById('campaignInviter')?.value||'').trim().toLowerCase();
@@ -1946,9 +1988,9 @@ function campaignSelectedGuests(){
   }
   return guests.map((g,i)=>({g,i})).filter(({g})=>g['שם מלא / שם לקוח']||g['טלפון וואטסאפ']).filter(({g})=>{
     const side=String(g['צד באירוע']||g['קבוצה']||'');
-    if(a==='pending_rsvp') return String(g['סטטוס אישור השתתפות']||'טרם נענה')==='טרם נענה';
+    if(a==='pending_rsvp') return ['טרם נענה','אולי'].includes(String(g['סטטוס אישור השתתפות']||'טרם נענה'));
     if(a==='all_with_phone') return !!g['טלפון וואטסאפ'];
-    if(a==='not_invited') return !log[campaignKey('invite',g)] && String(g['סטטוס אישור השתתפות']||'טרם נענה')==='טרם נענה';
+    if(a==='not_invited') return !log[campaignKey('invite',g)] && ['טרם נענה','אולי'].includes(String(g['סטטוס אישור השתתפות']||'טרם נענה'));
     if(a==='side_bride') return side==='צד כלה';
     if(a==='side_groom') return side==='צד חתן';
     if(a==='by_inviter') return inviter && String(g['גורם מזמין']||'').toLowerCase().includes(inviter);
@@ -2004,7 +2046,7 @@ function campaignAutomationCandidates(type=campaignAutomation.type,log=campaignL
     let reason='';
     if(!phone) reason='חסר טלפון';
     else if(count>=max) reason='הגיע למקסימום תזכורות';
-    else if(type==='rsvpReminder' && status!=='טרם נענה') reason='כבר הגיב לאישור הגעה';
+    else if(type==='rsvpReminder' && !['טרם נענה','אולי'].includes(status)) reason='כבר הגיב לאישור הגעה';
     else if(type==='paymentReminder' && paid) reason='כבר סומן כשולם';
     else if(type==='rsvpReminder' && !invitedAt) reason='לא נשלחה הזמנה ראשונית';
     else if(type==='paymentReminder' && !paymentSentAt) reason='לא נשלחה בקשת מתנה/תשלום ראשונית';
