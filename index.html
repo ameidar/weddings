@@ -1013,8 +1013,56 @@ function installOpalLiveContextBridge(){
     return window.__opalOriginalFetch(input,init);
   };
 }
+function opalEventDisplayName(){
+  const name=String(eventSettings?.name||eventSettings?.title||'').trim();
+  return name || 'האירוע הזה';
+}
+function prepareOpalSessionForActiveEvent(){
+  if(!document.body.classList.contains('client-mode')) return;
+  const eventId=currentEventId();
+  if(!eventId) return;
+  const baseKey='opal_embed_session_agent-mp6tgr93';
+  const eventKey=`${baseKey}_${eventId}`;
+  let sessionId=localStorage.getItem(eventKey);
+  if(!sessionId){ sessionId=crypto.randomUUID(); localStorage.setItem(eventKey,sessionId); }
+  localStorage.setItem(baseKey,sessionId);
+}
+function applyOpalWidgetPresentation(){
+  const root=document.getElementById('opal-ai-widget-root');
+  const shadow=root?.shadowRoot;
+  if(!shadow) return false;
+  let style=shadow.getElementById('opalClientPositionOverride');
+  if(!style){
+    style=document.createElement('style');
+    style.id='opalClientPositionOverride';
+    style.textContent=`.bubble{left:22px!important;right:auto!important}.panel{left:22px!important;right:auto!important}@media(max-width:520px){.bubble{left:14px!important;right:auto!important}.panel{left:12px!important;right:auto!important}}`;
+    shadow.appendChild(style);
+  }
+  const isClient=document.body.classList.contains('client-mode');
+  const eventName=opalEventDisplayName();
+  const title=isClient?`הסוכן של ${eventName}`:'סוכן אירועים';
+  const welcome=isClient?`שלום, אני הסוכן של ${eventName}. איך אפשר לעזור לך היום?`:'שלום, אני סוכן האירועים. איך אפשר לעזור?';
+  const h3=shadow.querySelector('h3');
+  if(h3) h3.textContent=title;
+  const firstAssistant=shadow.querySelector('.messages .msg.assistant');
+  const userMessageExists=!!shadow.querySelector('.messages .msg.user');
+  if(firstAssistant && !userMessageExists){
+    const current=String(firstAssistant.textContent||'').trim();
+    if(!current || current==='שלום, איך אפשר לעזור?' || current==='Hi, how can I help?' || current.includes('סוכן אירועים') || current.includes('עוזר AI')) firstAssistant.textContent=welcome;
+  }
+  return true;
+}
+function startOpalWidgetPresentation(){
+  if(window.__opalWidgetPresentationTimer) clearInterval(window.__opalWidgetPresentationTimer);
+  let ticks=0;
+  window.__opalWidgetPresentationTimer=setInterval(()=>{
+    applyOpalWidgetPresentation();
+    if(++ticks>40) clearInterval(window.__opalWidgetPresentationTimer);
+  },250);
+}
 function loadOpalSystemWidget(){
-  if(document.getElementById(OPAL_WIDGET_SCRIPT_ID)) return;
+  prepareOpalSessionForActiveEvent();
+  if(document.getElementById(OPAL_WIDGET_SCRIPT_ID)){ startOpalWidgetPresentation(); return; }
   installOpalLiveContextBridge();
   const script=document.createElement('script');
   script.id=OPAL_WIDGET_SCRIPT_ID;
@@ -1023,7 +1071,9 @@ function loadOpalSystemWidget(){
   script.dataset.opalKey='pub_mUM0rdLAa-1lLWBQkVIZOn6Q';
   script.dataset.opalLanguage='he';
   script.async=true;
+  script.onload=startOpalWidgetPresentation;
   document.body.appendChild(script);
+  startOpalWidgetPresentation();
 }
 
 function showPage(page){
