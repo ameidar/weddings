@@ -897,14 +897,16 @@ let eventAssistantHistory = [];
 let syncTimer = null;
 let suppressSync = false;
 const OPAL_WIDGET_SCRIPT_ID = 'opal-system-widget-script';
-function summarizeParticipantsForOpal(participants){
+function summarizeParticipantsForOpal(participants,options={}){
   const list=Array.isArray(participants)?participants:[];
   const partySize=g=>Math.max(0,Number(g?.['כמות מוזמנים']||g?.['כמות מגיעים']||1)||1);
   const guestName=g=>String(g?.['שם מלא / שם לקוח']||g?.name||'').trim();
   const byStatus=list.reduce((acc,g)=>{ const s=String(g?.['סטטוס אישור השתתפות']||'טרם נענה'); acc[s]=(acc[s]||0)+partySize(g); return acc; },{});
   const groupBy=(field)=>list.reduce((acc,g)=>{ const key=String(g?.[field]||'לא שויך').trim()||'לא שויך'; acc[key]=acc[key]||{רשומות:0,אנשים:0,אישרו:0,טרם_נענו:0,לא_מגיעים:0,אולי:0}; const size=partySize(g); const status=String(g?.['סטטוס אישור השתתפות']||'טרם נענה'); acc[key].רשומות+=1; acc[key].אנשים+=size; if(status==='אישר') acc[key].אישרו+=size; else if(status==='לא מגיע') acc[key].לא_מגיעים+=size; else if(status==='אולי') acc[key].אולי+=size; else acc[key].טרם_נענו+=size; return acc; },{});
-  const declined=list.filter(g=>String(g?.['סטטוס אישור השתתפות']||'')==='לא מגיע').map(g=>({שם:guestName(g)||'ללא שם',אנשים:partySize(g),צד:g?.['צד באירוע']||'',מזמין:g?.['גורם מזמין']||''})).slice(0,30);
-  return {רשומות:list.length,סהכ_אנשים:list.reduce((s,g)=>s+partySize(g),0),אישרו:byStatus['אישר']||0,לא_מגיעים:byStatus['לא מגיע']||0,שמות_לא_מגיעים:declined,טרם_נענו:byStatus['טרם נענה']||0,לפי_צד:groupBy('צד באירוע'),לפי_גורם_מזמין:groupBy('גורם מזמין')};
+  const summary={רשומות:list.length,סהכ_אנשים:list.reduce((s,g)=>s+partySize(g),0),אישרו:byStatus['אישר']||0,לא_מגיעים:byStatus['לא מגיע']||0,טרם_נענו:byStatus['טרם נענה']||0,אולי:byStatus['אולי']||0};
+  if(options.groups) Object.assign(summary,{לפי_צד:groupBy('צד באירוע'),לפי_גורם_מזמין:groupBy('גורם מזמין')});
+  if(options.declinedNames) summary.שמות_לא_מגיעים=list.filter(g=>String(g?.['סטטוס אישור השתתפות']||'')==='לא מגיע').map(g=>({שם:guestName(g)||'ללא שם',אנשים:partySize(g),צד:g?.['צד באירוע']||'',מזמין:g?.['גורם מזמין']||''})).slice(0,15);
+  return summary;
 }
 function summarizeSelectedEventLocalStateForOpal(eventId){
   const readJson=(key,fallback)=>{ try{return JSON.parse(localStorage.getItem(key)||'')||fallback;}catch(e){return fallback;} };
@@ -923,7 +925,7 @@ function eventSummaryForOpal(ev){
   if(!ev) return null;
   return {id:ev.id,name:ev.name,type:ev.type,owner:ev.owner,clientEmail:ev.clientEmail,clientPhone:ev.clientPhone,date:ev.date,venue:ev.venue,expected:Number(ev.expected)||0,modules:ev.modules,updatedAt:ev.updatedAt||ev.createdAt||''};
 }
-async function buildOpalLiveContext(){
+async function buildOpalLiveContext(userMessage=''){
   const isClientDashboard=document.body.classList.contains('client-mode') || (isClientUrl() && !currentAdminToken);
   if(isClientDashboard){
     const id=currentEventId();
@@ -936,26 +938,26 @@ async function buildOpalLiveContext(){
         if(res.ok && data.ok && data.state) state={...state,...data.state};
       }catch(e){}
     }
+    const msg=String(userMessage||'');
+    const wantsDeclined=/לא\s*מגיע|שלא\s*יגיע|הודיעו\s*שלא|declin/i.test(msg);
     const hall=state.hall||{};
     const tables=Array.isArray(hall.tables)?hall.tables:[];
     const vendors=Array.isArray(state.vendors)?state.vendors:[];
-    const walletTx=Array.isArray(state.walletTx)?state.walletTx:[];
     const payments=Array.isArray(state.payments)?state.payments:[];
     const selectedEvent=eventSummaryForOpal({...(eventSettings||{}),id});
     const context={
       source:'live-client-dashboard-context',
-      note:'זהו Context חי שנוסף אוטומטית מדף הלקוח של אירוע אחד בלבד. אל תחשוף סיסמאות או טוקנים. אל תציג רשימת אירועים של אדמין. אם נדרשת שליחה, מחיקה, שינוי כספי או פעולה רגישה — בקש אישור מפורש מהמשתמש בממשק.',
+      note:'Context חי מדף לקוח של אירוע אחד בלבד. לא לחשוף סודות. פעולה רגישה/שליחה/כספים דורשת אישור מפורש.',
       currentPage:document.querySelector('.page-section.active')?.dataset?.page||'',
-      selectedEvent,
+      selectedEvent:selectedEvent?{name:selectedEvent.name,type:selectedEvent.type,owner:selectedEvent.owner,date:selectedEvent.date,venue:selectedEvent.venue,expected:selectedEvent.expected}:null,
       selectedEventStats:selectedEvent?{
-        participants:summarizeParticipantsForOpal(state.participants),
+        participants:summarizeParticipantsForOpal(state.participants,{declinedNames:wantsDeclined}),
         tables:{count:tables.length,totalCapacity:tables.reduce((s,t)=>s+(Number(t.capacity)||0),0)},
-        vendors:{count:vendors.length,totalAgreed:vendors.reduce((s,v)=>s+(Number(v.amount)||Number(v.agreedAmount)||0),0)},
-        wallet:{transactions:walletTx.length,balance:walletTx.reduce((s,t)=>s+(t.type==='expense'?-1:1)*(Number(t.amount)||0),0)},
-        payments:{count:payments.length,pendingCount:payments.filter(p=>p.status==='pending').length,paidTotal:payments.filter(p=>p.status==='paid').reduce((s,p)=>s+(Number(p.amount)||0),0),payoutRequests:payments.filter(p=>p.direction==='out').length}
+        vendors:{count:vendors.length},
+        payments:{count:payments.length,pendingCount:payments.filter(p=>p.status==='pending').length}
       }:null
     };
-    return JSON.stringify(context).slice(0,2200);
+    return JSON.stringify(context).slice(0,1200);
   }
   const events=loadAdminEvents().map(eventSummaryForOpal).filter(Boolean);
   const selected=events.find(ev=>ev.id===selectedAdminEventId)||null;
@@ -981,14 +983,14 @@ async function buildOpalLiveContext(){
     events:events.slice(0,25),
     selectedEvent:selected,
     selectedEventStats:selected?{
-      participants:summarizeParticipantsForOpal(state.participants),
+      participants:summarizeParticipantsForOpal(state.participants,{groups:true}),
       tables:{count:tables.length,totalCapacity:tables.reduce((s,t)=>s+(Number(t.capacity)||0),0)},
       vendors:{count:vendors.length,totalAgreed:vendors.reduce((s,v)=>s+(Number(v.amount)||Number(v.agreedAmount)||0),0)},
       wallet:{transactions:walletTx.length,balance:walletTx.reduce((s,t)=>s+(t.type==='expense'?-1:1)*(Number(t.amount)||0),0)},
       payments:{count:payments.length,pendingCount:payments.filter(p=>p.status==='pending').length,paidTotal:payments.filter(p=>p.status==='paid').reduce((s,p)=>s+(Number(p.amount)||0),0),payoutRequests:payments.filter(p=>p.direction==='out').length}
     }:null
   };
-  return JSON.stringify(context).slice(0,3000);
+  return JSON.stringify(context).slice(0,2200);
 }
 function installOpalLiveContextBridge(){
   if(window.__opalLiveContextBridgeInstalled) return;
@@ -1001,8 +1003,9 @@ function installOpalLiveContextBridge(){
       try{
         const body=JSON.parse(init.body);
         if(body?.message && !String(body.message).includes('[[LIVE_EVENT_CONTEXT]]')){
-          const context=await buildOpalLiveContext();
-          body.message=`[[LIVE_EVENT_CONTEXT]]\n${context}\n[[END_LIVE_EVENT_CONTEXT]]\n\nשאלת האדמין:\n${body.message}`;
+          const context=await buildOpalLiveContext(body.message);
+          const label=document.body.classList.contains('client-mode')?'שאלת הלקוח':'שאלת האדמין';
+          body.message=`[[LIVE_EVENT_CONTEXT]]\n${context}\n[[END_LIVE_EVENT_CONTEXT]]\n\n${label}:\n${body.message}`;
           init={...init,body:JSON.stringify(body)};
         }
       }catch(e){}
