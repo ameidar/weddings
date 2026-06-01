@@ -939,7 +939,6 @@ async function buildOpalLiveContext(){
     const vendors=Array.isArray(state.vendors)?state.vendors:[];
     const walletTx=Array.isArray(state.walletTx)?state.walletTx:[];
     const payments=Array.isArray(state.payments)?state.payments:[];
-    const automation=state.paymentAutomation||defaultPaymentAutomationSettings();
     const selectedEvent=eventSummaryForOpal({...(eventSettings||{}),id});
     const context={
       source:'live-client-dashboard-context',
@@ -951,10 +950,10 @@ async function buildOpalLiveContext(){
         tables:{count:tables.length,totalCapacity:tables.reduce((s,t)=>s+(Number(t.capacity)||0),0)},
         vendors:{count:vendors.length,totalAgreed:vendors.reduce((s,v)=>s+(Number(v.amount)||Number(v.agreedAmount)||0),0)},
         wallet:{transactions:walletTx.length,balance:walletTx.reduce((s,t)=>s+(t.type==='expense'?-1:1)*(Number(t.amount)||0),0)},
-        payments:{count:payments.length,pendingCount:payments.filter(p=>p.status==='pending').length,paidTotal:payments.filter(p=>p.status==='paid').reduce((s,p)=>s+(Number(p.amount)||0),0),payoutRequests:payments.filter(p=>p.direction==='out').length,automation}
+        payments:{count:payments.length,pendingCount:payments.filter(p=>p.status==='pending').length,paidTotal:payments.filter(p=>p.status==='paid').reduce((s,p)=>s+(Number(p.amount)||0),0),payoutRequests:payments.filter(p=>p.direction==='out').length}
       }:null
     };
-    return JSON.stringify(context).slice(0,7000);
+    return JSON.stringify(context).slice(0,2200);
   }
   const events=loadAdminEvents().map(eventSummaryForOpal).filter(Boolean);
   const selected=events.find(ev=>ev.id===selectedAdminEventId)||null;
@@ -972,7 +971,6 @@ async function buildOpalLiveContext(){
   const vendors=Array.isArray(state.vendors)?state.vendors:[];
   const walletTx=Array.isArray(state.walletTx)?state.walletTx:[];
   const payments=Array.isArray(state.payments)?state.payments:[];
-  const automation=state.paymentAutomation||defaultPaymentAutomationSettings();
   const context={
     source:'live-admin-dashboard-context',
     note:'זהו Context חי שנוסף אוטומטית מהמערכת בזמן השאלה. אל תחשוף סיסמאות או טוקנים. אם נדרשת פעולה רגישה/שליחה/מחיקה/שינוי כספי — בקש אישור מפורש.',
@@ -985,10 +983,10 @@ async function buildOpalLiveContext(){
       tables:{count:tables.length,totalCapacity:tables.reduce((s,t)=>s+(Number(t.capacity)||0),0)},
       vendors:{count:vendors.length,totalAgreed:vendors.reduce((s,v)=>s+(Number(v.amount)||Number(v.agreedAmount)||0),0)},
       wallet:{transactions:walletTx.length,balance:walletTx.reduce((s,t)=>s+(t.type==='expense'?-1:1)*(Number(t.amount)||0),0)},
-      payments:{count:payments.length,pendingCount:payments.filter(p=>p.status==='pending').length,paidTotal:payments.filter(p=>p.status==='paid').reduce((s,p)=>s+(Number(p.amount)||0),0),payoutRequests:payments.filter(p=>p.direction==='out').length,automation}
+      payments:{count:payments.length,pendingCount:payments.filter(p=>p.status==='pending').length,paidTotal:payments.filter(p=>p.status==='paid').reduce((s,p)=>s+(Number(p.amount)||0),0),payoutRequests:payments.filter(p=>p.direction==='out').length}
     }:null
   };
-  return JSON.stringify(context).slice(0,7000);
+  return JSON.stringify(context).slice(0,3000);
 }
 function installOpalLiveContextBridge(){
   if(window.__opalLiveContextBridgeInstalled) return;
