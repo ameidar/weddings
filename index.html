@@ -900,9 +900,11 @@ const OPAL_WIDGET_SCRIPT_ID = 'opal-system-widget-script';
 function summarizeParticipantsForOpal(participants){
   const list=Array.isArray(participants)?participants:[];
   const partySize=g=>Math.max(0,Number(g?.['כמות מוזמנים']||g?.['כמות מגיעים']||1)||1);
+  const guestName=g=>String(g?.['שם מלא / שם לקוח']||g?.name||'').trim();
   const byStatus=list.reduce((acc,g)=>{ const s=String(g?.['סטטוס אישור השתתפות']||'טרם נענה'); acc[s]=(acc[s]||0)+partySize(g); return acc; },{});
   const groupBy=(field)=>list.reduce((acc,g)=>{ const key=String(g?.[field]||'לא שויך').trim()||'לא שויך'; acc[key]=acc[key]||{רשומות:0,אנשים:0,אישרו:0,טרם_נענו:0,לא_מגיעים:0,אולי:0}; const size=partySize(g); const status=String(g?.['סטטוס אישור השתתפות']||'טרם נענה'); acc[key].רשומות+=1; acc[key].אנשים+=size; if(status==='אישר') acc[key].אישרו+=size; else if(status==='לא מגיע') acc[key].לא_מגיעים+=size; else if(status==='אולי') acc[key].אולי+=size; else acc[key].טרם_נענו+=size; return acc; },{});
-  return {רשומות:list.length,סהכ_אנשים:list.reduce((s,g)=>s+partySize(g),0),אישרו:byStatus['אישר']||0,לא_מגיעים:byStatus['לא מגיע']||0,טרם_נענו:byStatus['טרם נענה']||0,לפי_צד:groupBy('צד באירוע'),לפי_גורם_מזמין:groupBy('גורם מזמין')};
+  const declined=list.filter(g=>String(g?.['סטטוס אישור השתתפות']||'')==='לא מגיע').map(g=>({שם:guestName(g)||'ללא שם',אנשים:partySize(g),צד:g?.['צד באירוע']||'',מזמין:g?.['גורם מזמין']||''})).slice(0,30);
+  return {רשומות:list.length,סהכ_אנשים:list.reduce((s,g)=>s+partySize(g),0),אישרו:byStatus['אישר']||0,לא_מגיעים:byStatus['לא מגיע']||0,שמות_לא_מגיעים:declined,טרם_נענו:byStatus['טרם נענה']||0,לפי_צד:groupBy('צד באירוע'),לפי_גורם_מזמין:groupBy('גורם מזמין')};
 }
 function summarizeSelectedEventLocalStateForOpal(eventId){
   const readJson=(key,fallback)=>{ try{return JSON.parse(localStorage.getItem(key)||'')||fallback;}catch(e){return fallback;} };
