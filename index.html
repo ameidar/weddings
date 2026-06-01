@@ -922,6 +922,40 @@ function eventSummaryForOpal(ev){
   return {id:ev.id,name:ev.name,type:ev.type,owner:ev.owner,clientEmail:ev.clientEmail,clientPhone:ev.clientPhone,date:ev.date,venue:ev.venue,expected:Number(ev.expected)||0,modules:ev.modules,updatedAt:ev.updatedAt||ev.createdAt||''};
 }
 async function buildOpalLiveContext(){
+  const isClientDashboard=document.body.classList.contains('client-mode') || (isClientUrl() && !currentAdminToken);
+  if(isClientDashboard){
+    const id=currentEventId();
+    let state=id ? summarizeSelectedEventLocalStateForOpal(id) : {participants:[],hall:{},vendors:[],walletTx:[],payments:[]};
+    if(id && currentClientToken){
+      try{
+        const f=window.__opalOriginalFetch||window.fetch.bind(window);
+        const res=await f('/api/event-state?eventId='+encodeURIComponent(id),{headers:clientAuthHeaders()});
+        const data=await res.json().catch(()=>({}));
+        if(res.ok && data.ok && data.state) state={...state,...data.state};
+      }catch(e){}
+    }
+    const hall=state.hall||{};
+    const tables=Array.isArray(hall.tables)?hall.tables:[];
+    const vendors=Array.isArray(state.vendors)?state.vendors:[];
+    const walletTx=Array.isArray(state.walletTx)?state.walletTx:[];
+    const payments=Array.isArray(state.payments)?state.payments:[];
+    const automation=state.paymentAutomation||defaultPaymentAutomationSettings();
+    const selectedEvent=eventSummaryForOpal({...(eventSettings||{}),id});
+    const context={
+      source:'live-client-dashboard-context',
+      note:'זהו Context חי שנוסף אוטומטית מדף הלקוח של אירוע אחד בלבד. אל תחשוף סיסמאות או טוקנים. אל תציג רשימת אירועים של אדמין. אם נדרשת שליחה, מחיקה, שינוי כספי או פעולה רגישה — בקש אישור מפורש מהמשתמש בממשק.',
+      currentPage:document.querySelector('.page-section.active')?.dataset?.page||'',
+      selectedEvent,
+      selectedEventStats:selectedEvent?{
+        participants:summarizeParticipantsForOpal(state.participants),
+        tables:{count:tables.length,totalCapacity:tables.reduce((s,t)=>s+(Number(t.capacity)||0),0)},
+        vendors:{count:vendors.length,totalAgreed:vendors.reduce((s,v)=>s+(Number(v.amount)||Number(v.agreedAmount)||0),0)},
+        wallet:{transactions:walletTx.length,balance:walletTx.reduce((s,t)=>s+(t.type==='expense'?-1:1)*(Number(t.amount)||0),0)},
+        payments:{count:payments.length,pendingCount:payments.filter(p=>p.status==='pending').length,paidTotal:payments.filter(p=>p.status==='paid').reduce((s,p)=>s+(Number(p.amount)||0),0),payoutRequests:payments.filter(p=>p.direction==='out').length,automation}
+      }:null
+    };
+    return JSON.stringify(context).slice(0,7000);
+  }
   const events=loadAdminEvents().map(eventSummaryForOpal).filter(Boolean);
   const selected=events.find(ev=>ev.id===selectedAdminEventId)||null;
   let state=selected ? summarizeSelectedEventLocalStateForOpal(selected.id) : {participants:[],hall:{},vendors:[],walletTx:[],payments:[]};
@@ -977,7 +1011,7 @@ function installOpalLiveContextBridge(){
   };
 }
 function loadOpalSystemWidget(){
-  if(isClientUrl() || document.getElementById(OPAL_WIDGET_SCRIPT_ID)) return;
+  if(document.getElementById(OPAL_WIDGET_SCRIPT_ID)) return;
   installOpalLiveContextBridge();
   const script=document.createElement('script');
   script.id=OPAL_WIDGET_SCRIPT_ID;
@@ -1549,7 +1583,7 @@ async function validateClientSession(id){
   currentClientToken='';
   return false;
 }
-async function enterClientMode(ev){ document.body.classList.remove('admin-landing','admin-locked','client-auth-locked'); document.body.classList.add('client-mode'); applyAdminEventToWorkspace(ev); await loadRemoteEventState(); await loadPendingParticipants(); fillEventSettings(); render(); renderHall(); renderVendors(); renderWallet(); renderPayments(); updateVendorStats(); renderWhatsAppGuests(); showPage('overview'); document.querySelectorAll('.nav-btn.admin-only').forEach(e=>e.remove()); showLegalConsentIfNeeded(); scheduleEventStateSync(); }
+async function enterClientMode(ev){ document.body.classList.remove('admin-landing','admin-locked','client-auth-locked'); document.body.classList.add('client-mode'); applyAdminEventToWorkspace(ev); await loadRemoteEventState(); await loadPendingParticipants(); fillEventSettings(); render(); renderHall(); renderVendors(); renderWallet(); renderPayments(); updateVendorStats(); renderWhatsAppGuests(); showPage('overview'); document.querySelectorAll('.nav-btn.admin-only').forEach(e=>e.remove()); showLegalConsentIfNeeded(); loadOpalSystemWidget(); scheduleEventStateSync(); }
 async function bootMode(){
   setupAdminDateMin();
   renderCreateColorPalette();
