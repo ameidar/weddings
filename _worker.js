@@ -242,7 +242,8 @@ async function dreamLeadsApi(request, env) {
     const admin = await requireAdmin(request, env);
     if (!admin) return jsonResponse({ ok:false, error:'Unauthorized' }, 401);
     const leads = JSON.parse(await env.EVENTS_KV.get(DREAM_LEADS_KEY) || '[]');
-    return jsonResponse({ ok:true, leads: Array.isArray(leads) ? leads : [] });
+    const visibleLeads = (Array.isArray(leads) ? leads : []).filter(lead => !(lead?.phone === '0520000000' && lead?.name === 'בדיקת דמו'));
+    return jsonResponse({ ok:true, leads: visibleLeads });
   }
   if (request.method !== 'POST') return jsonResponse({ ok:false, error:'Method not allowed' }, 405);
   const body = await request.json().catch(() => ({}));
