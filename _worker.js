@@ -524,9 +524,36 @@ function extractAssistantRecipientName(text) {
 }
 function extractAssistantCount(text) { const m = String(text || '').match(/(\d+)\s*(?:משתתפים|מוזמנים|אנשים|מגיעים|אורחים|נפשות)/); return m ? Number(m[1]) : 0; }
 function extractAssistantPhone(text) { const m = String(text || '').match(/(\+?\d[\d\-\s]{8,}\d)/); return m ? m[1].replace(/[\s-]/g,'') : ''; }
+function extractAssistantMoney(text) { const m = String(text || '').replace(/,/g, '').match(/(?:₪|שח|ש״ח|מחיר|סכום|עלות|סוכם|סגרנו|תשלום)\s*[:\-]?\s*(\d{2,7})|(\d{2,7})\s*(?:₪|שח|ש״ח)/); return m ? Number(m[1] || m[2] || 0) : 0; }
 function normalizeEventAction(action) {
   return String(action || '').trim().toLowerCase().replace(/[\s-]+/g, '_');
 }
+
+function normalizeVendorCategory(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return 'אחר';
+  if (/מגנט|צילום מגנט|צלם מגנטים/.test(raw)) return 'מגנטים';
+  if (/צלם|צילום|וידאו|סטילס/.test(raw)) return 'צילום';
+  if (/די.?ג'?יי|dj|מוזיקה|תקליטן/.test(raw)) return 'מוזיקה/DJ';
+  if (/אולם|גן|מתחם/.test(raw)) return 'אולם/מתחם';
+  if (/קייטרינג|אוכל|בר /.test(raw)) return 'קייטרינג';
+  if (/בר|אלכוהול/.test(raw)) return 'בר';
+  if (/עיצוב|פרחים/.test(raw)) return 'עיצוב';
+  if (/איפור|שיער/.test(raw)) return 'איפור ושיער';
+  if (/רב|חופה/.test(raw)) return 'רב/חופה';
+  if (/הסע/.test(raw)) return 'הסעות';
+  if (/הפק/.test(raw)) return 'הפקת אירוע';
+  return raw;
+}
+
+function extractAssistantEmail(text) { const m = String(text || '').match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i); return m ? m[0] : ''; }
+
+function extractLabeledValue(text, labels) {
+  const pattern = new RegExp(`(?:${labels.join('|')})\\s*[:：-]?\\s*([^,\\n]+)`, 'i');
+  return String(text || '').match(pattern)?.[1]?.trim() || '';
+}
+
+function nextVendorId() { return `vendor_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`; }
 
 function normalizeRsvp(value) {
   const raw = String(value || '').trim();
@@ -571,6 +598,7 @@ function nextParticipantNumber(state) {
 
 function executeEventAction(state, action, payload = {}) {
   state.participants = Array.isArray(state.participants) ? state.participants : [];
+  state.vendors = Array.isArray(state.vendors) ? state.vendors : [];
   state.eventSettings = state.eventSettings || {};
   const type = normalizeEventAction(action || payload.action);
   const name = cleanEventAssistantName(payload.name || payload.guestName || payload.participantName || '');
@@ -618,6 +646,37 @@ function executeEventAction(state, action, payload = {}) {
     state.participants.forEach((g,i)=>g['מספר']=i+1);
     return { ok:true, changed:true, intent:'action', action:type, answer:`הוספתי את ${name} עם ${count} מוזמנים${rsvp ? `, סטטוס ${rsvp}` : ''}${table ? ` ושיבוץ ל${normalizeTable(table)}` : ''}.`, guest };
   }
+  if (type === 'add_vendor' || type === 'update_vendor') {
+    const vendorName = cleanEventAssistantName(payload.vendorName || payload.supplierName || payload.businessName || name || '');
+    const category = normalizeVendorCategory(payload.category || payload.domain || payload.type || payload.field || '');
+    const contact = cleanEventAssistantName(payload.contact || payload.contactName || payload.person || '');
+    const vendorPhone = String(payload.phone || payload.whatsapp || payload.mobile || '').trim();
+    const email = String(payload.email || '').trim();
+    const agreed = Number(payload.agreed || payload.amount || payload.price || payload.cost || 0) || 0;
+    const status = String(payload.status || 'פתוח').trim() || 'פתוח';
+    const dueDate = String(payload.dueDate || payload.date || '').trim();
+    const contractUrl = String(payload.contractUrl || payload.url || '').trim();
+    const contractText = String(payload.contractText || payload.terms || payload.summary || '').trim();
+    const notes = String(payload.notes || payload.note || '').trim();
+    if (!vendorName && !category) return { ok:false, changed:false, intent:'clarify', error:'missing_vendor', answer:'איזה ספק להוסיף? אפשר לכתוב למשל: “תוסיף ספק צלם מגנטים בשם יוסי, טלפון 052...”' };
+    const existingIndex = state.vendors.findIndex(v => vendorName && String(v?.name || '').trim().toLowerCase() === vendorName.toLowerCase());
+    const vendor = existingIndex >= 0 ? state.vendors[existingIndex] : { id: nextVendorId(), name: vendorName || `ספק חדש - ${category}`, category, paid: 0, status:'פתוח', eventId: state.eventSettings?.id || state.eventId || '' };
+    if (vendorName) vendor.name = vendorName;
+    if (category) vendor.category = category;
+    if (contact) vendor.contact = contact;
+    if (vendorPhone) vendor.phone = vendorPhone;
+    if (email) vendor.email = email;
+    if (agreed) vendor.agreed = agreed;
+    if (status) vendor.status = status;
+    if (dueDate) vendor.dueDate = dueDate;
+    if (contractUrl) vendor.contractUrl = contractUrl;
+    if (contractText) vendor.contractText = contractText;
+    if (notes) vendor.notes = vendor.notes ? `${vendor.notes} | ${notes}` : notes;
+    if (vendor.paid === undefined) vendor.paid = 0;
+    if (existingIndex < 0) state.vendors.push(vendor);
+    const details = [vendor.category, vendor.phone ? `טלפון ${vendor.phone}` : '', vendor.agreed ? `סכום ${vendor.agreed}₪` : '', vendor.contractText ? 'כולל תנאים/תקציר' : ''].filter(Boolean).join(', ');
+    return { ok:true, changed:true, intent:'action', action:type, vendor, answer:`${existingIndex >= 0 ? 'עדכנתי' : 'הוספתי'} את הספק ${vendor.name}${details ? ` (${details})` : ''}. אפשר למצוא אותו במודול ספקים ולהשלים חוזה, תשלום וסטטוס.` };
+  }
   if (type === 'update_guest') {
     if (!name) return { ok:false, changed:false, intent:'clarify', error:'missing_name', answer:'את מי לעדכן?' };
     const found = findGuestByName(state, name);
@@ -658,7 +717,7 @@ function answerEventAssistantQuery(state, command) {
   const snap = eventAssistantStateSnapshot(state);
   const groupLines = obj => Object.entries(obj || {}).sort((a,b)=>b[1].people-a[1].people).map(([k,v])=>`- ${k}: ${v.people} אנשים (${v.records} רשומות), אישרו ${v.confirmed}, טרם ${v.pending}, לא מגיעים ${v.declined}`).join('\n');
   if (/שלום|היי|מי אתה|מי את|תציג/.test(text)) return eventAssistantIntro(state);
-  if (/מה אתה יכול|מה אפשר|איך אתה עוזר|יכולות/.test(text)) return 'אפשר לשאול אותי: כמה אישרו הגעה, מי לא ענה, מי מגיע, איפה יושבת משפחה, מה מצב האירוע ומה המשימות. לפעולות שינוי כתבו במפורש: הוסף, עדכן, שבץ או הכן הודעת וואטסאפ.';
+  if (/מה אתה יכול|מה אפשר|איך אתה עוזר|יכולות/.test(text)) return 'אפשר לשאול אותי: כמה אישרו הגעה, מי לא ענה, מי מגיע, איפה יושבת משפחה, מה מצב האירוע ומה המשימות. אני יכול גם לעזור להוסיף משתתפים וספקים. לדוגמה: “תוסיף ספק צלם מגנטים בשם יוסי, טלפון 052..., מחיר 1800”. לפעולות רגישות כמו שליחת וואטסאפ עדיין נדרש אישור מפורש.';
   if (/משימות|מה נשאר|צריך לעשות|עד האירוע/.test(text)) return eventAssistantTasks(state);
   if (/צדדים|צד כלה|צד חתן|גורם מזמין|מזמינים|מי הזמין|אחראי/.test(text)) return `פילוח מוזמנים לפי צד:\n${groupLines(snap.bySide) || 'אין עדיין שיוך צדדים.'}\n\nפילוח לפי גורם מזמין:\n${groupLines(snap.byInviter) || 'אין עדיין גורמים מזמינים.'}`;
   if (/סיכום|מצב האירוע|סטטוס|איפה אנחנו עומדים/.test(text)) return `סיכום ${snap.settings.name || 'האירוע'}:\nמשתתפים: ${snap.participants.length} רשומות / ${snap.totalPeople} אנשים\nאישרו הגעה: ${snap.confirmed.length} רשומות / ${snap.confirmedPeople} אנשים\nטרם ענו: ${snap.pending.length} רשומות / ${snap.pendingPeople} אנשים\nלא מגיעים: ${snap.declined.length} רשומות / ${snap.declinedPeople} אנשים\nמשובצים לשולחנות: ${snap.assigned.length} רשומות\nספקים: ${snap.vendors.length}`;
@@ -667,6 +726,7 @@ function answerEventAssistantQuery(state, command) {
   if (/כמה.*(משתתפים|מוזמנים|אורחים|אנשים)/.test(text)) return `כרגע יש ${snap.participants.length} רשומות משתתפים, סה״כ ${snap.totalPeople} אנשים לפי כמויות.`;
   if (/(^|\s)מי\s.*(לא ענה|טרם|לא אישר)|טרם.*(ענו|אישרו)/.test(text)) return snap.pending.length ? `אלו עדיין לא אישרו:\n${snap.pending.map(g=>`- ${g['שם מלא / שם לקוח']} (${snap.qty(g)} מוזמנים)`).join('\n')}` : 'אין כרגע משתתפים שמסומנים כטרם נענו.';
   if (/(^|\s)מי\s.*(מאושר|אישר|מגיע)/.test(text)) return snap.confirmed.length ? `אלו אישרו הגעה:\n${snap.confirmed.map(g=>`- ${g['שם מלא / שם לקוח']} (${snap.qty(g)} מוזמנים)`).join('\n')}` : 'אין כרגע משתתפים שמסומנים כמאושרים.';
+  if (/ספק|ספקים|צלם|מגנטים|די.?ג'?יי|dj|קייטרינג|אולם/.test(text)) return snap.vendors.length ? `ספקים שמופיעים כרגע במערכת:\n${snap.vendors.map(v=>`- ${v.name || 'ללא שם'} · ${v.category || 'ללא תחום'} · ${v.phone || 'אין טלפון'} · ${v.agreed ? v.agreed + '₪' : 'אין סכום'}`).join('\n')}` : 'עדיין אין ספקים במערכת. אפשר לכתוב לי למשל: “תוסיף ספק צלם מגנטים בשם יוסי, טלפון 052..., מחיר 1800”.';
   if (/איפה|איזה שולחן|יושב|יושבת/.test(text)) {
     const raw = (text.match(/משפחת\s+([^?.,!]+)/) || text.match(/(?:איפה|שולחן|יושב|יושבת)\s+([^?.,!]+)/) || [])[1];
     const { guest } = findGuestByName(state, raw ? (text.includes('משפחת') ? 'משפחת ' + raw.trim() : raw.trim()) : '');
@@ -685,6 +745,19 @@ function handleEventAssistantAction(state, command) {
     const phone = extractAssistantPhone(text) || guest?.['טלפון וואטסאפ'] || '';
     const message = /אישור|הגעה|מאשר/.test(text) ? `היי ${guest?.['שם מלא / שם לקוח'] || name || 'אורח/ת יקר/ה'}, נשמח לדעת האם אתם מאשרים הגעה לאירוע. תודה רבה!` : `היי ${guest?.['שם מלא / שם לקוח'] || name || 'אורח/ת יקר/ה'}, רציתי לעדכן אותך לגבי האירוע.`;
     return { changed: false, needsConfirmation: true, draft: { type:'whatsapp', name: guest?.['שם מלא / שם לקוח'] || name, phone, message }, answer: `הכנתי טיוטת וואטסאפ לאישור לפני שליחה:\nאל: ${guest?.['שם מלא / שם לקוח'] || name || phone || 'לא נבחר'}${phone ? ' ('+phone+')' : ''}\nהודעה: ${message}\n\nלא שלחתי בפועל. שליחה מתבצעת רק ממודול הוואטסאפ אחרי אישור.` };
+  }
+  if (/(ספק|ספקים|צלם|מגנטים|די.?ג'?יי|dj|אולם|קייטרינג|בר|עיצוב|איפור|שיער|רב|חופה)/i.test(text) && /(הוסף|תוסיף|תכניס|הכנס|תרשום|רשום|תעדכן|עדכן)/.test(text)) {
+    state.vendors = Array.isArray(state.vendors) ? state.vendors : [];
+    const categoryRaw = extractLabeledValue(text, ['תחום', 'קטגוריה', 'סוג']) || (text.match(/(?:ספק|ספקית)\s+([^,\n]+?)(?:\s+בשם|\s+שם|\s+טלפון|,|$)/)?.[1] || '') || (text.match(/(צלם\s+מגנטים|מגנטים|צלם|צילום|די.?ג'?יי|dj|קייטרינג|בר|עיצוב|איפור|שיער|רב|חופה|אולם)/i)?.[1] || '');
+    const vendorName = cleanEventAssistantName(extractLabeledValue(text, ['שם ספק', 'שם הספק', 'בשם', 'שם']) || text.match(/(?:בשם|שם)\s+([^,\n]+?)(?:\s+טלפון|\s+נייד|\s+מחיר|\s+סכום|\s+תנאי|,|$)/)?.[1] || '');
+    const contact = cleanEventAssistantName(extractLabeledValue(text, ['איש קשר', 'אשת קשר', 'נציג']) || '');
+    const vendorPhone = extractAssistantPhone(text);
+    const email = extractAssistantEmail(text);
+    const agreed = extractAssistantMoney(text);
+    const terms = extractLabeledValue(text, ['תנאים', 'תנאי תשלום', 'הערות', 'סיכום', 'חוזה']);
+    const result = executeEventAction(state, vendorName ? 'add_vendor' : 'add_vendor', { vendorName: vendorName || (categoryRaw ? `ספק ${normalizeVendorCategory(categoryRaw)}` : ''), category: categoryRaw, contact, phone: vendorPhone, email, agreed, contractText: terms, notes: terms });
+    if (result.ok) return { changed:true, answer: result.answer, vendor: result.vendor };
+    return { changed:false, answer: result.answer || 'כדי להוסיף ספק אני צריך לפחות שם ספק או תחום. למשל: “תוסיף ספק צלם מגנטים בשם יוסי, טלפון 052...”' };
   }
   const updateCount = text.match(/(?:תעדכן|עדכן|תשנה|שנה)\s+(?:את\s+)?(.+?)\s+(?:ל|עם)\s*[־-]?\s*(\d+)\s*(?:משתתפים|מוזמנים|אנשים|מגיעים|אורחים|נפשות)/);
   if (updateCount) {
@@ -772,7 +845,7 @@ function applyEventAssistantAiPlan(state, plan) {
   if (intent === 'clarify') return { changed:false, intent:'clarify', answer: plan.answer || 'אפשר לחדד מה תרצה שאעשה?' };
   if (action === 'answer') return { changed:false, intent:'query-ai', answer: plan.answer || 'אין לי מספיק נתונים כדי לענות.' };
   if (action === 'task_board') return { changed:false, intent:'query-ai', answer: eventAssistantTasks(state) };
-  if (['get_summary', 'list_pending_rsvp', 'rename_assistant', 'add_guest', 'update_guest', 'assign_table', 'prepare_whatsapp'].includes(action)) {
+  if (['get_summary', 'list_pending_rsvp', 'rename_assistant', 'add_guest', 'update_guest', 'assign_table', 'prepare_whatsapp', 'add_vendor', 'update_vendor'].includes(action)) {
     const executed = executeEventAction(state, action, plan);
     return { ...executed, intent: executed.intent === 'query' ? 'query-ai' : executed.intent === 'clarify' ? 'clarify' : 'action-ai' };
   }
