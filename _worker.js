@@ -16,6 +16,7 @@ const EVENT_ASSISTANT_CHAT_PREFIX = 'event_assistant_chat_v1:';
 const ADMIN_CONFIG_KEY = 'admin_config_v1';
 const ADMIN_RESET_PREFIX = 'admin_password_reset_v1:';
 const MORNING_WEBHOOK_PREFIX = 'morning_webhook_v1:';
+const GREENAPI_WEBHOOK_PREFIX = 'greenapi_webhook_v1:';
 const PAYMENT_SHORT_LINK_PREFIX = 'payment_short_link_v1:';
 const RSVP_SHORT_LINK_PREFIX = 'rsvp_short_link_v1:';
 const APPROVED_MESSAGE_HOSTS = ['wedding.orma-ai.com','orma-ai.com','morning.co.il','greeninvoice.co.il','payboxapp.page.link','waze.com','ul.waze.com','google.com','maps.google.com','goo.gl'];
@@ -1084,6 +1085,109 @@ async function sendWhatsApp(request, env) {
   }
 }
 
+function cleanPhoneDigits(value) {
+  let digits = String(value || '').replace(/\D/g, '');
+  if (digits.startsWith('00')) digits = digits.slice(2);
+  if (digits.startsWith('0')) digits = `972${digits.slice(1)}`;
+  if (digits && !digits.startsWith('972')) digits = `972${digits}`;
+  return digits;
+}
+
+function phoneMatches(a, b) {
+  const pa = cleanPhoneDigits(a);
+  const pb = cleanPhoneDigits(b);
+  return !!pa && !!pb && pa === pb;
+}
+
+function extractGreenApiIncomingText(body) {
+  const md = body?.messageData || {};
+  return String(
+    md?.textMessageData?.textMessage ||
+    md?.extendedTextMessageData?.text ||
+    md?.quotedMessage?.textMessage ||
+    body?.textMessage ||
+    body?.message ||
+    ''
+  ).trim();
+}
+
+function inferRsvpFromReplyTextServer(text) {
+  const raw = String(text || '').trim();
+  const clean = raw.replace(/[.,!?:;־–—]/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
+  if (!clean || clean.length > 80) return null;
+  const numMatch = clean.match(/^(?:אני|אנחנו|נגיע|מגיעים|מגיעות|מגיע)?\s*(\d{1,2})\s*(?:מגיעים|מגיעות|אורחים|אנשים)?$/);
+  if (numMatch) {
+    const count = Math.max(0, Math.min(99, Number(numMatch[1]) || 0));
+    return count === 0 ? { status: 'לא מגיע', count: 0, reason: 'זוהתה תשובת 0' } : { status: 'אישר', count, reason: `זוהתה תשובה מספרית: ${count}` };
+  }
+  if (/^(?:0|לא|לא מגיע|לא נגיע|לא נוכל|לא יכולים|לא יכול|לא מגיעים|לא מגיעות|לצערי לא|לא אוכל)$/.test(clean)) return { status: 'לא מגיע', count: 0, reason: 'זוהתה תשובת אי הגעה' };
+  if (/לא\s*(?:יודע|יודעת|יודעים|ידוע)|כרגע|אולי|בהמשך|נעדכן|נעדכן בהמשך|עדיין לא/.test(clean)) return { status: 'אולי', count: null, reason: 'זוהתה תשובת לא ידוע כרגע' };
+  if (/^(?:כן|בסדר|אוקיי|ok|סבבה|מאשר|מאשרת|מאשרים)$/.test(clean)) return { status: 'אישור-המשך', count: null, reason: 'זוהה אישור לשאלת המשך' };
+  if (/^(?:מגיע|מגיעה|מגיעים|נגיע|אישור)$/.test(clean)) return { status: 'אישר', count: null, reason: 'זוהתה תשובת הגעה ללא כמות' };
+  return null;
+}
+
+async function findGuestByIncomingChat(env, chatId) {
+  const events = await loadEvents(env);
+  if (!Array.isArray(events)) return null;
+  for (const ev of events) {
+    const eventId = String(ev?.id || '').trim();
+    if (!eventId) continue;
+    const raw = await env.EVENTS_KV.get(EVENT_STATE_PREFIX + eventId);
+    let state; try { state = raw ? JSON.parse(raw) : null; } catch { state = null; }
+    const participants = Array.isArray(state?.participants) ? state.participants : [];
+    const index = participants.findIndex(g => phoneMatches(g?.['טלפון וואטסאפ'], chatId));
+    if (index >= 0) return { eventId, state, guest: participants[index], index };
+  }
+  return null;
+}
+
+async function greenApiWebhook(request, env) {
+  if (!env.EVENTS_KV) return jsonResponse({ ok: false, error: 'Cloudflare KV binding EVENTS_KV is not configured' }, 501);
+  const url = new URL(request.url);
+  const expectedToken = String(env.GREENAPI_WEBHOOK_TOKEN || '').trim();
+  const suppliedToken = String(url.searchParams.get('token') || request.headers.get('x-greenapi-token') || '').trim();
+  if (expectedToken && !safeEqual(expectedToken, suppliedToken)) return jsonResponse({ ok: false, error: 'Unauthorized' }, 401);
+  const body = await request.json().catch(() => ({}));
+  if (body?.typeWebhook !== 'incomingMessageReceived') return jsonResponse({ ok: true, ignored: true, reason: 'not_incoming_message' });
+  const chatId = String(body?.senderData?.chatId || body?.senderData?.sender || '').trim();
+  const text = extractGreenApiIncomingText(body);
+  const idMessage = String(body?.idMessage || crypto.randomUUID());
+  if (!chatId || !text) return jsonResponse({ ok: true, ignored: true, reason: 'missing_chat_or_text' });
+
+  const processedKey = GREENAPI_WEBHOOK_PREFIX + idMessage;
+  if (await env.EVENTS_KV.get(processedKey)) return jsonResponse({ ok: true, duplicate: true });
+  await env.EVENTS_KV.put(processedKey, JSON.stringify({ receivedAt: new Date().toISOString(), chatId }), { expirationTtl: 60 * 60 * 24 * 14 });
+
+  const inferred = inferRsvpFromReplyTextServer(text);
+  if (!inferred) return jsonResponse({ ok: true, ignored: true, reason: 'no_rsvp_intent', text });
+  const found = await findGuestByIncomingChat(env, chatId);
+  if (!found?.guest) return jsonResponse({ ok: true, ignored: true, reason: 'guest_not_found_for_phone', chatId, inferred });
+
+  const guest = found.guest;
+  let reply = '';
+  if (inferred.status === 'אישור-המשך' && guest['סטטוס אישור השתתפות'] === 'אולי') {
+    guest['הערות'] = `${guest['הערות'] ? guest['הערות'] + ' | ' : ''}אישר/ה בוואטסאפ שכרגע לא לקחת בחשבון בתאריך ${new Date().toLocaleString('he-IL')}`;
+    reply = 'תודה, עדכנו ✅ כרגע לא ניקח אתכם בחשבון. אם יהיה שינוי אפשר לעדכן כאן בהודעה.';
+  } else if (inferred.status === 'אישר') {
+    guest['סטטוס אישור השתתפות'] = 'אישר';
+    if (inferred.count) guest['כמות מוזמנים'] = String(inferred.count);
+    reply = `קיבלנו, תודה רבה ✅ סימנו הגעה${inferred.count ? ` עבור ${inferred.count} משתתפים` : ''}.`;
+  } else if (inferred.status === 'לא מגיע') {
+    guest['סטטוס אישור השתתפות'] = 'לא מגיע';
+    guest['כמות מוזמנים'] = '0';
+    reply = 'קיבלנו, תודה שעדכנתם ✅ סימנו שלא תגיעו.';
+  } else if (inferred.status === 'אולי') {
+    guest['סטטוס אישור השתתפות'] = 'אולי';
+    reply = 'האם זה בסדר מבחינתכם שלא ניקח אתכם בחשבון כרגע ובמידה ויהיה שינוי תעדכנו כאן בהודעה?';
+  }
+  guest['הערות'] = `${guest['הערות'] ? guest['הערות'] + ' | ' : ''}עודכן אוטומטית מוואטסאפ: ${inferred.reason} (${text})`;
+  found.state.updatedAt = new Date().toISOString();
+  await env.EVENTS_KV.put(EVENT_STATE_PREFIX + found.eventId, JSON.stringify({ ...found.state, eventId: found.eventId }));
+  const sent = reply ? await sendGreenApiMessage(env, chatId, reply) : { ok: true };
+  return jsonResponse({ ok: true, eventId: found.eventId, guestIndex: found.index, status: guest['סטטוס אישור השתתפות'], count: guest['כמות מוזמנים'], inferred, replySent: !!sent.ok, replyError: sent.ok ? undefined : sent.error || sent.result });
+}
+
 function morningBaseUrl(env) {
   const explicit = String(env.MORNING_BASE_URL || '').trim();
   if (explicit) return explicit.replace(/\/+$/, '');
@@ -1351,6 +1455,10 @@ export default {
     if (url.pathname === '/api/send-whatsapp') {
       if (request.method !== 'POST') return jsonResponse({ ok: false, error: 'Method not allowed' }, 405);
       return sendWhatsApp(request, env);
+    }
+    if (url.pathname === '/api/greenapi/webhook') {
+      if (request.method !== 'POST') return jsonResponse({ ok: false, error: 'Method not allowed' }, 405);
+      return greenApiWebhook(request, env);
     }
     if (url.pathname === '/api/morning/create-payment-link') {
       if (request.method !== 'POST') return jsonResponse({ ok: false, error: 'Method not allowed' }, 405);
