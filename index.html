@@ -221,6 +221,33 @@
     @media(max-width:760px){.admin-locked .auth-shell.opening-hero{grid-template-columns:1fr;padding:42px 20px!important}.opening-copy p{font-size:16px}.opening-actions span{font-size:13px;padding:9px 12px}.opening-login{padding:22px!important}}
     @media(max-width:560px){.grid{grid-template-columns:1fr!important}.card{border-radius:18px!important}}
 
+    /* Premium admin dashboard after login only — does not affect the admin login/details screen */
+    body.admin-landing{background:#120d09!important}
+    body.admin-landing main{max-width:1440px!important;width:100%!important}
+    body.admin-landing .page-section[data-page="admin"].admin-dashboard-shell{
+      border:0!important;background:transparent!important;box-shadow:none!important;padding:0!important;color:var(--orma-cream)!important;
+    }
+    .admin-dashboard-layout{display:grid;grid-template-columns:300px minmax(0,1fr);gap:22px;align-items:start}
+    .admin-tree-nav{position:sticky;top:18px;min-height:calc(100vh - 36px);border-radius:30px;padding:18px;background:linear-gradient(180deg,rgba(242,237,232,.105),rgba(242,237,232,.035));border:1px solid rgba(var(--event-accent-rgb),.16);box-shadow:0 28px 80px rgba(0,0,0,.32),inset 0 1px 0 rgba(255,255,255,.06);backdrop-filter:blur(18px)}
+    .admin-tree-brand{min-height:156px;border-radius:24px;padding:18px;display:flex;flex-direction:column;justify-content:flex-end;position:relative;overflow:hidden;background:linear-gradient(180deg,rgba(0,0,0,.12),rgba(0,0,0,.76)),url('https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=900&q=80') center/cover;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+    .admin-tree-brand:before{content:"";position:absolute;inset:auto -22px -34px auto;width:150px;height:150px;border-radius:50%;background:rgba(var(--event-accent-rgb),.28);filter:blur(20px)}
+    .admin-tree-brand b{position:relative;font-size:22px;line-height:1.05;letter-spacing:-.5px}.admin-tree-brand span{position:relative;color:rgba(242,237,232,.78);font-size:13px;margin-top:6px}
+    .admin-tree-group{margin-top:18px}.admin-tree-title{display:flex;align-items:center;gap:8px;color:var(--orma-gold);font-size:12px;font-weight:950;letter-spacing:1.7px;text-transform:uppercase;margin:0 6px 8px}.admin-tree-title:before{content:"";width:7px;height:7px;border-radius:999px;background:var(--orma-gold);box-shadow:0 0 18px rgba(var(--event-accent-rgb),.8)}
+    .admin-tree-nav .admin-tab{width:100%;display:grid;grid-template-columns:34px 1fr;gap:10px;align-items:center;border-radius:18px!important;padding:12px 13px!important;margin:6px 0;background:transparent!important;border:1px solid transparent!important;text-align:right;box-shadow:none!important;color:var(--orma-cream)!important}
+    .admin-tree-nav .admin-tab .ico{width:34px;height:34px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:rgba(242,237,232,.08);font-size:17px;color:var(--orma-gold)}
+    .admin-tree-nav .admin-tab strong{display:block;font-size:16px;line-height:1.15}.admin-tree-nav .admin-tab span:not(.ico){font-size:12px!important;color:rgba(242,237,232,.56)!important;margin-top:4px!important}
+    .admin-tree-nav .admin-tab:hover{background:rgba(242,237,232,.075)!important;border-color:rgba(var(--event-accent-rgb),.18)!important;transform:translateX(-2px)}
+    .admin-tree-nav .admin-tab.active{background:linear-gradient(135deg,rgba(var(--event-accent-rgb),.28),rgba(var(--event-secondary-rgb),.10))!important;border-color:rgba(var(--event-accent-rgb),.38)!important;color:#fff!important}.admin-tree-nav .admin-tab.active .ico{background:var(--orma-gold);color:#1a0f08}
+    .admin-tree-footer{margin-top:18px;border-top:1px solid rgba(242,237,232,.10);padding-top:14px}.admin-tree-footer button{width:100%;border-radius:16px!important}
+    .admin-dashboard-main{min-width:0}.admin-dashboard-hero{position:relative;overflow:hidden;border-radius:34px;min-height:260px;padding:30px;display:grid;grid-template-columns:minmax(0,1.2fr) minmax(260px,.8fr);gap:18px;align-items:end;background:linear-gradient(110deg,rgba(18,13,9,.96) 0%,rgba(18,13,9,.75) 52%,rgba(18,13,9,.20) 100%),url('https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?auto=format&fit=crop&w=1600&q=82') center/cover;border:1px solid rgba(var(--event-accent-rgb),.18);box-shadow:0 32px 90px rgba(0,0,0,.34)}
+    .admin-dashboard-hero:after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 52% 80% at 12% 100%,rgba(var(--event-accent-rgb),.30),transparent 66%);pointer-events:none}.admin-dashboard-hero > *{position:relative;z-index:1}
+    .admin-dashboard-hero .eyebrow{color:var(--orma-gold);font-size:12px;font-weight:950;letter-spacing:2px;text-transform:uppercase;margin-bottom:14px}.admin-dashboard-hero h2{margin:0;font-size:clamp(36px,4vw,58px);line-height:.96;letter-spacing:-1.9px}.admin-dashboard-hero p{max-width:660px;color:rgba(242,237,232,.75);font-size:18px;line-height:1.65;margin:16px 0 0}.admin-quick-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}.admin-quick-actions button{border:0;border-radius:999px;padding:12px 17px;background:var(--orma-gold);color:#1a0f08;font-weight:950;cursor:pointer}.admin-quick-actions button.secondary{background:rgba(242,237,232,.09);color:var(--orma-cream);border:1px solid rgba(242,237,232,.14)}
+    .admin-hero-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}.admin-hero-stat{border-radius:22px;padding:16px;background:rgba(15,17,16,.58);border:1px solid rgba(242,237,232,.12);backdrop-filter:blur(16px)}.admin-hero-stat b{display:block;font-size:28px;color:#fff;line-height:1}.admin-hero-stat span{display:block;color:rgba(242,237,232,.65);font-size:12px;margin-top:7px}
+    .admin-dashboard-content{margin-top:20px}.admin-dashboard-shell .admin-panel{border-radius:30px;padding:22px;background:rgba(242,237,232,.055);border:1px solid rgba(242,237,232,.10);box-shadow:0 20px 70px rgba(0,0,0,.20)}.admin-dashboard-shell .admin-panel .admin-panel-head{margin-top:0}.admin-dashboard-shell .admin-panel-head h3{color:#fff}.admin-dashboard-shell .label,.admin-dashboard-shell .note{color:rgba(242,237,232,.68)!important}
+    .admin-dashboard-shell .event-picker-card{background:linear-gradient(135deg,rgba(242,237,232,.08),rgba(242,237,232,.035))!important;border-color:rgba(var(--event-accent-rgb),.18)!important;border-radius:24px!important}.admin-dashboard-shell .admin-event-card{border-radius:24px!important;background:rgba(242,237,232,.065)!important;border-color:rgba(242,237,232,.12)!important}.admin-dashboard-shell .admin-form{background:rgba(0,0,0,.10);border-radius:24px;padding:4px}.admin-dashboard-shell .toolbar button{border-radius:999px!important}
+    @media(max-width:980px){.admin-dashboard-layout{grid-template-columns:1fr}.admin-tree-nav{position:relative;top:auto;min-height:0}.admin-dashboard-hero{grid-template-columns:1fr}.admin-hero-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:620px){.admin-dashboard-hero{padding:22px;border-radius:24px}.admin-hero-stats{grid-template-columns:1fr}.admin-tree-brand{min-height:128px}.admin-dashboard-shell .admin-panel{padding:16px;border-radius:22px}}
+
 
 
     /* Client pages must stay controlled by the client's selected event design, not the Orma admin skin */
@@ -371,14 +398,38 @@
     </div>
   </section>
 
-  <section class="card page-section" data-page="admin">
-    <div class="top-actions"><h2 style="margin:0;font-size:34px">דשבורד אדמין</h2><button class="nav-btn" style="width:auto" onclick="adminLogout()">יציאה מאדמין</button></div>
-    <div class="admin-subnav" role="tablist" aria-label="תפריט אדמין">
-      <button class="admin-tab active" data-admin-tab="events" onclick="showAdminPanel('events')">📋 רשימת אירועים<span>כל הלקוחות והאירועים במקום אחד</span></button>
-      <button class="admin-tab" data-admin-tab="create" onclick="showAdminPanel('create')">➕ יצירת אירוע<span>פתיחת לקוח חדש וקישור כניסה</span></button>
-      <button class="admin-tab" data-admin-tab="tools" onclick="showAdminPanel('tools')">⚙️ כלי ניהול<span>ייצוא, ניקוי וטיפים לאדמין</span></button>
-    </div>
-    <div id="adminCreatedBox" class="note"></div>
+  <section class="card page-section admin-dashboard-shell" data-page="admin">
+    <div class="admin-dashboard-layout">
+      <aside class="admin-tree-nav" aria-label="תפריט אדמין">
+        <div class="admin-tree-brand"><b>Orma Events</b><span>מרכז שליטה לאירועים, לקוחות ואוטומציות</span></div>
+        <div class="admin-tree-group">
+          <div class="admin-tree-title">ניהול אירועים</div>
+          <button class="admin-tab active" data-admin-tab="events" onclick="showAdminPanel('events')"><span class="ico">📋</span><span><strong>רשימת אירועים</strong><span>כל הלקוחות והאירועים במקום אחד</span></span></button>
+          <button class="admin-tab" data-admin-tab="create" onclick="showAdminPanel('create')"><span class="ico">✦</span><span><strong>יצירת אירוע</strong><span>פתיחת לקוח חדש וקישור כניסה</span></span></button>
+        </div>
+        <div class="admin-tree-group">
+          <div class="admin-tree-title">מערכת וכלים</div>
+          <button class="admin-tab" data-admin-tab="tools" onclick="showAdminPanel('tools')"><span class="ico">⚙️</span><span><strong>כלי ניהול</strong><span>ייצוא, ניקוי ובדיקות אדמין</span></span></button>
+        </div>
+        <div class="admin-tree-footer"><button class="nav-btn" onclick="adminLogout()">יציאה מאדמין</button></div>
+      </aside>
+      <div class="admin-dashboard-main">
+        <section class="admin-dashboard-hero">
+          <div>
+            <div class="eyebrow">Admin Command Center</div>
+            <h2>דשבורד אדמין</h2>
+            <p>ניהול רגוע וברור של כל האירועים: קודם בוחרים אירוע, ואז עוברים לפעולות המדויקות — לקוחות, הרשאות, הזמנות, וואטסאפ ותפעול.</p>
+            <div class="admin-quick-actions"><button onclick="showAdminPanel('create')">צור אירוע חדש</button><button class="secondary" onclick="showAdminPanel('events')">פתח רשימת אירועים</button><button class="secondary" onclick="adminExportEvents()">ייצוא נתונים</button></div>
+          </div>
+          <div class="admin-hero-stats" aria-label="תקציר אדמין">
+            <div class="admin-hero-stat"><b id="adminHeroEventsCount">—</b><span>אירועים במערכת</span></div>
+            <div class="admin-hero-stat"><b>KV</b><span>נתונים מסונכרנים בענן</span></div>
+            <div class="admin-hero-stat"><b>WA</b><span>Green API מחובר</span></div>
+            <div class="admin-hero-stat"><b>AI</b><span>Widget לעזרה באדמין</span></div>
+          </div>
+        </section>
+        <div id="adminCreatedBox" class="note"></div>
+        <div class="admin-dashboard-content">
 
     <div id="adminPanelEvents" class="admin-panel active">
       <div class="admin-panel-head">
@@ -439,6 +490,9 @@ imma, 123456, אמא"></textarea><small>כל משתמש כאן יוכל להיכ
       </div>
       <div class="toolbar"><button onclick="adminExportEvents()">ייצוא רשימת לקוחות/אירועים</button><button class="secondary" onclick="showAdminPanel('events')">חזרה לרשימת אירועים</button></div>
       <div class="note">מבנה הדשבורד: קודם רואים את רשימת האירועים, יצירת אירוע נמצאת בטאב נפרד, וכלי ניהול בטאב נפרד.</div>
+    </div>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -1363,6 +1417,7 @@ function renderAdminEvents(){
   const box=document.getElementById('adminEventsList'); if(!box) return;
   const list=loadAdminEvents(); box.classList.remove('hidden');
   const count=document.getElementById('adminEventsCount'); if(count) count.textContent=list.length;
+  const heroCount=document.getElementById('adminHeroEventsCount'); if(heroCount) heroCount.textContent=list.length;
   const selector=document.getElementById('adminEventSelector');
   if(selector){
     const current=list.some(ev=>ev.id===selectedAdminEventId) ? selectedAdminEventId : '';
