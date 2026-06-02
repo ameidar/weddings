@@ -19,6 +19,7 @@ const MORNING_WEBHOOK_PREFIX = 'morning_webhook_v1:';
 const GREENAPI_WEBHOOK_PREFIX = 'greenapi_webhook_v1:';
 const PAYMENT_SHORT_LINK_PREFIX = 'payment_short_link_v1:';
 const RSVP_SHORT_LINK_PREFIX = 'rsvp_short_link_v1:';
+const DREAM_LEADS_KEY = 'dream_leads_v1';
 const APPROVED_MESSAGE_HOSTS = ['wedding.orma-ai.com','orma-ai.com','morning.co.il','greeninvoice.co.il','payboxapp.page.link','waze.com','ul.waze.com','google.com','maps.google.com','goo.gl'];
 
 function extractUrls(text) {
@@ -233,6 +234,42 @@ async function saveEvents(env, events) {
   if (!env.EVENTS_KV) return false;
   await env.EVENTS_KV.put(EVENTS_KEY, JSON.stringify(events));
   return true;
+}
+
+async function dreamLeadsApi(request, env) {
+  if (!env.EVENTS_KV) return jsonResponse({ ok:false, error:'Cloudflare KV binding EVENTS_KV is not configured' }, 501);
+  if (request.method === 'GET') {
+    const admin = await requireAdmin(request, env);
+    if (!admin) return jsonResponse({ ok:false, error:'Unauthorized' }, 401);
+    const leads = JSON.parse(await env.EVENTS_KV.get(DREAM_LEADS_KEY) || '[]');
+    return jsonResponse({ ok:true, leads: Array.isArray(leads) ? leads : [] });
+  }
+  if (request.method !== 'POST') return jsonResponse({ ok:false, error:'Method not allowed' }, 405);
+  const body = await request.json().catch(() => ({}));
+  const lead = {
+    id: `dream_${Date.now().toString(36)}_${crypto.randomUUID().slice(0,8)}`,
+    status: 'new',
+    name: String(body.name || '').trim().slice(0,120),
+    phone: String(body.phone || '').trim().slice(0,40),
+    email: String(body.email || '').trim().slice(0,160),
+    eventType: String(body.eventType || '').trim().slice(0,80),
+    location: String(body.location || '').trim().slice(0,160),
+    guests: Number(body.guests || 0) || 0,
+    venueStyle: String(body.venueStyle || '').trim().slice(0,80),
+    kosher: String(body.kosher || '').trim().slice(0,80),
+    budget: String(body.budget || '').trim().slice(0,80),
+    dateWindow: String(body.dateWindow || '').trim().slice(0,120),
+    dream: String(body.dream || '').trim().slice(0,5000),
+    recommendations: Array.isArray(body.recommendations) ? body.recommendations.slice(0,5) : [],
+    source: 'public-dream-flow',
+    createdAt: new Date().toISOString(),
+  };
+  if (!lead.name || !lead.phone || !lead.location || !lead.guests || !lead.dream) return jsonResponse({ ok:false, error:'חסרים פרטים חיוניים: שם, טלפון, מיקום, כמות אורחים ותיאור החלום.' }, 400);
+  const existing = JSON.parse(await env.EVENTS_KV.get(DREAM_LEADS_KEY) || '[]');
+  const leads = Array.isArray(existing) ? existing : [];
+  leads.unshift(lead);
+  await env.EVENTS_KV.put(DREAM_LEADS_KEY, JSON.stringify(leads.slice(0,500)));
+  return jsonResponse({ ok:true, lead });
 }
 
 async function eventsApi(request, env) {
@@ -1505,6 +1542,7 @@ export default {
     if (url.pathname === '/api/admin-password-reset/complete' && request.method === 'POST') return completeAdminPasswordReset(request, env);
     if (url.pathname === '/api/auth/me') return jsonResponse({ ok: !!(await verifySession(request, env)), session: await verifySession(request, env) });
     if (url.pathname === '/api/events') return eventsApi(request, env);
+    if (url.pathname === '/api/dream-leads') return dreamLeadsApi(request, env);
     if (url.pathname === '/api/client-login' && request.method === 'POST') return clientLogin(request, env);
     if (url.pathname === '/api/event-assistant' && request.method === 'POST') return eventAssistantApi(request, env);
     if (url.pathname === '/api/event-assistant-history') return eventAssistantHistoryApi(request, env);

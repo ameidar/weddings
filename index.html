@@ -219,6 +219,7 @@
     .opening-login .toolbar{margin:12px 0 0}.opening-login input{height:56px!important;border-radius:16px!important;margin-top:10px!important}
     @media(max-width:1100px){.admin-locked .auth-shell.opening-hero{grid-template-columns:1fr 420px}.opening-stage{display:none}.opening-copy h1{font-size:clamp(42px,8vw,76px)}}
     @media(max-width:760px){.admin-locked .auth-shell.opening-hero{grid-template-columns:1fr;padding:42px 20px!important}.opening-copy p{font-size:16px}.opening-actions span{font-size:13px;padding:9px 12px}.opening-login{padding:22px!important}}
+    body.dream-mode{background:#120d09!important;color:#f2ede8;overflow-x:hidden}body.dream-mode header,body.dream-mode .auth-shell,body.dream-mode .app-shell,body.dream-mode .mobile-menu{display:none!important}.dream-public-shell{display:none}.dream-mode .dream-public-shell{display:block;min-height:100vh;padding:34px 18px;background:radial-gradient(circle at 12% 12%,rgba(198,166,100,.22),transparent 32%),linear-gradient(135deg,#120d09,#211711 56%,#120d09)}.dream-wrap{max-width:1180px;margin:0 auto;display:grid;gap:18px}.dream-hero{border:1px solid rgba(198,166,100,.22);border-radius:34px;padding:30px;background:linear-gradient(120deg,rgba(18,13,9,.92),rgba(42,31,24,.72)),url('https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=1600&q=82') center/cover;box-shadow:0 28px 90px rgba(0,0,0,.35)}.dream-hero h1{font-size:clamp(42px,7vw,86px);line-height:.98;margin:8px 0;color:#fff3d6}.dream-hero p{max-width:820px;color:#e7d8c8;font-size:20px}.dream-shell{display:grid;grid-template-columns:minmax(360px,.95fr) minmax(360px,1.05fr);gap:16px}.dream-card{border:1px solid rgba(242,237,232,.14);border-radius:28px;padding:22px;background:rgba(242,237,232,.075);box-shadow:0 18px 58px rgba(0,0,0,.22);backdrop-filter:blur(14px)}.dream-card h2,.dream-card h3{color:#fff3d6!important;margin-top:0}.dream-form{display:grid;grid-template-columns:1fr 1fr;gap:12px}.dream-form .full{grid-column:1/-1}.dream-form label{font-weight:900;color:#f2ede8}.dream-form input,.dream-form select,.dream-form textarea{width:100%;border:1px solid rgba(242,237,232,.20);border-radius:16px;background:rgba(255,255,255,.94);color:#1f1a17;font-family:inherit;font-size:17px;padding:13px}.dream-form textarea{min-height:160px}.dream-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}.dream-actions button,.dream-actions a{height:50px;border:0;border-radius:999px;background:#c6a664;color:#120d09;font-weight:950;padding:0 18px;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}.dream-actions .secondary{background:rgba(242,237,232,.10);color:#f2ede8;border:1px solid rgba(242,237,232,.16)}.dream-results{display:grid;gap:12px}.dream-match{border:1px solid rgba(198,166,100,.24);border-radius:22px;padding:15px;background:rgba(18,13,9,.35)}.dream-match b{color:#fff3d6;font-size:20px}.dream-match .score{display:inline-flex;border-radius:999px;background:#c6a664;color:#120d09;padding:3px 9px;font-weight:900;font-size:12px;margin-inline-start:6px}.dream-status{color:#c7f9d4;font-weight:900;margin-top:10px}.dream-lead-list{display:grid;gap:10px}.dream-lead-card{border:1px solid rgba(242,237,232,.13);border-radius:20px;padding:14px;background:rgba(242,237,232,.055)}@media(max-width:900px){.dream-shell,.dream-form{grid-template-columns:1fr}.dream-hero{padding:22px}}
     @media(max-width:560px){.grid{grid-template-columns:1fr!important}.card{border-radius:18px!important}}
 
     /* Premium admin dashboard after login only — does not affect the admin login/details screen */
@@ -361,6 +362,40 @@
     <div id="adminLoginStatus" class="status"></div>
   </div>
 </section>
+<section class="dream-public-shell" id="dreamPublicShell" dir="rtl">
+  <div class="dream-wrap">
+    <div class="dream-hero">
+      <div class="eyebrow">ORMa Dream Finder ✦ נקודת פתיחה לאירוע</div>
+      <h1>ספרו לנו את החלום.<br>נמצא את המקום הנכון.</h1>
+      <p>במקום להתחיל מחיפוש טכני של אולמות, מתחילים מהלקוח: איך האירוע צריך להרגיש, מי מגיע, איפה, מה חשוב — והסוכנת שלנו מתרגמת את זה להמלצות מקום מדויקות יותר.</p>
+      <div class="opening-actions"><span>לקוח במרכז</span><span>התאמת אולם</span><span>ליד בשל לאולם</span><span>המשך לניהול אירוע</span></div>
+    </div>
+    <div class="dream-shell">
+      <div class="dream-card">
+        <h2>בניית חלום האירוע</h2>
+        <div class="dream-form">
+          <div><label>שם מלא</label><input id="dreamName" placeholder="איך קוראים לך?" /></div>
+          <div><label>טלפון וואטסאפ</label><input id="dreamPhone" placeholder="052..." /></div>
+          <div><label>סוג אירוע</label><select id="dreamEventType"><option>חתונה</option><option>בר/בת מצווה</option><option>אירוע חברה</option><option>כנס</option><option>יום הולדת</option><option>אחר</option></select></div>
+          <div><label>מיקום רצוי</label><input id="dreamLocation" placeholder="מרכז, שרון, ירושלים, צפון..." /></div>
+          <div><label>כמות אורחים משוערת</label><input id="dreamGuests" type="number" min="1" placeholder="לדוגמה: 350" /></div>
+          <div><label>אולם או גן?</label><select id="dreamVenueStyle"><option>לא משנה לי</option><option>גן אירועים</option><option>אולם</option><option>אורבני / בוטיק</option><option>טבע / שטח</option></select></div>
+          <div><label>כשרות</label><select id="dreamKosher"><option>כשר</option><option>לא כשר</option><option>מהדרין</option><option>לא משנה</option></select></div>
+          <div><label>תקציב כללי</label><select id="dreamBudget"><option>עוד לא יודע/ת</option><option>חסכוני</option><option>ביניים</option><option>פרימיום</option><option>יוקרתי מאוד</option></select></div>
+          <div class="full"><label>מתי בערך?</label><input id="dreamDateWindow" placeholder="לדוגמה: יוני 2026 / חמישי בערב / גמיש" /></div>
+          <div class="full"><label>תארו את החלום שלכם</label><textarea id="dreamText" placeholder="איך אתם מדמיינים את האירוע? אווירה, אוכל, חופה, מוזיקה, קהל, חניה, נוף, חוויה לאורחים, דברים שחשובים לכם או דברים שאתם לא רוצים..."></textarea></div>
+        </div>
+        <div class="dream-actions"><button onclick="generateDreamRecommendations()">קבלו המלצות ראשוניות</button><button class="secondary" onclick="submitDreamLead()">שמרו ליד ושיחה עם הסוכנת</button><a class="secondary" href="/">כניסת אדמין</a></div>
+        <div id="dreamStatus" class="dream-status"></div>
+      </div>
+      <div class="dream-card">
+        <h2>המלצות הסוכנת</h2>
+        <p class="label" style="color:#e7d8c8!important">בדמו הזה ההמלצות מבוססות על מאגר אולמות ראשוני. בהמשך נחבר מאגר אמיתי עם זמינות, מחירים, אזורים, כשרות וקיבולת.</p>
+        <div id="dreamResults" class="dream-results"><div class="dream-match"><b>עוד רגע נבנה התאמה</b><p>מלאו את החלום ולחצו על קבלת המלצות. הסוכנת תסביר למה כל מקום מתאים ומה כדאי לבדוק מול האולם.</p></div></div>
+      </div>
+    </div>
+  </div>
+</section>
 <button class="mobile-menu" onclick="toggleMenu()">☰ תפריט</button>
 <div class="app-shell">
   <aside class="sidebar" id="sidebar">
@@ -406,6 +441,7 @@
         <div class="admin-tree-group">
           <div class="admin-tree-title">ניהול אירועים</div>
           <button class="admin-tab active" data-admin-tab="events" onclick="showAdminPanel('events')"><span class="ico">📋</span><span><strong>רשימת אירועים</strong><span>כל הלקוחות והאירועים במקום אחד</span></span></button>
+          <button class="admin-tab" data-admin-tab="dreams" onclick="showAdminPanel('dreams'); loadDreamLeads()"><span class="ico">✨</span><span><strong>חלום האירוע ולידים</strong><span>נקודת פתיחה ללקוח לפני אולם</span></span></button>
           <button class="admin-tab" data-admin-tab="create" onclick="showAdminPanel('create')"><span class="ico">✦</span><span><strong>יצירת אירוע</strong><span>פתיחת לקוח חדש וקישור כניסה</span></span></button>
         </div>
         <div class="admin-tree-group">
@@ -420,7 +456,7 @@
             <div class="eyebrow">Admin Command Center</div>
             <h2>דשבורד אדמין</h2>
             <p>ניהול רגוע וברור של כל האירועים: קודם בוחרים אירוע, ואז עוברים לפעולות המדויקות — לקוחות, הרשאות, הזמנות, וואטסאפ ותפעול.</p>
-            <div class="admin-quick-actions"><button onclick="showAdminPanel('create')">צור אירוע חדש</button><button class="secondary" onclick="showAdminPanel('events')">פתח רשימת אירועים</button><button class="secondary" onclick="adminExportEvents()">ייצוא נתונים</button></div>
+            <div class="admin-quick-actions"><button onclick="showAdminPanel('create')">צור אירוע חדש</button><button class="secondary" onclick="showAdminPanel('dreams'); loadDreamLeads()">פתח לידים</button><button class="secondary" onclick="adminExportEvents()">ייצוא נתונים</button></div>
           </div>
           <div class="admin-hero-stats" aria-label="תקציר אדמין">
             <div class="admin-hero-stat"><b id="adminHeroEventsCount">—</b><span>אירועים במערכת</span></div>
@@ -448,6 +484,19 @@
         </div>
       </div>
       <div id="adminEventsList" class="admin-event-list hidden"></div>
+    </div>
+
+    <div id="adminPanelDreams" class="admin-panel">
+      <div class="admin-panel-head">
+        <div><h3>חלום האירוע ולידים לאולמות</h3><div class="label">נקודת הכניסה החדשה: הלקוח מתאר את האירוע, מקבל התאמה ראשונית, ואנחנו שומרים ליד שאפשר להעביר לאולם מתאים.</div></div>
+        <div class="toolbar" style="margin:0"><a href="/#dream" target="_blank">פתח דף חלום ללקוח</a><button class="secondary" onclick="loadDreamLeads()">רענן לידים</button></div>
+      </div>
+      <div class="event-picker-card">
+        <b>לינק דמו ללקוח:</b>
+        <div class="link-box">https://wedding.orma-ai.com#dream</div>
+        <div class="label">בהמשך נוכל להפוך כל ליד לכרטיס אירוע מלא, לשלוח לאולם, ולפתוח דף לקוח להמשך RSVP, ספקים, שולחנות ותשלומים.</div>
+      </div>
+      <div id="dreamLeadsList" class="dream-lead-list"><div class="selected-event-empty">לחץ רענן לידים כדי לראות פניות חדשות.</div></div>
     </div>
 
     <div id="adminPanelCreate" class="admin-panel">
@@ -931,6 +980,7 @@ imma, 123456, אמא"></textarea><small>כל משתמש כאן יוכל להיכ
 </div>
 <script>
 const ADMIN_EVENTS_KEY = 'dynamic_event_admin_events_v1';
+const DREAM_LEADS_LOCAL_KEY = 'orma_dream_leads_v1';
 const ADMIN_SESSION_KEY = 'dynamic_event_admin_session_v2';
 const CLIENT_SESSION_PREFIX = 'dynamic_event_client_session_v2_';
 const EVENT_KEY = 'dynamic_event_settings_v1';
@@ -1165,6 +1215,55 @@ function loadOpalSystemWidget(){
   startOpalWidgetPresentation();
 }
 
+const DREAM_VENUE_DEMO_DB=[
+  {name:'גן אורמה בשרון',area:'שרון',style:'גן אירועים',min:220,max:520,kosher:'כשר',vibe:['טבע','יוקרתי','חופה בחוץ','גן','ירוק'],strength:'גן פתוח עם חופה טבעית, חניה נוחה ותחושה יוקרתית בלי להיות כבדה.'},
+  {name:'אולם Urban Gold תל אביב',area:'מרכז',style:'אורבני / בוטיק',min:120,max:320,kosher:'כשר',vibe:['אורבני','מסיבה','קוקטייל','צעיר','תל אביב'],strength:'מתאים לזוגות שרוצים אירוע עירוני, עיצוב מודרני וקצב גבוה מהרגע הראשון.'},
+  {name:'החווה הלבנה',area:'שפלה',style:'טבע / שטח',min:180,max:420,kosher:'לא משנה',vibe:['כפרי','טבע','חופש','חוץ','משפחתי'],strength:'מרגיש כמו אירוע שטח מוקפד, עם הרבה אוויר, מרחב ומשפחתיות.'},
+  {name:'טרקלין ירושלים',area:'ירושלים',style:'אולם',min:250,max:650,kosher:'מהדרין',vibe:['אלגנטי','מסורתי','משפחתי','מהדרין','קלאסי'],strength:'בחירה חזקה לקהל גדול, כשרות מוקפדת ואירוע משפחתי-קלאסי.'},
+  {name:'קו הים קיסריה',area:'צפון',style:'גן אירועים',min:180,max:480,kosher:'כשר',vibe:['ים','שקיעה','יוקרתי','רומנטי','גן'],strength:'מקום עם אפקט וואו, מתאים במיוחד לחלום של חופה מול שקיעה ואווירה רומנטית.'}
+];
+function dreamVal(id){ return String(document.getElementById(id)?.value||'').trim(); }
+function dreamLeadPayload(){ return {name:dreamVal('dreamName'),phone:dreamVal('dreamPhone'),eventType:dreamVal('dreamEventType'),location:dreamVal('dreamLocation'),guests:Number(dreamVal('dreamGuests'))||0,venueStyle:dreamVal('dreamVenueStyle'),kosher:dreamVal('dreamKosher'),budget:dreamVal('dreamBudget'),dateWindow:dreamVal('dreamDateWindow'),dream:dreamVal('dreamText')}; }
+function scoreDreamVenue(lead,venue){
+  let score=0; const reasons=[]; const loc=lead.location||''; const dream=(lead.dream||'').toLowerCase();
+  if(loc && (venue.area.includes(loc)||loc.includes(venue.area))){ score+=28; reasons.push('מתאים לאזור המבוקש'); }
+  if(lead.guests>=venue.min && lead.guests<=venue.max){ score+=26; reasons.push('מתאים לכמות האורחים'); } else if(lead.guests && Math.abs(lead.guests-((venue.min+venue.max)/2))<180){ score+=10; reasons.push('קרוב לטווח הקיבולת'); }
+  if(!lead.venueStyle || lead.venueStyle==='לא משנה לי' || venue.style===lead.venueStyle){ score+=18; reasons.push('מתאים לסגנון המקום'); }
+  if(!lead.kosher || lead.kosher==='לא משנה' || venue.kosher===lead.kosher || venue.kosher==='לא משנה'){ score+=14; reasons.push('מתאים לדרישת הכשרות'); }
+  const hits=venue.vibe.filter(v=>dream.includes(v.toLowerCase())); if(hits.length){ score+=Math.min(18,hits.length*7); reasons.push('מתחבר לאווירה שתיארת: '+hits.join(', ')); }
+  return {...venue,score:Math.min(99,score),reasons:reasons.slice(0,4)};
+}
+function dreamRecommendations(lead){ return DREAM_VENUE_DEMO_DB.map(v=>scoreDreamVenue(lead,v)).sort((a,b)=>b.score-a.score).slice(0,3); }
+function renderDreamRecommendations(recs){
+  const box=document.getElementById('dreamResults'); if(!box) return;
+  box.innerHTML=recs.map((r,i)=>`<div class="dream-match"><b>${i+1}. ${escapeHtml(r.name)}</b><span class="score">התאמה ${r.score}%</span><p>${escapeHtml(r.strength)}</p><div class="label" style="color:#e7d8c8!important">${escapeHtml(r.area)} · ${escapeHtml(r.style)} · ${r.min}-${r.max} אורחים · ${escapeHtml(r.kosher)}</div><ul>${(r.reasons.length?r.reasons:['התאמה כללית טובה לפתיחת שיחה עם האולם']).map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ul><p><b>מה לבדוק מול האולם:</b> זמינות בטווח התאריך, מחיר מנה, חניה, שעת סיום, חופה בחוץ ותנאי ביטול.</p></div>`).join('');
+}
+function generateDreamRecommendations(){
+  const lead=dreamLeadPayload(); const status=document.getElementById('dreamStatus');
+  if(!lead.location || !lead.guests || !lead.dream){ if(status) status.textContent='כדי לבנות המלצה צריך לפחות מיקום, כמות אורחים ותיאור חלום.'; return []; }
+  const recs=dreamRecommendations(lead); renderDreamRecommendations(recs); if(status) status.textContent='בנינו התאמה ראשונית. אפשר לשמור את הפנייה כדי שנחזור עם אפשרויות מדויקות יותר.'; return recs;
+}
+async function submitDreamLead(){
+  const status=document.getElementById('dreamStatus'); const lead=dreamLeadPayload(); const recs=generateDreamRecommendations();
+  if(!lead.name || !lead.phone || !lead.location || !lead.guests || !lead.dream){ if(status) status.textContent='חסר שם, טלפון, מיקום, כמות אורחים או תיאור חלום.'; return; }
+  const payload={...lead,recommendations:recs};
+  try{
+    const res=await fetch('/api/dream-leads',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});
+    const data=await res.json().catch(()=>({})); if(!res.ok||!data.ok) throw new Error(data.error||'שמירת הליד נכשלה');
+    const local=JSON.parse(localStorage.getItem(DREAM_LEADS_LOCAL_KEY)||'[]'); local.unshift(data.lead); localStorage.setItem(DREAM_LEADS_LOCAL_KEY,JSON.stringify(local.slice(0,100)));
+    if(status) status.textContent='הפנייה נשמרה ✅ הסוכנת תוכל להמשיך מכאן לאולם המתאים.';
+  }catch(e){ if(status) status.textContent=e.message; }
+}
+async function loadDreamLeads(){
+  const box=document.getElementById('dreamLeadsList'); if(!box) return;
+  box.innerHTML='<div class="selected-event-empty">טוען לידים...</div>';
+  let leads=[];
+  try{ const res=await fetch('/api/dream-leads',{headers:authHeaders()}); const data=await res.json().catch(()=>({})); if(res.ok&&data.ok) leads=data.leads||[]; }
+  catch(e){}
+  if(!leads.length){ try{ leads=JSON.parse(localStorage.getItem(DREAM_LEADS_LOCAL_KEY)||'[]'); }catch(e){} }
+  box.innerHTML=leads.length?leads.map(lead=>`<div class="dream-lead-card"><b>${escapeHtml(lead.name||'ליד ללא שם')}</b> <span class="pill">${escapeHtml(lead.eventType||'אירוע')}</span><div class="label">${escapeHtml(lead.phone||'')} · ${escapeHtml(lead.location||'')} · ${Number(lead.guests)||0} אורחים · ${escapeHtml(lead.venueStyle||'')}</div><p>${escapeHtml(String(lead.dream||'').slice(0,260))}${String(lead.dream||'').length>260?'...':''}</p><div class="label"><b>המלצות:</b> ${(lead.recommendations||[]).slice(0,3).map(r=>escapeHtml(r.name||'')).join(' · ')||'טרם נוצרו'}</div><div class="toolbar"><button class="secondary" onclick="copyText('${jsArg(`ליד חדש מאורמה:\nשם: ${lead.name||''}\nטלפון: ${lead.phone||''}\nמיקום: ${lead.location||''}\nאורחים: ${lead.guests||''}\nחלום: ${lead.dream||''}`)}')">העתק ליד</button></div></div>`).join(''):'<div class="selected-event-empty">עדיין אין לידים מחלום האירוע.</div>';
+}
+
 function showPage(page){
   if(document.body.classList.contains('client-mode') && (page==='event' || page==='admin')) page='overview';
   document.body.classList.add('app-page');
@@ -1191,6 +1290,7 @@ function showClientAdminMenu(id, tab){
 function toggleMenu(){ document.getElementById('sidebar')?.classList.toggle('open'); }
 function eventSlug(){ return new URLSearchParams(location.search).get('event'); }
 function isClientUrl(){ return location.hash === '#client' || !!eventSlug(); }
+function isDreamUrl(){ return location.hash === '#dream'; }
 function authHeaders(){ return currentAdminToken ? {authorization:'Bearer '+currentAdminToken} : {}; }
 function clientAuthHeaders(){ return currentClientToken ? {authorization:'Bearer '+currentClientToken} : {}; }
 function eventAccessHeaders(){ return currentAdminToken ? authHeaders() : clientAuthHeaders(); }
@@ -1731,6 +1831,10 @@ async function bootMode(){
   setupAdminDateMin();
   renderCreateColorPalette();
   renderAdminEvents();
+  if(isDreamUrl()){
+    document.body.className='dream-mode';
+    return;
+  }
   if(!isClientUrl()) loadOpalSystemWidget();
   if(isClientUrl()){
     document.body.classList.remove('admin-landing','admin-locked');
