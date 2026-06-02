@@ -1216,24 +1216,45 @@ function loadOpalSystemWidget(){
 }
 
 const DREAM_VENUE_DEMO_DB=[
-  {name:'גן אורמה בשרון',area:'שרון',style:'גן אירועים',min:220,max:520,kosher:'כשר',vibe:['טבע','יוקרתי','חופה בחוץ','גן','ירוק'],strength:'גן פתוח עם חופה טבעית, חניה נוחה ותחושה יוקרתית בלי להיות כבדה.'},
-  {name:'אולם Urban Gold תל אביב',area:'מרכז',style:'אורבני / בוטיק',min:120,max:320,kosher:'כשר',vibe:['אורבני','מסיבה','קוקטייל','צעיר','תל אביב'],strength:'מתאים לזוגות שרוצים אירוע עירוני, עיצוב מודרני וקצב גבוה מהרגע הראשון.'},
-  {name:'החווה הלבנה',area:'שפלה',style:'טבע / שטח',min:180,max:420,kosher:'לא משנה',vibe:['כפרי','טבע','חופש','חוץ','משפחתי'],strength:'מרגיש כמו אירוע שטח מוקפד, עם הרבה אוויר, מרחב ומשפחתיות.'},
-  {name:'טרקלין ירושלים',area:'ירושלים',style:'אולם',min:250,max:650,kosher:'מהדרין',vibe:['אלגנטי','מסורתי','משפחתי','מהדרין','קלאסי'],strength:'בחירה חזקה לקהל גדול, כשרות מוקפדת ואירוע משפחתי-קלאסי.'},
-  {name:'קו הים קיסריה',area:'צפון',style:'גן אירועים',min:180,max:480,kosher:'כשר',vibe:['ים','שקיעה','יוקרתי','רומנטי','גן'],strength:'מקום עם אפקט וואו, מתאים במיוחד לחלום של חופה מול שקיעה ואווירה רומנטית.'}
+  {name:'גן אורמה בשרון',area:'שרון',areas:['שרון','מרכז'],style:'גן אירועים',min:220,max:520,kosher:'כשר',vibe:['טבע','יוקרתי','חופה בחוץ','גן','ירוק'],strength:'גן פתוח עם חופה טבעית, חניה נוחה ותחושה יוקרתית בלי להיות כבדה.'},
+  {name:'אולם Urban Gold תל אביב',area:'מרכז',areas:['מרכז','תל אביב','גוש דן'],style:'אורבני / בוטיק',min:120,max:320,kosher:'כשר',vibe:['אורבני','מסיבה','קוקטייל','צעיר','תל אביב'],strength:'מתאים לזוגות שרוצים אירוע עירוני, עיצוב מודרני וקצב גבוה מהרגע הראשון.'},
+  {name:'החווה הלבנה',area:'שפלה',areas:['שפלה','מרכז','דרום'],style:'טבע / שטח',min:180,max:420,kosher:'לא משנה',vibe:['כפרי','טבע','חופש','חוץ','משפחתי'],strength:'מרגיש כמו אירוע שטח מוקפד, עם הרבה אוויר, מרחב ומשפחתיות.'},
+  {name:'טרקלין ירושלים',area:'ירושלים',areas:['ירושלים','שפלה'],style:'אולם',min:250,max:650,kosher:'מהדרין',vibe:['אלגנטי','מסורתי','משפחתי','מהדרין','קלאסי'],strength:'בחירה חזקה לקהל גדול, כשרות מוקפדת ואירוע משפחתי-קלאסי.'},
+  {name:'קו הים קיסריה',area:'צפון',areas:['צפון','חיפה','קיסריה'],style:'גן אירועים',min:180,max:480,kosher:'כשר',vibe:['ים','שקיעה','יוקרתי','רומנטי','גן'],strength:'מקום עם אפקט וואו, מתאים במיוחד לחלום של חופה מול שקיעה ואווירה רומנטית.'},
+  {name:'אחוזת המדבר באר שבע',area:'דרום',areas:['דרום','באר שבע','נגב'],style:'גן אירועים',min:180,max:520,kosher:'כשר',vibe:['מדבר','שקיעה','טבע','גן','חם','משפחתי'],strength:'גן דרומי רחב עם אווירת שקיעה, חוץ פתוח וחוויה שמתאימה לאירוע חם ומשפחתי.'},
+  {name:'טרמינל אשדוד',area:'דרום',areas:['דרום','אשדוד','אשקלון','שפלה'],style:'אולם',min:220,max:700,kosher:'כשר',vibe:['ים','אולם','אלגנטי','גדול','מסיבה'],strength:'אולם גדול בדרום-חוף, מתאים לקהל רחב ולזוג שרוצה תפעול נוח ואירוע אלגנטי.'},
+  {name:'בוטיק הנגב',area:'דרום',areas:['דרום','נגב','באר שבע'],style:'אורבני / בוטיק',min:80,max:240,kosher:'לא משנה',vibe:['בוטיק','אינטימי','מדבר','צעיר','קוקטייל'],strength:'פתרון אינטימי יותר בדרום, טוב לאירוע אישי, צעיר ופחות המוני.'}
 ];
 function dreamVal(id){ return String(document.getElementById(id)?.value||'').trim(); }
 function dreamLeadPayload(){ return {name:dreamVal('dreamName'),phone:dreamVal('dreamPhone'),eventType:dreamVal('dreamEventType'),location:dreamVal('dreamLocation'),guests:Number(dreamVal('dreamGuests'))||0,venueStyle:dreamVal('dreamVenueStyle'),kosher:dreamVal('dreamKosher'),budget:dreamVal('dreamBudget'),dateWindow:dreamVal('dreamDateWindow'),dream:dreamVal('dreamText')}; }
+function normalizeDreamArea(value){
+  const text=String(value||'').trim().toLowerCase();
+  if(!text) return '';
+  if(/דרום|נגב|באר שבע|אשדוד|אשקלון|קרית גת|אילת|דימונה|נתיבות|שדרות/.test(text)) return 'דרום';
+  if(/מרכז|תל אביב|גוש דן|רמת גן|פתח תקווה|ראשון|חולון|בת ים/.test(text)) return 'מרכז';
+  if(/שרון|הרצליה|רעננה|כפר סבא|נתניה|חדרה/.test(text)) return 'שרון';
+  if(/שפלה|רחובות|נס ציונה|מודיעין|לוד|רמלה/.test(text)) return 'שפלה';
+  if(/ירושלים|בית שמש/.test(text)) return 'ירושלים';
+  if(/צפון|חיפה|גליל|גולן|טבריה|עפולה|קיסריה/.test(text)) return 'צפון';
+  return text;
+}
 function scoreDreamVenue(lead,venue){
-  let score=0; const reasons=[]; const loc=lead.location||''; const dream=(lead.dream||'').toLowerCase();
-  if(loc && (venue.area.includes(loc)||loc.includes(venue.area))){ score+=28; reasons.push('מתאים לאזור המבוקש'); }
+  let score=0; const reasons=[]; const loc=normalizeDreamArea(lead.location); const dream=(lead.dream||'').toLowerCase();
+  const venueAreas=(venue.areas||[venue.area]).map(normalizeDreamArea);
+  const areaMatch=!loc || venueAreas.includes(loc) || venueAreas.some(a=>a && (a.includes(loc)||loc.includes(a)));
+  if(areaMatch){ score+=36; reasons.push('מתאים לאזור המבוקש'); }
   if(lead.guests>=venue.min && lead.guests<=venue.max){ score+=26; reasons.push('מתאים לכמות האורחים'); } else if(lead.guests && Math.abs(lead.guests-((venue.min+venue.max)/2))<180){ score+=10; reasons.push('קרוב לטווח הקיבולת'); }
   if(!lead.venueStyle || lead.venueStyle==='לא משנה לי' || venue.style===lead.venueStyle){ score+=18; reasons.push('מתאים לסגנון המקום'); }
   if(!lead.kosher || lead.kosher==='לא משנה' || venue.kosher===lead.kosher || venue.kosher==='לא משנה'){ score+=14; reasons.push('מתאים לדרישת הכשרות'); }
   const hits=venue.vibe.filter(v=>dream.includes(v.toLowerCase())); if(hits.length){ score+=Math.min(18,hits.length*7); reasons.push('מתחבר לאווירה שתיארת: '+hits.join(', ')); }
-  return {...venue,score:Math.min(99,score),reasons:reasons.slice(0,4)};
+  if(loc && !areaMatch){ score=Math.min(score,42); reasons.unshift('לא באזור שביקשת — מוצג רק כחלופה רחבה'); }
+  return {...venue,score:Math.min(99,score),areaMatch,reasons:reasons.slice(0,4)};
 }
-function dreamRecommendations(lead){ return DREAM_VENUE_DEMO_DB.map(v=>scoreDreamVenue(lead,v)).sort((a,b)=>b.score-a.score).slice(0,3); }
+function dreamRecommendations(lead){
+  const scored=DREAM_VENUE_DEMO_DB.map(v=>scoreDreamVenue(lead,v)).sort((a,b)=>(Number(b.areaMatch)-Number(a.areaMatch)) || b.score-a.score);
+  const areaMatches=scored.filter(r=>r.areaMatch);
+  return (areaMatches.length?areaMatches:scored).slice(0,3);
+}
 function renderDreamRecommendations(recs){
   const box=document.getElementById('dreamResults'); if(!box) return;
   box.innerHTML=recs.map((r,i)=>`<div class="dream-match"><b>${i+1}. ${escapeHtml(r.name)}</b><span class="score">התאמה ${r.score}%</span><p>${escapeHtml(r.strength)}</p><div class="label" style="color:#e7d8c8!important">${escapeHtml(r.area)} · ${escapeHtml(r.style)} · ${r.min}-${r.max} אורחים · ${escapeHtml(r.kosher)}</div><ul>${(r.reasons.length?r.reasons:['התאמה כללית טובה לפתיחת שיחה עם האולם']).map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ul><p><b>מה לבדוק מול האולם:</b> זמינות בטווח התאריך, מחיר מנה, חניה, שעת סיום, חופה בחוץ ותנאי ביטול.</p></div>`).join('');
