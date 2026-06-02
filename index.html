@@ -1047,6 +1047,38 @@ async function buildOpalLiveContext(userMessage=''){
   };
   return JSON.stringify(context).slice(0,2200);
 }
+
+function shouldBridgeOpalEventAction(message){
+  const text=String(message||'');
+  if(!text.trim()) return false;
+  if(/מחק|תמחק|שלח|תשלח|תשלום|שלם|העבר כסף|חייב|זכה/.test(text)) return false;
+  return /(הוסף|תוסיף|תכניס|הכנס|תרשום|רשום|תעדכן|עדכן)/.test(text) && /(ספק|ספקים|צלם|מגנטים|די.?ג'?יי|dj|אולם|קייטרינג|בר|עיצוב|איפור|שיער|רב|חופה)/i.test(text);
+}
+
+async function runOpalLocalEventAction(message){
+  if(!shouldBridgeOpalEventAction(message)) return null;
+  const eventId=currentEventId();
+  const token=currentAdminToken || currentClientToken;
+  if(!eventId || !token) return null;
+  try{
+    if(typeof syncEventStateNow==='function') await syncEventStateNow();
+    const f=window.__opalOriginalFetch||window.fetch.bind(window);
+    const headers={'content-type':'application/json',...(currentAdminToken?authHeaders():clientAuthHeaders())};
+    const res=await f('/api/event-assistant',{method:'POST',headers,body:JSON.stringify({eventId,command:String(message||''),state:collectEventState(),history:(eventAssistantHistory||[]).slice(-20)})});
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok || !data.ok || !data.changed) return null;
+    if(data.state){
+      if(Array.isArray(data.state.vendors)){ vendors=data.state.vendors; eventStorageSet(VENDOR_KEY,JSON.stringify(vendors)); }
+      if(Array.isArray(data.state.participants)){ guests=data.state.participants; eventStorageSet(STORAGE_KEY,JSON.stringify(guests)); }
+      if(data.state.eventSettings){ eventSettings={...eventSettings,...data.state.eventSettings}; eventStorageSet(EVENT_KEY,JSON.stringify(eventSettings)); }
+      render(); renderVendors(); renderWallet(); renderPayments(); updateVendorStats();
+    }
+    return data.answer || 'הפעולה בוצעה במערכת.';
+  }catch(e){
+    return `ניסיתי לבצע פעולה במערכת, אבל הייתה שגיאה: ${e.message}`;
+  }
+}
+
 function installOpalLiveContextBridge(){
   if(window.__opalLiveContextBridgeInstalled) return;
   window.__opalLiveContextBridgeInstalled=true;
@@ -1058,9 +1090,11 @@ function installOpalLiveContextBridge(){
       try{
         const body=JSON.parse(init.body);
         if(body?.message && !String(body.message).includes('[[LIVE_EVENT_CONTEXT]]')){
-          const context=await buildOpalLiveContext(body.message);
+          const originalMessage=String(body.message||'');
+          const localActionResult=await runOpalLocalEventAction(originalMessage);
+          const context=await buildOpalLiveContext(originalMessage);
           const label=document.body.classList.contains('client-mode')?'שאלת הלקוח':'שאלת האדמין';
-          body.message=`[[LIVE_EVENT_CONTEXT]]\n${context}\n[[END_LIVE_EVENT_CONTEXT]]\n\n${label}:\n${body.message}`;
+          body.message=`[[LIVE_EVENT_CONTEXT]]\n${context}\n[[END_LIVE_EVENT_CONTEXT]]${localActionResult?`\n\n[[LOCAL_SYSTEM_ACTION_RESULT]]\nהפעולה המבוקשת כבר בוצעה בפועל במערכת האירוע דרך API פנימי מאובטח. אמור למשתמש בקצרה שהפעולה בוצעה ואל תגיד שאין לך הרשאה. תוצאת הפעולה: ${localActionResult}\n[[END_LOCAL_SYSTEM_ACTION_RESULT]]`:''}\n\n${label}:\n${originalMessage}`;
           init={...init,body:JSON.stringify(body)};
         }
       }catch(e){}
