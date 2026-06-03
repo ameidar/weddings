@@ -382,6 +382,8 @@
           <div><label>אולם או גן?</label><select id="dreamVenueStyle"><option>לא משנה לי</option><option>גן אירועים</option><option>אולם</option><option>אורבני / בוטיק</option><option>טבע / שטח</option></select></div>
           <div><label>כשרות</label><select id="dreamKosher"><option>כשר</option><option>לא כשר</option><option>מהדרין</option><option>לא משנה</option></select></div>
           <div><label>תקציב כללי</label><select id="dreamBudget"><option>עוד לא יודע/ת</option><option>חסכוני</option><option>ביניים</option><option>פרימיום</option><option>יוקרתי מאוד</option></select></div>
+          <div><label>מועד האירוע</label><select id="dreamEventTime"><option>לא משנה / גמיש</option><option>אירוע ערב</option><option>אירוע יום</option><option>שישי צהריים</option><option>מוצאי שבת</option><option>בוקר / בראנץ׳</option></select></div>
+          <div><label>סגנון ישיבה</label><select id="dreamSeatingStyle"><option>עוד לא החלטנו</option><option>ישיבה מלאה</option><option>קוקטייל / מסיבה</option><option>משולב: קבלת פנים וישיבה</option><option>אינטימי ומשפחתי</option></select></div>
           <div class="full"><label>מתי בערך?</label><input id="dreamDateWindow" placeholder="לדוגמה: יוני 2026 / חמישי בערב / גמיש" /></div>
           <div class="full"><label>תארו את החלום שלכם</label><textarea id="dreamText" placeholder="איך אתם מדמיינים את האירוע? אווירה, אוכל, חופה, מוזיקה, קהל, חניה, נוף, חוויה לאורחים, דברים שחשובים לכם או דברים שאתם לא רוצים..."></textarea></div>
         </div>
@@ -1226,7 +1228,7 @@ const DREAM_VENUE_DEMO_DB=[
   {name:'בוטיק הנגב',area:'דרום',areas:['דרום','נגב','באר שבע'],style:'אורבני / בוטיק',min:80,max:240,kosher:'לא משנה',vibe:['בוטיק','אינטימי','מדבר','צעיר','קוקטייל'],strength:'פתרון אינטימי יותר בדרום, טוב לאירוע אישי, צעיר ופחות המוני.'}
 ];
 function dreamVal(id){ return String(document.getElementById(id)?.value||'').trim(); }
-function dreamLeadPayload(){ return {name:dreamVal('dreamName'),phone:dreamVal('dreamPhone'),eventType:dreamVal('dreamEventType'),location:dreamVal('dreamLocation'),guests:Number(dreamVal('dreamGuests'))||0,venueStyle:dreamVal('dreamVenueStyle'),kosher:dreamVal('dreamKosher'),budget:dreamVal('dreamBudget'),dateWindow:dreamVal('dreamDateWindow'),dream:dreamVal('dreamText')}; }
+function dreamLeadPayload(){ return {name:dreamVal('dreamName'),phone:dreamVal('dreamPhone'),eventType:dreamVal('dreamEventType'),location:dreamVal('dreamLocation'),guests:Number(dreamVal('dreamGuests'))||0,venueStyle:dreamVal('dreamVenueStyle'),kosher:dreamVal('dreamKosher'),budget:dreamVal('dreamBudget'),eventTime:dreamVal('dreamEventTime'),seatingStyle:dreamVal('dreamSeatingStyle'),dateWindow:dreamVal('dreamDateWindow'),dream:dreamVal('dreamText')}; }
 function normalizeDreamArea(value){
   const text=String(value||'').trim().toLowerCase();
   if(!text) return '';
@@ -1247,6 +1249,13 @@ function scoreDreamVenue(lead,venue){
   if(!lead.venueStyle || lead.venueStyle==='לא משנה לי' || venue.style===lead.venueStyle){ score+=18; reasons.push('מתאים לסגנון המקום'); }
   if(!lead.kosher || lead.kosher==='לא משנה' || venue.kosher===lead.kosher || venue.kosher==='לא משנה'){ score+=14; reasons.push('מתאים לדרישת הכשרות'); }
   const hits=venue.vibe.filter(v=>dream.includes(v.toLowerCase())); if(hits.length){ score+=Math.min(18,hits.length*7); reasons.push('מתחבר לאווירה שתיארת: '+hits.join(', ')); }
+  if(lead.eventTime && lead.eventTime!=='לא משנה / גמיש'){
+    const timeText=`${lead.eventTime} ${lead.dateWindow||''}`.toLowerCase();
+    const dayish=/יום|צהריים|בוקר|בראנץ/.test(timeText);
+    const eveningish=/ערב|מוצאי/.test(timeText);
+    if(dayish && /גן אירועים|טבע|שטח/.test(venue.style)){ score+=6; reasons.push('יכול להתאים לאירוע יום/צהריים'); }
+    if(eveningish){ score+=4; reasons.push('מתאים לבדיקת זמינות לאירוע ערב'); }
+  }
   if(loc && !areaMatch){ score=Math.min(score,42); reasons.unshift('לא באזור שביקשת — מוצג רק כחלופה רחבה'); }
   return {...venue,score:Math.min(99,score),areaMatch,reasons:reasons.slice(0,4)};
 }
@@ -1257,7 +1266,9 @@ function dreamRecommendations(lead){
 }
 function renderDreamRecommendations(recs){
   const box=document.getElementById('dreamResults'); if(!box) return;
-  box.innerHTML=recs.map((r,i)=>`<div class="dream-match"><b>${i+1}. ${escapeHtml(r.name)}</b><span class="score">התאמה ${r.score}%</span><p>${escapeHtml(r.strength)}</p><div class="label" style="color:#e7d8c8!important">${escapeHtml(r.area)} · ${escapeHtml(r.style)} · ${r.min}-${r.max} אורחים · ${escapeHtml(r.kosher)}</div><ul>${(r.reasons.length?r.reasons:['התאמה כללית טובה לפתיחת שיחה עם האולם']).map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ul><p><b>מה לבדוק מול האולם:</b> זמינות בטווח התאריך, מחיר מנה, חניה, שעת סיום, חופה בחוץ ותנאי ביטול.</p></div>`).join('');
+  const lead=dreamLeadPayload();
+  const eventTime=lead.eventTime && lead.eventTime!=='לא משנה / גמיש' ? ` · ${escapeHtml(lead.eventTime)}` : '';
+  box.innerHTML=recs.map((r,i)=>`<div class="dream-match"><b>${i+1}. ${escapeHtml(r.name)}</b><span class="score">התאמה ${r.score}%</span><p>${escapeHtml(r.strength)}</p><div class="label" style="color:#e7d8c8!important">${escapeHtml(r.area)} · ${escapeHtml(r.style)} · ${r.min}-${r.max} אורחים · ${escapeHtml(r.kosher)}${eventTime}</div><ul>${(r.reasons.length?r.reasons:['התאמה כללית טובה לפתיחת שיחה עם האולם']).map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ul><p><b>מה לבדוק מול האולם:</b> זמינות בטווח התאריך ובמועד שבחרתם, מחיר מנה, חניה, שעת סיום, חופה בחוץ ותנאי ביטול.</p></div>`).join('');
 }
 function generateDreamRecommendations(){
   const lead=dreamLeadPayload(); const status=document.getElementById('dreamStatus');
@@ -1282,7 +1293,7 @@ async function loadDreamLeads(){
   try{ const res=await fetch('/api/dream-leads',{headers:authHeaders()}); const data=await res.json().catch(()=>({})); if(res.ok&&data.ok) leads=data.leads||[]; }
   catch(e){}
   if(!leads.length){ try{ leads=JSON.parse(localStorage.getItem(DREAM_LEADS_LOCAL_KEY)||'[]'); }catch(e){} }
-  box.innerHTML=leads.length?leads.map(lead=>`<div class="dream-lead-card"><b>${escapeHtml(lead.name||'ליד ללא שם')}</b> <span class="pill">${escapeHtml(lead.eventType||'אירוע')}</span><div class="label">${escapeHtml(lead.phone||'')} · ${escapeHtml(lead.location||'')} · ${Number(lead.guests)||0} אורחים · ${escapeHtml(lead.venueStyle||'')}</div><p>${escapeHtml(String(lead.dream||'').slice(0,260))}${String(lead.dream||'').length>260?'...':''}</p><div class="label"><b>המלצות:</b> ${(lead.recommendations||[]).slice(0,3).map(r=>escapeHtml(r.name||'')).join(' · ')||'טרם נוצרו'}</div><div class="toolbar"><button class="secondary" onclick="copyText('${jsArg(`ליד חדש מאורמה:\nשם: ${lead.name||''}\nטלפון: ${lead.phone||''}\nמיקום: ${lead.location||''}\nאורחים: ${lead.guests||''}\nחלום: ${lead.dream||''}`)}')">העתק ליד</button></div></div>`).join(''):'<div class="selected-event-empty">עדיין אין לידים מחלום האירוע.</div>';
+  box.innerHTML=leads.length?leads.map(lead=>`<div class="dream-lead-card"><b>${escapeHtml(lead.name||'ליד ללא שם')}</b> <span class="pill">${escapeHtml(lead.eventType||'אירוע')}</span><div class="label">${escapeHtml(lead.phone||'')} · ${escapeHtml(lead.location||'')} · ${Number(lead.guests)||0} אורחים · ${escapeHtml(lead.venueStyle||'')} · ${escapeHtml(lead.eventTime||'מועד גמיש')}</div><p>${escapeHtml(String(lead.dream||'').slice(0,260))}${String(lead.dream||'').length>260?'...':''}</p><div class="label"><b>המלצות:</b> ${(lead.recommendations||[]).slice(0,3).map(r=>escapeHtml(r.name||'')).join(' · ')||'טרם נוצרו'}</div><div class="toolbar"><button class="secondary" onclick="copyText('${jsArg(`ליד חדש מאורמה:\nשם: ${lead.name||''}\nטלפון: ${lead.phone||''}\nמיקום: ${lead.location||''}\nאורחים: ${lead.guests||''}\nמועד: ${lead.eventTime||''}\nסגנון ישיבה: ${lead.seatingStyle||''}\nחלום: ${lead.dream||''}`)}')">העתק ליד</button></div></div>`).join(''):'<div class="selected-event-empty">עדיין אין לידים מחלום האירוע.</div>';
 }
 
 function showPage(page){

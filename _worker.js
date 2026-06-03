@@ -259,6 +259,8 @@ async function dreamLeadsApi(request, env) {
     venueStyle: String(body.venueStyle || '').trim().slice(0,80),
     kosher: String(body.kosher || '').trim().slice(0,80),
     budget: String(body.budget || '').trim().slice(0,80),
+    eventTime: String(body.eventTime || '').trim().slice(0,80),
+    seatingStyle: String(body.seatingStyle || '').trim().slice(0,80),
     dateWindow: String(body.dateWindow || '').trim().slice(0,120),
     dream: String(body.dream || '').trim().slice(0,5000),
     recommendations: Array.isArray(body.recommendations) ? body.recommendations.slice(0,5) : [],
