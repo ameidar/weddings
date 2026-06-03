@@ -26,7 +26,11 @@
     "https://mazaltov.walla.co.il/event-place/eventshalls/south/",
     "https://mazaltov.walla.co.il/event-place/hotels/",
     "https://mazaltov.walla.co.il/event-place/weddinginnature/",
-    "https://mazaltov.walla.co.il/event-place/weddingonthebeach/"
+    "https://mazaltov.walla.co.il/event-place/weddingonthebeach/",
+    "https://www.hafakot.co.il/place/אולמות-אירועים/אולמות-אירועים-בדרום/",
+    "https://www.hafakot.co.il/place/גני-אירועים/גני-אירועים-בדרום/",
+    "https://www.eventplaces.co.il/A_דרום/אולמות+אירועים.html",
+    "https://easy.co.il/list/Event-Venue?region=3"
   ],
   "venues": [
     {
@@ -2442,6 +2446,743 @@
       "strength": "מלון אירוס המדבר ירוחם מלון אירוס המדבר הנמצא בליבו של המדבר הקסום, מציע מקום אירוח מפואר באווירה חמה ושונה מהרגיל. מלון אירוס המדבר מזמין אתכם לנופש ייחודי, בליבו של הטבע עוצר הנשימה.",
       "sourceName": "וואלה! Wedding",
       "sourceUrl": "https://mazaltov.walla.co.il/event-place/shabbatchatan/desert-irishotel/"
+    },
+    {
+      "name": "מיוזיק סיטי – Music City",
+      "city": "באר שבע",
+      "type": "מתחם להופעות ואירועים",
+      "style": "אולם",
+      "min": 80,
+      "max": 350,
+      "vibe": [
+        "הופעות",
+        "יוקרתי",
+        "באר שבע",
+        "עסקי",
+        "מסיבה"
+      ],
+      "strength": "מתחם להופעות ואירועים יוקרתיים בדרום, מתאים לכ-80 עד 350 אורחים.",
+      "sourceName": "Call Events / hafakot.co.il",
+      "sourceUrl": "https://www.hafakot.co.il/location/music-city/",
+      "area": "דרום",
+      "areas": [
+        "דרום",
+        "באר שבע"
+      ],
+      "kosher": "לא ידוע",
+      "capacityConfidence": "source"
+    },
+    {
+      "name": "שרי – SARAY",
+      "city": "אשקלון",
+      "type": "מתחם אירועים",
+      "style": "אולם",
+      "min": 220,
+      "max": 700,
+      "vibe": [
+        "יוקרתי",
+        "כנסים",
+        "אשקלון",
+        "גדול"
+      ],
+      "strength": "מתחם אירועים יוקרתי באשקלון לכנסים ואירועים עד כ-700 איש.",
+      "sourceName": "Call Events / hafakot.co.il",
+      "sourceUrl": "https://www.hafakot.co.il/location/saray/",
+      "area": "דרום",
+      "areas": [
+        "דרום",
+        "אשקלון"
+      ],
+      "kosher": "לא ידוע",
+      "capacityConfidence": "source"
+    },
+    {
+      "name": "אהובת הספן",
+      "city": "אשדוד",
+      "type": "אולם אירועים",
+      "style": "אולם",
+      "min": 100,
+      "max": 300,
+      "vibe": [
+        "ים",
+        "אשדוד",
+        "קסום",
+        "חוף",
+        "אינטימי"
+      ],
+      "strength": "אולם אירועים ליד הים באשדוד, מתאים לכ-100 עד 300 אורחים.",
+      "sourceName": "Call Events / hafakot.co.il",
+      "sourceUrl": "https://www.hafakot.co.il/location/אהובת-הספן/",
+      "area": "דרום",
+      "areas": [
+        "דרום",
+        "אשדוד"
+      ],
+      "kosher": "לא ידוע",
+      "capacityConfidence": "source"
+    },
+    {
+      "name": "סמילנסקי גארדן",
+      "city": "באר שבע",
+      "type": "גג וחלל אירועים",
+      "style": "אורבני / בוטיק",
+      "min": 70,
+      "max": 200,
+      "vibe": [
+        "גג",
+        "בוטיק",
+        "באר שבע",
+        "מסיבה",
+        "אורבני"
+      ],
+      "strength": "גג וחלל אירועים יוקרתי בלב באר שבע, מתאים למסיבות ואירועים של 70 עד 200 איש.",
+      "sourceName": "Call Events / hafakot.co.il",
+      "sourceUrl": "https://www.hafakot.co.il/location/סמילנסקי-גארדן/",
+      "area": "דרום",
+      "areas": [
+        "דרום",
+        "באר שבע"
+      ],
+      "kosher": "לא ידוע",
+      "capacityConfidence": "source"
+    },
+    {
+      "name": "בית עלמי",
+      "city": "אשקלון",
+      "type": "בית לאירועים",
+      "style": "אורבני / בוטיק",
+      "min": 30,
+      "max": 90,
+      "vibe": [
+        "מבנה עתיק",
+        "נוף",
+        "אינטימי",
+        "בוטיק",
+        "אשקלון"
+      ],
+      "strength": "מבנה עות׳מאני עתיק וייחודי באשקלון מול נוף מרהיב, מתאים לאירועים קטנים.",
+      "sourceName": "Call Events / hafakot.co.il",
+      "sourceUrl": "https://www.hafakot.co.il/location/בית-עלמי/",
+      "area": "דרום",
+      "areas": [
+        "דרום",
+        "אשקלון"
+      ],
+      "kosher": "לא ידוע",
+      "capacityConfidence": "source"
+    },
+    {
+      "name": "נועה – בית לאירועים",
+      "city": "אשדוד",
+      "type": "בית לאירועים",
+      "style": "אורבני / בוטיק",
+      "min": 40,
+      "max": 200,
+      "vibe": [
+        "חם",
+        "משפחתי",
+        "אשדוד",
+        "חניה",
+        "אוכל"
+      ],
+      "strength": "בית לאירועים חם ומשפחתי באשדוד, עם חניה צמודה ואירועים עד כ-200 מוזמנים.",
+      "sourceName": "Call Events / hafakot.co.il",
+      "sourceUrl": "https://www.hafakot.co.il/location/נועה-בית-לאירועים/",
+      "area": "דרום",
+      "areas": [
+        "דרום",
+        "אשדוד"
+      ],
+      "kosher": "לא ידוע",
+      "capacityConfidence": "source"
+    },
+    {
+      "name": "רוי איוונטס ROY EVENTS",
+      "city": "באר שבע",
+      "type": "אולם בוטיק",
+      "style": "אורבני / בוטיק",
+      "min": 60,
+      "max": 160,
+      "vibe": [
+        "בוטיק",
+        "קטן",
+        "באר שבע",
+        "משפחתי"
+      ],
+      "strength": "אולם בבאר שבע לאירועים קטנים ומיוחדים, מתאים לכ-60 עד 160 איש.",
+      "sourceName": "Call Events / hafakot.co.il",
+      "sourceUrl": "https://www.hafakot.co.il/location/רוי-איוונטס-roy-events/",
+      "area": "דרום",
+      "areas": [
+        "דרום",
+        "באר שבע"
+      ],
+      "kosher": "לא ידוע",
+      "capacityConfidence": "source"
+    },
+    {
+      "name": "קותאי",
+      "city": "באר שבע",
+      "type": "מסעדה לאירועים",
+      "style": "אורבני / בוטיק",
+      "min": 10,
+      "max": 100,
+      "kosher": "כשר רבנות",
+      "vibe": [
+        "מסעדה",
+        "כשר",
+        "אסייתי",
+        "בוטיק",
+        "באר שבע"
+      ],
+      "strength": "מסעדה מקבוצת קמפאי לאירועים כשרים באווירה אסייתית, עד כ-100 איש.",
+      "sourceName": "Call Events / hafakot.co.il",
+      "sourceUrl": "https://www.hafakot.co.il/location/קותאי/",
+      "area": "דרום",
+      "areas": [
+        "דרום",
+        "באר שבע"
+      ],
+      "capacityConfidence": "source"
+    },
+    {
+      "name": "CHEF'S BOX",
+      "city": "אשדוד",
+      "type": "מקום לאירועים",
+      "style": "אורבני / בוטיק",
+      "min": 40,
+      "max": 180,
+      "vibe": [
+        "נמל",
+        "ים",
+        "אינטימי",
+        "אשדוד",
+        "בוטיק"
+      ],
+      "strength": "מקום לאירועים אינטימיים על שפת הנמל באשדוד, עד כ-180 איש.",
+      "sourceName": "Call Events / hafakot.co.il",
+      "sourceUrl": "https://www.hafakot.co.il/location/chefs-box/",
+      "area": "דרום",
+      "areas": [
+        "דרום",
+        "אשדוד"
+      ],
+      "kosher": "לא ידוע",
+      "capacityConfidence": "source"
+    },
+    {
+      "name": "בנג׳מין אשדוד",
+      "city": "אשדוד",
+      "type": "מתחם אירועים",
+      "style": "אורבני / בוטיק",
+      "min": 50,
+      "max": 250,
+      "vibe": [
+        "בוטיק",
+        "אשדוד",
+        "עסקי",
+        "משפחתי"
+      ],
+      "strength": "מתחם אירועים באשדוד המתאים לאירועים עד כ-250 איש.",
+      "sourceName": "Call Events / hafakot.co.il",
+      "sourceUrl": "https://www.hafakot.co.il/location/בנגמין-אשדוד/",
+      "area": "דרום",
+      "areas": [
+        "דרום",
+        "אשדוד"
+      ],
+      "kosher": "לא ידוע",
+      "capacityConfidence": "source"
+    },
+    {
+      "name": "יקב מרשה",
+      "city": "קריית גת",
+      "type": "יקב / מקום אירוח",
+      "style": "טבע / שטח",
+      "min": 10,
+      "max": 200,
+      "vibe": [
+        "יקב",
+        "שפלה",
+        "יין",
+        "אינטימי",
+        "טבע"
+      ],
+      "strength": "יקב באזור קריית גת/שפלה לאירועים עד כ-60 איש בחורף וכ-200 בקיץ.",
+      "sourceName": "Call Events / hafakot.co.il",
+      "sourceUrl": "https://www.hafakot.co.il/location/יקב-מרשה/",
+      "area": "דרום",
+      "areas": [
+        "דרום",
+        "קריית גת"
+      ],
+      "kosher": "לא ידוע",
+      "capacityConfidence": "source"
+    },
+    {
+      "name": "הבוסתן",
+      "city": "באר שבע",
+      "type": "חלל אירועים",
+      "style": "אורבני / בוטיק",
+      "min": 60,
+      "max": 100,
+      "vibe": [
+        "היסטורי",
+        "בוטיק",
+        "באר שבע",
+        "יוקרתי"
+      ],
+      "strength": "חלל אירועים יוקרתי והיסטורי בלב באר שבע, עד כ-100 מוזמנים.",
+      "sourceName": "Call Events / hafakot.co.il",
+      "sourceUrl": "https://www.hafakot.co.il/location/הבוסתן/",
+      "area": "דרום",
+      "areas": [
+        "דרום",
+        "באר שבע"
+      ],
+      "kosher": "לא ידוע",
+      "capacityConfidence": "source"
+    },
+    {
+      "name": "אור ביער",
+      "city": "אשקלון",
+      "type": "מתחם אירועים בטבע",
+      "style": "טבע / שטח",
+      "min": 15,
+      "max": 400,
+      "vibe": [
+        "טבע",
+        "יער",
+        "אשקלון",
+        "פסטורלי"
+      ],
+      "strength": "מתחם אירועים בטבע באזור אשקלון, מתאים לאירועים של 15 עד 400 איש.",
+      "sourceName": "Call Events / hafakot.co.il",
+      "sourceUrl": "https://www.hafakot.co.il/location/אור-ביער/",
+      "area": "דרום",
+      "areas": [
+        "דרום",
+        "אשקלון"
+      ],
+      "kosher": "לא ידוע",
+      "capacityConfidence": "source"
+    },
+    {
+      "name": "כפר שיטים",
+      "city": "אילת-הערבה",
+      "type": "מתחם אירועים",
+      "style": "טבע / שטח",
+      "min": 20,
+      "max": 3000,
+      "vibe": [
+        "ערבה",
+        "מדבר",
+        "גדול",
+        "קמפינג",
+        "טבע"
+      ],
+      "strength": "מתחם לאירועים קטנים וגדולים בערבה, עם קיבולת רחבה במיוחד.",
+      "sourceName": "Call Events / hafakot.co.il",
+      "sourceUrl": "https://www.hafakot.co.il/location/כפר-שיטים/",
+      "area": "דרום",
+      "areas": [
+        "דרום",
+        "אילת-הערבה"
+      ],
+      "kosher": "לא ידוע",
+      "capacityConfidence": "source"
+    },
+    {
+      "name": "חוות היען",
+      "city": "באר שבע",
+      "type": "אירועים בטבע",
+      "style": "טבע / שטח",
+      "min": 80,
+      "max": 500,
+      "vibe": [
+        "טבע",
+        "חווה",
+        "נוף",
+        "שדות",
+        "כפרי"
+      ],
+      "strength": "חווה לאירועים בטבע מול נוף פתוח, מתאימה לכ-80 עד 500 מוזמנים.",
+      "sourceName": "Call Events / hafakot.co.il",
+      "sourceUrl": "https://www.hafakot.co.il/location/חוות-היען/",
+      "area": "דרום",
+      "areas": [
+        "דרום",
+        "באר שבע"
+      ],
+      "kosher": "לא ידוע",
+      "capacityConfidence": "source"
+    },
+    {
+      "name": "המשק של אבא",
+      "city": "באר שבע",
+      "type": "מתחם אירועים בטבע",
+      "style": "טבע / שטח",
+      "min": 30,
+      "max": 500,
+      "vibe": [
+        "כפרי",
+        "טבע",
+        "חווה",
+        "באר שבע"
+      ],
+      "strength": "מתחם אירועים בטבע באווירה כפרית באזור באר שבע, עד כ-500 איש.",
+      "sourceName": "Call Events / hafakot.co.il",
+      "sourceUrl": "https://www.hafakot.co.il/location/המשק-של-אבא/",
+      "area": "דרום",
+      "areas": [
+        "דרום",
+        "באר שבע"
+      ],
+      "kosher": "לא ידוע",
+      "capacityConfidence": "source"
+    },
+    {
+      "name": "חוות הדקלים",
+      "city": "באר שבע",
+      "type": "חווה לאירועים",
+      "style": "טבע / שטח",
+      "min": 20,
+      "max": 500,
+      "vibe": [
+        "חווה",
+        "טבע",
+        "קסום",
+        "דרום"
+      ],
+      "strength": "חווה בדרום לאירועים קסומים עד כ-500 איש.",
+      "sourceName": "Call Events / hafakot.co.il",
+      "sourceUrl": "https://www.hafakot.co.il/location/חוות-הדקלים/",
+      "area": "דרום",
+      "areas": [
+        "דרום",
+        "באר שבע"
+      ],
+      "kosher": "לא ידוע",
+      "capacityConfidence": "source"
+    },
+    {
+      "name": "לה לונה (La Luna)",
+      "city": "אילת-הערבה",
+      "type": "מתחם אירועים על המים",
+      "style": "גן אירועים",
+      "min": 30,
+      "max": 500,
+      "kosher": "כשר בשרי",
+      "vibe": [
+        "מים",
+        "אילת",
+        "שף",
+        "כשר",
+        "פנים וחוץ"
+      ],
+      "strength": "אירועים על קו המים באילת/ערבה, מתחם פנימי וחיצוני, כשרות בשרית ותפריט שף.",
+      "sourceName": "Call Events / hafakot.co.il",
+      "sourceUrl": "https://www.hafakot.co.il/location/la-luna/",
+      "area": "דרום",
+      "areas": [
+        "דרום",
+        "אילת-הערבה"
+      ],
+      "capacityConfidence": "source"
+    },
+    {
+      "name": "הדריס",
+      "city": "נתיבות",
+      "type": "מתחם אירועים",
+      "style": "טבע / שטח",
+      "min": 10,
+      "max": 200,
+      "vibe": [
+        "כפרי",
+        "פסטורלי",
+        "מושב",
+        "קייטרינג",
+        "עיצוב"
+      ],
+      "strength": "מתחם אירועים פסטורלי במושב שוקדה ליד נתיבות, עם הפקה מלאה וקייטרינג.",
+      "sourceName": "Call Events / hafakot.co.il",
+      "sourceUrl": "https://www.hafakot.co.il/location/הדריס/",
+      "area": "דרום",
+      "areas": [
+        "דרום",
+        "נתיבות"
+      ],
+      "kosher": "לא ידוע",
+      "capacityConfidence": "source"
+    },
+    {
+      "name": "ארץ פרא",
+      "city": "אילת-הערבה",
+      "type": "אירועים במדבר",
+      "style": "טבע / שטח",
+      "min": 10,
+      "max": 500,
+      "vibe": [
+        "מדבר",
+        "קמפינג",
+        "טבע",
+        "ערבה"
+      ],
+      "strength": "אירועים במדבר עם אפשרות קמפינג, עד כ-500 אורחים.",
+      "sourceName": "Call Events / hafakot.co.il",
+      "sourceUrl": "https://www.hafakot.co.il/location/ארץ-פרא/",
+      "area": "דרום",
+      "areas": [
+        "דרום",
+        "אילת-הערבה"
+      ],
+      "kosher": "לא ידוע",
+      "capacityConfidence": "source"
+    },
+    {
+      "name": "נהנים בטבע",
+      "city": "אשקלון",
+      "type": "מתחם בטבע",
+      "style": "טבע / שטח",
+      "min": 10,
+      "max": 200,
+      "vibe": [
+        "יער",
+        "פסטורלי",
+        "טבע",
+        "אשקלון"
+      ],
+      "strength": "מתחם נהנים בטבע במושב ניר ישראל ליד אשקלון, אירוח פסטורלי ביער.",
+      "sourceName": "Call Events / hafakot.co.il",
+      "sourceUrl": "https://www.hafakot.co.il/location/נהנים-בטבע/",
+      "area": "דרום",
+      "areas": [
+        "דרום",
+        "אשקלון"
+      ],
+      "kosher": "לא ידוע",
+      "capacityConfidence": "source"
+    },
+    {
+      "name": "הטירה על הים באשדוד",
+      "city": "אשדוד",
+      "type": "אולם וגן אירועים",
+      "style": "גן אירועים",
+      "min": 30,
+      "max": 300,
+      "vibe": [
+        "ים",
+        "חופה",
+        "גן",
+        "אשדוד",
+        "חוף"
+      ],
+      "strength": "אולם וגן אירועים על הים באשדוד, מתאים לכ-30 עד 300 אורחים.",
+      "sourceName": "Call Events / hafakot.co.il",
+      "sourceUrl": "https://www.hafakot.co.il/location/הטירה-על-הים-באשדוד/",
+      "area": "דרום",
+      "areas": [
+        "דרום",
+        "אשדוד"
+      ],
+      "kosher": "לא ידוע",
+      "capacityConfidence": "source"
+    },
+    {
+      "name": "יהל 54 – חצר המשאלות",
+      "city": "קריית גת",
+      "type": "משק לאירועים",
+      "style": "טבע / שטח",
+      "min": 10,
+      "max": 400,
+      "vibe": [
+        "משק",
+        "בריכה",
+        "פסטורלי",
+        "יוקרתי",
+        "טבע"
+      ],
+      "strength": "משק יוקרתי ופסטורלי עם בריכה באזור קריית גת, מתאים לאירועים קטנים ובינוניים.",
+      "sourceName": "Call Events / hafakot.co.il",
+      "sourceUrl": "https://www.hafakot.co.il/location/יהל-54/",
+      "area": "דרום",
+      "areas": [
+        "דרום",
+        "קריית גת"
+      ],
+      "kosher": "לא ידוע",
+      "capacityConfidence": "source"
+    },
+    {
+      "name": "Garden Hall | גארדן הול",
+      "city": "באר שבע",
+      "type": "גן ואולם אירועים",
+      "style": "גן אירועים",
+      "min": 120,
+      "max": 600,
+      "vibe": [
+        "גן",
+        "אולם",
+        "באר שבע",
+        "משפחתי",
+        "עסקי"
+      ],
+      "strength": "גן ואולם אירועים בבאר שבע לאירועי חתונה, ברית/ה, בר/בת מצווה ואירועים עסקיים.",
+      "sourceName": "EventPlaces",
+      "sourceUrl": "https://www.eventplaces.co.il/Supplier-511693/Garden-Hall-גארדן-הול-גן-ואולם-אירועים",
+      "area": "דרום",
+      "areas": [
+        "דרום",
+        "באר שבע"
+      ],
+      "kosher": "לא ידוע",
+      "capacityConfidence": "source"
+    },
+    {
+      "name": "אודיסאה",
+      "city": "באר שבע",
+      "type": "מתחם אירועים",
+      "style": "גן אירועים",
+      "min": 120,
+      "max": 600,
+      "vibe": [
+        "גן ואולם",
+        "ארכיטקטורה",
+        "תאורה",
+        "באר שבע"
+      ],
+      "strength": "מתחם אירועים בבאר שבע המשלב גן ואולם בארכיטקטורה ייחודית.",
+      "sourceName": "EventPlaces",
+      "sourceUrl": "https://www.eventplaces.co.il/Supplier-123713/אודיסאה",
+      "area": "דרום",
+      "areas": [
+        "דרום",
+        "באר שבע"
+      ],
+      "kosher": "לא ידוע",
+      "capacityConfidence": "source"
+    },
+    {
+      "name": "ארבע עונות",
+      "city": "ברור חיל",
+      "type": "גן אירועים",
+      "style": "גן אירועים",
+      "min": 120,
+      "max": 700,
+      "vibe": [
+        "כפרי",
+        "נוף",
+        "גן",
+        "אולם מקורה",
+        "חוץ"
+      ],
+      "strength": "גן אירועים מפואר לצד נוף כפרי בברור חיל, עם אפשרות אירוע תחת כיפת השמיים או באולם מקורה.",
+      "sourceName": "EventPlaces",
+      "sourceUrl": "https://www.eventplaces.co.il/Supplier-490446/ארבע-עונות",
+      "area": "דרום",
+      "areas": [
+        "דרום",
+        "ברור חיל"
+      ],
+      "kosher": "לא ידוע",
+      "capacityConfidence": "source"
+    },
+    {
+      "name": "לורד גארדן",
+      "city": "אשקלון",
+      "type": "אולם אירועים",
+      "style": "אולם",
+      "min": 120,
+      "max": 700,
+      "vibe": [
+        "אשקלון",
+        "יוקרתי",
+        "גדול",
+        "מעוצב"
+      ],
+      "strength": "אולמי לורד גארדן באשקלון מאפשרים מגוון אירועים עד כ-700 איש.",
+      "sourceName": "EventPlaces",
+      "sourceUrl": "https://www.eventplaces.co.il/Supplier-490444/לורד-גארדן",
+      "area": "דרום",
+      "areas": [
+        "דרום",
+        "אשקלון"
+      ],
+      "kosher": "לא ידוע",
+      "capacityConfidence": "source"
+    },
+    {
+      "name": "C View",
+      "city": "אשקלון",
+      "type": "גן אירועים במלון",
+      "style": "אולם",
+      "min": 80,
+      "max": 600,
+      "vibe": [
+        "מלון",
+        "אשקלון",
+        "כנסים",
+        "אירועי חברה",
+        "אולמות"
+      ],
+      "strength": "גן אירועים במלון לאונרדו אשקלון, כולל מספר אולמות לאירועים פרטיים, כנסים ואירועי חברה.",
+      "sourceName": "EventPlaces",
+      "sourceUrl": "https://www.eventplaces.co.il/A_דרום/גני+אירועים.html",
+      "area": "דרום",
+      "areas": [
+        "דרום",
+        "אשקלון"
+      ],
+      "kosher": "לא ידוע",
+      "capacityConfidence": "source"
+    },
+    {
+      "name": "גני דניאל",
+      "city": "דימונה",
+      "type": "אולם אירועים",
+      "style": "אולם",
+      "min": 100,
+      "max": 600,
+      "vibe": [
+        "דימונה",
+        "אולם",
+        "משפחתי",
+        "דרום"
+      ],
+      "strength": "אולם אירועים מוכר בדימונה, מופיע במאגר איזי כאולם באזור הדרום.",
+      "sourceName": "Easy",
+      "sourceUrl": "https://easy.co.il/list/Event-Venue?region=3",
+      "area": "דרום",
+      "areas": [
+        "דרום",
+        "דימונה"
+      ],
+      "kosher": "לא ידוע",
+      "capacityConfidence": "source"
+    },
+    {
+      "name": "אילבן בוטיק לאירועים ELEVEN",
+      "city": "אשדוד",
+      "type": "אולם בוטיק",
+      "style": "אורבני / בוטיק",
+      "min": 40,
+      "max": 250,
+      "vibe": [
+        "בוטיק",
+        "אשדוד",
+        "אינטימי",
+        "חינה"
+      ],
+      "strength": "אולם בוטיק לאירועים באשדוד, מתאים לאירועים קטנים ובינוניים.",
+      "sourceName": "Easy",
+      "sourceUrl": "https://easy.co.il/list/Venues?region=26889578",
+      "area": "דרום",
+      "areas": [
+        "דרום",
+        "אשדוד"
+      ],
+      "kosher": "לא ידוע",
+      "capacityConfidence": "source"
     }
   ]
 }
