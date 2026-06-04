@@ -1242,7 +1242,8 @@ function scoreDreamVenue(lead,venue){
   let score=0; const reasons=[]; const rawLoc=normalizeDreamText(lead.location); const loc=normalizeDreamArea(lead.location); const dream=(lead.dream||'').toLowerCase();
   const rawVenueCity=normalizeDreamText(venue.city);
   const venueAreas=(venue.areas||[venue.area]).map(normalizeDreamArea);
-  const areaMatch=!loc || venueAreas.includes(loc) || venueAreas.some(a=>a && (a.includes(loc)||loc.includes(a)));
+  const primaryAreaMatch=!!loc && normalizeDreamArea(venue.area)===loc;
+  const areaMatch=!loc || primaryAreaMatch || venueAreas.includes(loc) || venueAreas.some(a=>a && (a.includes(loc)||loc.includes(a)));
   const exactLocationMatch=!!rawLoc && !!rawVenueCity && (rawVenueCity===rawLoc || rawVenueCity.includes(rawLoc) || rawLoc.includes(rawVenueCity));
   const specificLocation=isSpecificDreamLocation(rawLoc);
   if(exactLocationMatch){ score+=52; reasons.push('מתאים לעיר/מיקום המדויק שביקשת'); }
@@ -1260,10 +1261,10 @@ function scoreDreamVenue(lead,venue){
   }
   if(specificLocation && areaMatch && !exactLocationMatch){ score=Math.min(score,72); }
   if(loc && !areaMatch){ score=Math.min(score,42); reasons.unshift('לא באזור שביקשת — מוצג רק כחלופה רחבה'); }
-  return {...venue,score:Math.min(99,score),areaMatch,exactLocationMatch,reasons:reasons.slice(0,4)};
+  return {...venue,score:Math.min(99,score),areaMatch,primaryAreaMatch,exactLocationMatch,reasons:reasons.slice(0,4)};
 }
 function dreamRecommendations(lead){
-  const scored=DREAM_VENUE_REAL_DB.map(v=>scoreDreamVenue(lead,v)).sort((a,b)=>(Number(b.exactLocationMatch)-Number(a.exactLocationMatch)) || (Number(b.areaMatch)-Number(a.areaMatch)) || b.score-a.score);
+  const scored=DREAM_VENUE_REAL_DB.map(v=>scoreDreamVenue(lead,v)).sort((a,b)=>(Number(b.exactLocationMatch)-Number(a.exactLocationMatch)) || (Number(b.primaryAreaMatch)-Number(a.primaryAreaMatch)) || (Number(b.areaMatch)-Number(a.areaMatch)) || b.score-a.score);
   const exactMatches=scored.filter(r=>r.exactLocationMatch);
   const areaMatches=scored.filter(r=>r.areaMatch);
   const picked=[]; const seen=new Set();
