@@ -387,7 +387,7 @@
           <div class="full"><label>מתי בערך?</label><input id="dreamDateWindow" placeholder="לדוגמה: יוני 2026 / חמישי בערב / גמיש" /></div>
           <div class="full"><label>תארו את החלום שלכם</label><textarea id="dreamText" placeholder="איך אתם מדמיינים את האירוע? אווירה, אוכל, חופה, מוזיקה, קהל, חניה, נוף, חוויה לאורחים, דברים שחשובים לכם או דברים שאתם לא רוצים..."></textarea></div>
         </div>
-        <div class="dream-actions"><button onclick="generateDreamRecommendations()">קבלו המלצות ראשוניות</button><button class="secondary" onclick="submitDreamLead()">שמרו ליד ושיחה עם הסוכנת</button><a class="secondary" href="/">כניסת אדמין</a></div>
+        <div class="dream-actions"><button onclick="runDreamConsultation()">ייעוץ חכם לפני המלצות</button><button class="secondary" onclick="generateDreamRecommendations()">קבלו המלצות ראשוניות</button><button class="secondary" onclick="submitDreamLead()">שמרו ליד ושיחה עם הסוכנת</button><a class="secondary" href="/">כניסת אדמין</a></div>
         <div id="dreamStatus" class="dream-status"></div>
       </div>
       <div class="dream-card">
@@ -1299,6 +1299,37 @@ function renderDreamRecommendations(recs){
   const lead=dreamLeadPayload();
   const eventTime=lead.eventTime && lead.eventTime!=='לא משנה / גמיש' ? ` · ${escapeHtml(lead.eventTime)}` : '';
   box.innerHTML=recs.map((r,i)=>`<div class="dream-match"><b>${i+1}. ${escapeHtml(r.name)}</b><span class="score">התאמה ${r.score}%</span><p>${escapeHtml(r.strength)}</p><div class="label" style="color:#e7d8c8!important">${escapeHtml(r.area)} · ${escapeHtml(r.style)} · ${r.min}-${r.max} אורחים · ${escapeHtml(r.kosher)}${eventTime}</div><ul>${(r.reasons.length?r.reasons:['התאמה כללית טובה לפתיחת שיחה עם האולם']).map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ul><p><b>מה לבדוק מול המקום:</b> זמינות בטווח התאריך ובמועד שבחרתם, מחיר מנה, חניה, שעת סיום, תעודת כשרות ותנאי ביטול.</p>${r.sourceUrl?`<p class="label" style="color:#e7d8c8!important">מקור: <a href="${escapeHtml(r.sourceUrl)}" target="_blank" rel="noopener">${escapeHtml(r.sourceName||'מקור ציבורי')}</a>${r.capacityConfidence==='estimated'?' · קיבולת משוערת — לאימות מול המקום':''}</p>`:''}</div>`).join('');
+}
+function dreamConsultationQuestions(lead){
+  const questions=[]; const intent=dreamLocationIntent(lead.location);
+  if(!lead.location || intent.unclear) questions.push({title:'איפה בערך תרצו את האירוע?',body:lead.location?`כתבתם “${lead.location}”, ואני רוצה לוודא אזור כדי לא להציע מקומות רחוקים.`:'המיקום הוא אחד הדברים שהכי משפיעים על התאמה.',answers:[['דרום / באר שבע והסביבה','location','דרום'],['מרכז / גוש דן','location','מרכז'],['שרון','location','שרון'],['שפלה','location','שפלה'],['ירושלים והסביבה','location','ירושלים'],['צפון','location','צפון']]});
+  if(!lead.guests) questions.push({title:'כמה אורחים בערך?',body:'אפילו הערכה גסה עוזרת לסנן מקומות קטנים מדי או גדולים מדי.',answers:[['עד 100','guests','80'],['100–180','guests','150'],['180–300','guests','240'],['300+','guests','350']]});
+  if((!lead.venueStyle || lead.venueStyle==='לא משנה לי') && !lead.dream.includes('כמה כיוונים')) questions.push({title:'איזה אופי מקום אתם מדמיינים?',body:'זה יעזור לי להעדיף גן, אולם, מקום בוטיק או טבע.',answers:[['גן אירועים','venueStyle','גן אירועים'],['אולם','venueStyle','אולם'],['אורבני / בוטיק','venueStyle','אורבני / בוטיק'],['טבע / שטח','venueStyle','טבע / שטח'],['עוד לא יודעים','dream','חשוב לנו לקבל כמה כיוונים שונים של מקום']]});
+  if(!lead.dream || lead.dream.length<18) questions.push({title:'מה הכי חשוב לכם במקום?',body:'בחרו 1–2 דברים, ואשלב אותם בדיוק ההמלצות.',answers:[['גן יפה וחופה בחוץ','dream','חשוב לנו גן יפה, חופה בחוץ ואווירה נעימה לאורחים'],['חניה ונגישות','dream','חשובים לנו חניה נוחה, נגישות והגעה קלה'],['אוכל ברמה גבוהה','dream','חשובה לנו קולינריה טובה וחוויית אירוח מוקפדת'],['מחיר נוח','dream','חשוב לנו מקום בתקציב נוח בלי לוותר על איכות'],['יוקרתי ומרשים','dream','חשוב לנו מקום יוקרתי, מרשים ומעוצב']]});
+  if(lead.kosher==='כשר' && !lead.dream.includes('כשרות חשובה')) questions.push({title:'עד כמה הכשרות קריטית?',body:'חלק מהרשומות במאגר מסומנות “לא ידוע”, ולכן כדאי לדעת אם לסנן בזהירות או רק לבדוק מול המקום.',answers:[['חייב כשר','dream','כשרות חשובה וחייבים לבדוק תעודת כשרות מול המקום'],['מהדרין','kosher','מהדרין'],['לא קריטי כרגע','kosher','לא משנה']]});
+  return questions.slice(0,1);
+}
+function applyDreamConsultAnswer(field,value){
+  const map={location:'dreamLocation',guests:'dreamGuests',venueStyle:'dreamVenueStyle',kosher:'dreamKosher'};
+  if(field==='dream'){
+    const el=document.getElementById('dreamText');
+    if(el) el.value=[el.value.trim(),value].filter(Boolean).join(el.value.trim()?'. ':'');
+  } else {
+    const el=document.getElementById(map[field]); if(el) el.value=value;
+  }
+  runDreamConsultation();
+}
+function runDreamConsultation(){
+  const lead=dreamLeadPayload(); const status=document.getElementById('dreamStatus'); const box=document.getElementById('dreamResults');
+  const questions=dreamConsultationQuestions(lead);
+  if(questions.length){
+    const q=questions[0];
+    if(box) box.innerHTML=`<div class="dream-match"><b>ייעוץ חכם: ${escapeHtml(q.title)}</b><p>${escapeHtml(q.body)}</p><div class="dream-actions">${q.answers.map(a=>`<button class="secondary" onclick="applyDreamConsultAnswer('${escapeHtml(a[1])}','${escapeHtml(a[2])}')">${escapeHtml(a[0])}</button>`).join('')}</div><p class="label" style="color:#e7d8c8!important">אחרי בחירה אחת אמשיך לדייק, ואם יש מספיק מידע — אציג מקומות מתאימים.</p></div>`;
+    if(status) status.textContent='היועצת שואלת שאלה קצרה כדי לדייק את המקומות לפני הצגת המלצות.';
+    return [];
+  }
+  if(status) status.textContent='יש לי מספיק מידע ראשוני. בונה המלצות מדויקות יותר לפי הייעוץ.';
+  return generateDreamRecommendations();
 }
 function generateDreamRecommendations(){
   const lead=dreamLeadPayload(); const status=document.getElementById('dreamStatus');
