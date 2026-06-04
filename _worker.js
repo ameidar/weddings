@@ -275,6 +275,94 @@ async function dreamLeadsApi(request, env) {
   return jsonResponse({ ok:true, lead });
 }
 
+function sanitizeDreamConsultLead(input = {}) {
+  const clean = (value, max = 500) => String(value || '').trim().slice(0, max);
+  return {
+    eventType: clean(input.eventType, 80),
+    location: clean(input.location, 160),
+    guests: Number(input.guests) > 0 ? Math.min(20000, Math.round(Number(input.guests))) : 0,
+    venueStyle: clean(input.venueStyle, 80),
+    kosher: clean(input.kosher, 80),
+    budget: clean(input.budget, 80),
+    eventTime: clean(input.eventTime, 80),
+    seatingStyle: clean(input.seatingStyle, 80),
+    dateWindow: clean(input.dateWindow, 120),
+    dream: clean(input.dream, 1800),
+  };
+}
+
+function sanitizeDreamConsultHistory(history) {
+  if (!Array.isArray(history)) return [];
+  return history.slice(-8).map(m => ({
+    role: String(m?.role || '') === 'assistant' ? 'assistant' : 'user',
+    content: String(m?.content || '').trim().slice(0, 900),
+  })).filter(m => m.content);
+}
+
+function parseDreamAiJson(text) {
+  const raw = String(text || '').trim();
+  try { return JSON.parse(raw); } catch {}
+  const m = raw.match(/\{[\s\S]*\}/);
+  if (m) { try { return JSON.parse(m[0]); } catch {} }
+  return null;
+}
+
+function normalizeDreamAiPlan(plan) {
+  const updatesIn = plan && typeof plan === 'object' && plan.updates && typeof plan.updates === 'object' ? plan.updates : {};
+  const clean = (value, max = 500) => String(value || '').trim().slice(0, max);
+  const updates = {};
+  if (updatesIn.location) updates.location = clean(updatesIn.location, 160);
+  if (Number(updatesIn.guests) > 0) updates.guests = Math.min(20000, Math.round(Number(updatesIn.guests)));
+  if (updatesIn.venueStyle) updates.venueStyle = clean(updatesIn.venueStyle, 80);
+  if (updatesIn.kosher) updates.kosher = clean(updatesIn.kosher, 80);
+  if (updatesIn.budget) updates.budget = clean(updatesIn.budget, 80);
+  if (updatesIn.eventTime) updates.eventTime = clean(updatesIn.eventTime, 80);
+  if (updatesIn.seatingStyle) updates.seatingStyle = clean(updatesIn.seatingStyle, 80);
+  if (updatesIn.dateWindow) updates.dateWindow = clean(updatesIn.dateWindow, 120);
+  if (updatesIn.dream) updates.dream = clean(updatesIn.dream, 1800);
+  return {
+    reply: clean(plan?.reply || plan?.answer || 'כדי לדייק את המקומות, ספרו לי עוד קצת על האזור והאווירה שחשובים לכם.', 1200),
+    shouldRecommend: !!plan?.shouldRecommend,
+    updates,
+  };
+}
+
+async function dreamConsultAiApi(request, env) {
+  if (request.method !== 'POST') return jsonResponse({ ok:false, error:'Method not allowed' }, 405);
+  const body = await request.json().catch(() => ({}));
+  const lead = sanitizeDreamConsultLead(body.lead || {});
+  const message = String(body.message || '').trim().slice(0, 1200);
+  const history = sanitizeDreamConsultHistory(body.history);
+  if (!message && !lead.location && !lead.dream) return jsonResponse({ ok:false, error:'חסרה שאלה או תיאור חלום.' }, 400);
+  if (!env.OPENAI_API_KEY) return jsonResponse({ ok:false, needsSetup:true, error:'OPENAI_API_KEY is not configured for Dream AI consultation' }, 501);
+  const system = `את/ה יועץ/ת AI חם/ה ומקצועי/ת למציאת מקום לאירוע בישראל עבור ORMa Dream Finder.
+המטרה: להבין את רצון הלקוח לגבי מיקום האירוע, אזור, כמות אורחים, סוג מקום, כשרות, תקציב ואווירה.
+חשוב: אל תמציא שמות אולמות ואל תבטיח זמינות/מחירים. ההמלצות עצמן יגיעו ממאגר פנימי אחרי שתעדכן/י שדות.
+אם המיקום לא ברור, שאל/י שאלה אחת ממוקדת על אזור/עיר קרובה. אם הבקשה ברורה מספיק, החזר/י shouldRecommend=true ועדכונים.
+אזורים אפשריים: דרום, מרכז, שרון, שפלה, ירושלים, צפון. אם יש יישוב קטן, נסה/י לשייך לאזור לפי ידע כללי ואם יש ספק שאל/י.
+סגנונות אפשריים: גן אירועים, אולם, אורבני / בוטיק, טבע / שטח, לא משנה לי.
+כשרות אפשרית: כשר, לא כשר, מהדרין, לא משנה.
+ענה/י בעברית בלבד, קצר וברור, בפורמט JSON תקין בלבד:
+{"reply":"...","shouldRecommend":true|false,"updates":{"location":"...","guests":150,"venueStyle":"...","kosher":"...","budget":"...","eventTime":"...","seatingStyle":"...","dateWindow":"...","dream":"..."}}`;
+  const user = JSON.stringify({ lead, latestUserMessage: message, history }, null, 2).slice(0, 12000);
+  const upstream = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'content-type':'application/json', authorization:`Bearer ${env.OPENAI_API_KEY}` },
+    body: JSON.stringify({
+      model: env.DREAM_AI_MODEL || 'gpt-4o-mini',
+      temperature: 0.25,
+      response_format: { type:'json_object' },
+      messages: [{ role:'system', content: system }, { role:'user', content: user }],
+    }),
+  });
+  const text = await upstream.text();
+  if (!upstream.ok) return jsonResponse({ ok:false, error:'Dream AI provider error', detail:text.slice(0, 500) }, 502);
+  let data; try { data = JSON.parse(text); } catch { data = null; }
+  const plan = parseDreamAiJson(data?.choices?.[0]?.message?.content || '');
+  if (!plan) return jsonResponse({ ok:false, error:'Dream AI returned an invalid response' }, 502);
+  return jsonResponse({ ok:true, provider:'openai', ...normalizeDreamAiPlan(plan) });
+}
+
 async function eventsApi(request, env) {
   const admin = await requireAdmin(request, env);
   if (!admin) return jsonResponse({ ok: false, error: 'Unauthorized' }, 401);
@@ -1546,6 +1634,7 @@ export default {
     if (url.pathname === '/api/auth/me') return jsonResponse({ ok: !!(await verifySession(request, env)), session: await verifySession(request, env) });
     if (url.pathname === '/api/events') return eventsApi(request, env);
     if (url.pathname === '/api/dream-leads') return dreamLeadsApi(request, env);
+    if (url.pathname === '/api/dream-consult-ai') return dreamConsultAiApi(request, env);
     if (url.pathname === '/api/client-login' && request.method === 'POST') return clientLogin(request, env);
     if (url.pathname === '/api/event-assistant' && request.method === 'POST') return eventAssistantApi(request, env);
     if (url.pathname === '/api/event-assistant-history') return eventAssistantHistoryApi(request, env);

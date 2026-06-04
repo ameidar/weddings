@@ -387,7 +387,7 @@
           <div class="full"><label>מתי בערך?</label><input id="dreamDateWindow" placeholder="לדוגמה: יוני 2026 / חמישי בערב / גמיש" /></div>
           <div class="full"><label>תארו את החלום שלכם</label><textarea id="dreamText" placeholder="איך אתם מדמיינים את האירוע? אווירה, אוכל, חופה, מוזיקה, קהל, חניה, נוף, חוויה לאורחים, דברים שחשובים לכם או דברים שאתם לא רוצים..."></textarea></div>
         </div>
-        <div class="dream-actions"><button onclick="runDreamConsultation()">ייעוץ חכם לפני המלצות</button><button class="secondary" onclick="generateDreamRecommendations()">קבלו המלצות ראשוניות</button><button class="secondary" onclick="submitDreamLead()">שמרו ליד ושיחה עם הסוכנת</button><a class="secondary" href="/">כניסת אדמין</a></div>
+        <div class="dream-actions"><button onclick="openDreamAiConsult()">שיחה עם AI על המקום</button><button class="secondary" onclick="runDreamConsultation()">ייעוץ חכם מקומי</button><button class="secondary" onclick="generateDreamRecommendations()">קבלו המלצות ראשוניות</button><button class="secondary" onclick="submitDreamLead()">שמרו ליד ושיחה עם הסוכנת</button><a class="secondary" href="/">כניסת אדמין</a></div>
         <div id="dreamStatus" class="dream-status"></div>
       </div>
       <div class="dream-card">
@@ -1294,11 +1294,55 @@ function dreamRecommendations(lead){
   });
   return picked;
 }
+function dreamRecommendationHtml(recs,lead=dreamLeadPayload()){
+  const eventTime=lead.eventTime && lead.eventTime!=='לא משנה / גמיש' ? ` · ${escapeHtml(lead.eventTime)}` : '';
+  return recs.map((r,i)=>`<div class="dream-match"><b>${i+1}. ${escapeHtml(r.name)}</b><span class="score">התאמה ${r.score}%</span><p>${escapeHtml(r.strength)}</p><div class="label" style="color:#e7d8c8!important">${escapeHtml(r.area)} · ${escapeHtml(r.style)} · ${r.min}-${r.max} אורחים · ${escapeHtml(r.kosher)}${eventTime}</div><ul>${(r.reasons.length?r.reasons:['התאמה כללית טובה לפתיחת שיחה עם האולם']).map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ul><p><b>מה לבדוק מול המקום:</b> זמינות בטווח התאריך ובמועד שבחרתם, מחיר מנה, חניה, שעת סיום, תעודת כשרות ותנאי ביטול.</p>${r.sourceUrl?`<p class="label" style="color:#e7d8c8!important">מקור: <a href="${escapeHtml(r.sourceUrl)}" target="_blank" rel="noopener">${escapeHtml(r.sourceName||'מקור ציבורי')}</a>${r.capacityConfidence==='estimated'?' · קיבולת משוערת — לאימות מול המקום':''}</p>`:''}</div>`).join('');
+}
 function renderDreamRecommendations(recs){
   const box=document.getElementById('dreamResults'); if(!box) return;
-  const lead=dreamLeadPayload();
-  const eventTime=lead.eventTime && lead.eventTime!=='לא משנה / גמיש' ? ` · ${escapeHtml(lead.eventTime)}` : '';
-  box.innerHTML=recs.map((r,i)=>`<div class="dream-match"><b>${i+1}. ${escapeHtml(r.name)}</b><span class="score">התאמה ${r.score}%</span><p>${escapeHtml(r.strength)}</p><div class="label" style="color:#e7d8c8!important">${escapeHtml(r.area)} · ${escapeHtml(r.style)} · ${r.min}-${r.max} אורחים · ${escapeHtml(r.kosher)}${eventTime}</div><ul>${(r.reasons.length?r.reasons:['התאמה כללית טובה לפתיחת שיחה עם האולם']).map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ul><p><b>מה לבדוק מול המקום:</b> זמינות בטווח התאריך ובמועד שבחרתם, מחיר מנה, חניה, שעת סיום, תעודת כשרות ותנאי ביטול.</p>${r.sourceUrl?`<p class="label" style="color:#e7d8c8!important">מקור: <a href="${escapeHtml(r.sourceUrl)}" target="_blank" rel="noopener">${escapeHtml(r.sourceName||'מקור ציבורי')}</a>${r.capacityConfidence==='estimated'?' · קיבולת משוערת — לאימות מול המקום':''}</p>`:''}</div>`).join('');
+  box.innerHTML=dreamRecommendationHtml(recs);
+}
+let dreamAiHistory=[];
+function applyDreamAiUpdates(updates={}){
+  const set=(id,value)=>{ const el=document.getElementById(id); if(el && value!==undefined && value!==null && String(value).trim()) el.value=String(value).trim(); };
+  set('dreamLocation', updates.location);
+  set('dreamGuests', updates.guests);
+  set('dreamVenueStyle', updates.venueStyle);
+  set('dreamKosher', updates.kosher);
+  set('dreamBudget', updates.budget);
+  set('dreamEventTime', updates.eventTime);
+  set('dreamSeatingStyle', updates.seatingStyle);
+  set('dreamDateWindow', updates.dateWindow);
+  if(updates.dream){ const el=document.getElementById('dreamText'); if(el) el.value=String(updates.dream).trim(); }
+}
+function renderDreamAiConsult(extraHtml=''){
+  const box=document.getElementById('dreamResults'); if(!box) return;
+  const bubbles=dreamAiHistory.map(m=>`<div class="dream-match" style="background:${m.role==='user'?'rgba(198,166,100,.14)':'rgba(18,13,9,.35)'}"><b>${m.role==='user'?'אתם':'יועצת AI'}</b><p>${escapeHtml(m.content)}</p></div>`).join('');
+  box.innerHTML=`${bubbles}<div class="dream-match"><b>דברו איתי על המקום</b><p class="label" style="color:#e7d8c8!important">אפשר לכתוב חופשי: אזור, עיר, מרחק נסיעה, גן/אולם, כשרות, תקציב, או “אני לא בטוח”.</p><textarea id="dreamAiInput" placeholder="לדוגמה: אנחנו רוצים גן אירועים ליד עומר, עד 20 דקות מבאר שבע, 150 איש, עדיף חופה בחוץ" style="width:100%;min-height:96px;border-radius:16px;padding:12px;font-family:inherit;font-size:16px"></textarea><div class="dream-actions"><button onclick="sendDreamAiConsult()">שלחו ליועצת AI</button><button class="secondary" onclick="generateDreamRecommendations()">הציגו המלצות לפי הטופס</button></div></div>${extraHtml}`;
+}
+function openDreamAiConsult(){
+  if(!dreamAiHistory.length) dreamAiHistory=[{role:'assistant',content:'ספרו לי במילים שלכם איפה תרצו את האירוע ומה חשוב לכם במקום. אם יש יישוב קטן, כתבו גם עיר קרובה או מרחק נסיעה רצוי.'}];
+  renderDreamAiConsult(); const status=document.getElementById('dreamStatus'); if(status) status.textContent='שיחת AI פתוחה. היועצת תדייק את הבקשה ואז תחזיר מקומות מתוך המאגר.';
+}
+async function sendDreamAiConsult(){
+  const input=document.getElementById('dreamAiInput'); const message=String(input?.value||'').trim(); const status=document.getElementById('dreamStatus');
+  if(!message){ if(status) status.textContent='כתבו לי משפט או שאלה על המקום הרצוי.'; return; }
+  dreamAiHistory.push({role:'user',content:message}); renderDreamAiConsult('<div class="dream-match"><b>יועצת AI</b><p>חושבת ומדייקת את הבקשה...</p></div>');
+  try{
+    const res=await fetch('/api/dream-consult-ai',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({lead:dreamLeadPayload(),message,history:dreamAiHistory.slice(0,-1)})});
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok || !data.ok){
+      const fallback=data.needsSetup?'חיבור ה־AI עדיין לא הוגדר בשרת. בינתיים אפשר להשתמש בייעוץ המקומי, וכשנגדיר מפתח OpenAI זה יהפוך לשיחה חכמה מלאה.':(data.error||'לא הצלחתי לקבל תשובה מה־AI כרגע.');
+      dreamAiHistory.push({role:'assistant',content:fallback}); renderDreamAiConsult(); if(status) status.textContent=fallback; return;
+    }
+    applyDreamAiUpdates(data.updates||{});
+    dreamAiHistory.push({role:'assistant',content:data.reply||'דייקתי את הבקשה. אפשר להמשיך לשאול או להציג המלצות.'});
+    if(data.shouldRecommend){ const recs=dreamRecommendations(dreamLeadPayload()); renderDreamAiConsult(`<h3 style="color:#fff3d6!important">מקומות מדויקים לפי השיחה</h3>${dreamRecommendationHtml(recs)}`); }
+    else renderDreamAiConsult();
+    if(status) status.textContent=data.shouldRecommend?'ה־AI דייק את הבקשה והצגתי מקומות מתוך המאגר.':'ה־AI דייק את הבקשה. אפשר לענות לו או להציג המלצות.';
+  } catch(err){
+    dreamAiHistory.push({role:'assistant',content:'הייתה תקלה זמנית בחיבור ל־AI. אפשר לנסות שוב בעוד רגע.'}); renderDreamAiConsult(); if(status) status.textContent='תקלה זמנית בחיבור ל־AI.';
+  }
 }
 function dreamConsultationQuestions(lead){
   const questions=[]; const intent=dreamLocationIntent(lead.location);
