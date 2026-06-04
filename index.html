@@ -1266,7 +1266,12 @@ function dreamRecommendations(lead){
   const scored=DREAM_VENUE_REAL_DB.map(v=>scoreDreamVenue(lead,v)).sort((a,b)=>(Number(b.exactLocationMatch)-Number(a.exactLocationMatch)) || (Number(b.areaMatch)-Number(a.areaMatch)) || b.score-a.score);
   const exactMatches=scored.filter(r=>r.exactLocationMatch);
   const areaMatches=scored.filter(r=>r.areaMatch);
-  return (exactMatches.length?exactMatches:(areaMatches.length?areaMatches:scored)).slice(0,3);
+  const picked=[]; const seen=new Set();
+  [...exactMatches,...areaMatches,...scored].forEach(r=>{
+    const key=`${r.name}|${r.city||''}|${r.sourceUrl||''}`;
+    if(picked.length<5 && !seen.has(key)){ picked.push(r); seen.add(key); }
+  });
+  return picked;
 }
 function renderDreamRecommendations(recs){
   const box=document.getElementById('dreamResults'); if(!box) return;
