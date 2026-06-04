@@ -1223,20 +1223,40 @@ function dreamLeadPayload(){ return {name:dreamVal('dreamName'),phone:dreamVal('
 function normalizeDreamText(value){
   return String(value||'').trim().toLowerCase().replace(/[״׳']/g,'').replace(/\s+/g,' ');
 }
+const DREAM_AREA_CITY_HINTS={
+  'דרום':['דרום','נגב','עוטף עזה','ערבה','ים המלח','באר שבע','באר-שבע','עומר','מיתר','להבים','רהט','אשל הנשיא','אשדוד','אשקלון','קרית גת','קריית גת','קרית מלאכי','קריית מלאכי','אילת','דימונה','נתיבות','שדרות','אופקים','ירוחם','ערד','מצפה רמון','שדה בוקר','ירוחם','ברור חיל','צומת ראם','בני דרום','גן יבנה'],
+  'מרכז':['מרכז','גוש דן','תל אביב','תל-אביב','יפו','רמת גן','גבעתיים','פתח תקווה','פתח-תקווה','ראשון','ראשון לציון','חולון','בת ים','אור יהודה','יהוד','קרית אונו','קריית אונו','בני ברק','בית דגן','סביון','רמת אפעל','אזור'],
+  'שרון':['שרון','הרצליה','רעננה','כפר סבא','נתניה','חדרה','עמק חפר','רמת השרון','הוד השרון','אבן יהודה','קדימה','צורן','פרדסיה','תל מונד','שפיים','געש','יקום','נורדיה','בצרה','כפר ויתקין','משמר השרון'],
+  'שפלה':['שפלה','רחובות','נס ציונה','מודיעין','מודיעין-מכבים-רעות','לוד','רמלה','כנות','גדרה','יבנה','מזכרת בתיה','קריית עקרון','קרית עקרון','נצר סרני','בית עובד','לטרון','כפר אוריה','עמק האלה','חפץ חיים'],
+  'ירושלים':['ירושלים','הרי ירושלים','בית שמש','מבשרת','מבשרת ציון','אבו גוש','נווה אילן','שורש','מעלה החמישה','עין חמד','קרית ענבים','קריית ענבים'],
+  'צפון':['צפון','גליל','גליל מערבי','גליל עליון','גליל תחתון','גולן','רמת הגולן','חיפה','קריות','קרית אתא','קריית אתא','קרית ביאליק','קריית ביאליק','עכו','נהריה','כרמיאל','טבריה','כנרת','עפולה','נצרת','קיסריה','זכרון יעקב','בנימינה','פרדס חנה','יקנעם','יוקנעם','בית שאן','שדות ים','רגבה']
+};
 function normalizeDreamArea(value){
   const text=normalizeDreamText(value);
   if(!text) return '';
-  if(/דרום|נגב|באר שבע|באר-שבע|עומר|מיתר|להבים|רהט|אשל הנשיא|אשדוד|אשקלון|קרית גת|קריית גת|אילת|דימונה|נתיבות|שדרות|אופקים|ירוחם|ערד/.test(text)) return 'דרום';
-  if(/מרכז|תל אביב|גוש דן|רמת גן|פתח תקווה|ראשון|חולון|בת ים/.test(text)) return 'מרכז';
-  if(/שרון|הרצליה|רעננה|כפר סבא|נתניה|חדרה/.test(text)) return 'שרון';
-  if(/שפלה|רחובות|נס ציונה|מודיעין|לוד|רמלה|כנות|קריית עקרון|קרית עקרון/.test(text)) return 'שפלה';
-  if(/ירושלים|בית שמש/.test(text)) return 'ירושלים';
-  if(/צפון|חיפה|גליל|גולן|טבריה|עפולה|קיסריה/.test(text)) return 'צפון';
+  for(const [area,hints] of Object.entries(DREAM_AREA_CITY_HINTS)){
+    if(hints.some(h=>text.includes(normalizeDreamText(h)))) return area;
+  }
   return text;
+}
+function dreamLocationIntent(value){
+  const raw=normalizeDreamText(value);
+  const area=normalizeDreamArea(value);
+  const knownArea=Object.keys(DREAM_AREA_CITY_HINTS).includes(area);
+  const exactVenueCity=raw && DREAM_VENUE_REAL_DB.some(v=>{
+    const city=normalizeDreamText(v.city);
+    return city && (city===raw || city.includes(raw) || raw.includes(city));
+  });
+  const unclear=!!raw && !knownArea && !exactVenueCity && !/כל הארץ|לא משנה|גמיש/.test(raw);
+  return {raw,area,knownArea,exactVenueCity,unclear};
 }
 function isSpecificDreamLocation(value){
   const text=normalizeDreamText(value);
-  return !!text && !/^(דרום|נגב|מרכז|גוש דן|שרון|שפלה|ירושלים|צפון|כל הארץ)$/.test(text);
+  return !!text && !/^(דרום|נגב|מרכז|גוש דן|שרון|שפלה|ירושלים|צפון|כל הארץ|לא משנה|גמיש)$/.test(text);
+}
+function renderDreamClarification(intent){
+  const box=document.getElementById('dreamResults');
+  if(box) box.innerHTML=`<div class="dream-match"><b>רק רגע — צריך לדייק את המיקום</b><p>כתבתם: <b>${escapeHtml(intent.raw)}</b>. אני לא בטוחה לאיזה אזור בארץ לשייך את זה, ולכן עדיף לא להחזיר המלצות רחבות ולא מדויקות.</p><p>אפשר לכתוב למשל: <b>דרום / באר שבע והסביבה / מרכז / שרון / שפלה / ירושלים / צפון</b>, או עיר קרובה מוכרת.</p><ul><li>אם התכוונתם ליישוב קטן — כתבו גם עיר/אזור לידו.</li><li>לדוגמה: “עומר ליד באר שבע”, “מושב באזור השרון”, “גן אירועים בצפון ליד חיפה”.</li></ul></div>`;
 }
 function scoreDreamVenue(lead,venue){
   let score=0; const reasons=[]; const rawLoc=normalizeDreamText(lead.location); const loc=normalizeDreamArea(lead.location); const dream=(lead.dream||'').toLowerCase();
@@ -1283,7 +1303,9 @@ function renderDreamRecommendations(recs){
 function generateDreamRecommendations(){
   const lead=dreamLeadPayload(); const status=document.getElementById('dreamStatus');
   if(!lead.location || !lead.guests || !lead.dream){ if(status) status.textContent='כדי לבנות המלצה צריך לפחות מיקום, כמות אורחים ותיאור חלום.'; return []; }
-  const recs=dreamRecommendations(lead); renderDreamRecommendations(recs); if(status) status.textContent='בנינו התאמה ראשונית. אפשר לשמור את הפנייה כדי שנחזור עם אפשרויות מדויקות יותר.'; return recs;
+  const intent=dreamLocationIntent(lead.location);
+  if(intent.unclear){ renderDreamClarification(intent); if(status) status.textContent='אני צריכה הבהרה קטנה על המיקום לפני שאציג אולמות, כדי לא לתת המלצות לא רלוונטיות.'; return []; }
+  const recs=dreamRecommendations(lead); renderDreamRecommendations(recs); if(status) status.textContent=`הבנתי את הבקשה${intent.knownArea?' כאזור '+intent.area:''}. בנינו התאמה ראשונית; אפשר לשמור את הפנייה כדי שנחזור עם אפשרויות מדויקות יותר.`; return recs;
 }
 async function submitDreamLead(){
   const status=document.getElementById('dreamStatus'); const lead=dreamLeadPayload(); const recs=generateDreamRecommendations();
