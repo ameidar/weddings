@@ -760,7 +760,14 @@ imma, 123456, אמא"></textarea><small>כל משתמש כאן יוכל להיכ
       <h3 style="margin:0 0 6px;font-size:22px">בחירת ספקים משלימים לאירוע</h3>
       <div class="note">האולם מטופל בנפרד כנקודת הפתיחה של האירוע והליד. כאן מנהלים את שאר הספקים: קייטרינג, בר, עיצוב, DJ, צילום, הסעות, רב, אטרקציות ועוד.</div>
       <div id="vendorCatalog" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:12px"></div>
-      <div class="note">אפשר להתחיל מהקטגוריות, ואז להשלים שם ספק, איש קשר, חוזה, סכום ותשלומים.</div>
+      <div class="note">לחיצה על קטגוריה תפתח מאגר ספקים לאותה קטגוריה, כשהקרובים ביותר למקום האירוע מוצגים קודם. אפשר להוסיף ספק לתיק האירוע ואז להשלים חוזה, מחיר, זמינות ותשלומים.</div>
+      <div id="vendorDirectoryPanel" class="card" style="margin-top:12px;background:#fff;display:none">
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap">
+          <div><h3 id="vendorDirectoryTitle" style="margin:0 0 4px;font-size:20px">מאגר ספקים</h3><div id="vendorDirectoryMeta" class="label">בחר קטגוריה כדי לראות ספקים.</div></div>
+          <div class="toolbar" style="margin:0"><input id="vendorDirectorySearch" placeholder="חיפוש ספק / עיר / תגית" oninput="renderVendorDirectoryResults()" /><button class="secondary" onclick="closeVendorDirectory()">סגור</button></div>
+        </div>
+        <div id="vendorDirectoryResults" class="vendor-list" style="max-height:460px;margin-top:10px"></div>
+      </div>
     </section>
     <div class="vendor-grid">
       <div>
@@ -2930,6 +2937,67 @@ function renderPayments(){
   const walletBox=document.getElementById('paymentWalletTxList');
   if(walletBox) walletBox.innerHTML=walletTx.length?walletTx.slice(0,40).map(t=>`<div class="payment-wallet-row"><span>${new Date(t.date).toLocaleDateString('he-IL')} · ${escapeHtml(t.note||'')}</span><span class="money" style="color:${t.type==='income'?'var(--ok)':'var(--bad)'}">${t.type==='income'?'+':'-'}${nis(t.amount)}</span></div>`).join(''):'<div class="payment-empty">אין עדיין תנועות בארנק.</div>';
 }
+let vendorDirectory=[];
+let vendorDirectoryLoaded=false;
+let activeVendorDirectoryCategory='';
+async function loadVendorDirectory(){
+  if(vendorDirectoryLoaded) return vendorDirectory;
+  vendorDirectoryLoaded=true;
+  try{
+    const res=await fetch('/data/event-vendors-israel.json',{cache:'no-store'});
+    const data=await res.json().catch(()=>({vendors:[]}));
+    vendorDirectory=Array.isArray(data.vendors)?data.vendors:[];
+  }catch(e){ vendorDirectory=[]; }
+  return vendorDirectory;
+}
+function eventLocationText(){ return [eventSettings.venue,eventSettings.venueAddress,eventSettings.venueNotes].filter(Boolean).join(' '); }
+function locationTokens(text){
+  const raw=String(text||'').toLowerCase();
+  const areas=['מרכז','שרון','שפלה','ירושלים','דרום','צפון','תל אביב','ראשון לציון','פתח תקווה','רמת גן','חולון','נתניה','הרצליה','כפר סבא','רעננה','חדרה','רחובות','נס ציונה','לוד','מודיעין','גדרה','בית שמש','מבשרת ציון','מעלה אדומים','באר שבע','אשדוד','אשקלון','עומר','נתיבות','חיפה','עפולה','טבריה','כרמיאל','נהריה'];
+  return areas.filter(a=>raw.includes(a.toLowerCase()));
+}
+function vendorDistanceScore(v){
+  const tokens=locationTokens(eventLocationText());
+  const vendorTokens=[v.area,v.city,...(v.areas||[]),...(v.tags||[])].filter(Boolean).map(x=>String(x).toLowerCase());
+  if(!tokens.length) return 50;
+  let score=100;
+  for(const t of tokens){ const lt=t.toLowerCase(); if(vendorTokens.includes(lt)) score-=60; else if(vendorTokens.some(x=>x.includes(lt)||lt.includes(x))) score-=25; }
+  if(String(v.verificationStatus||'')==='verified') score-=10;
+  return Math.max(0,score);
+}
+function vendorDirectoryBadge(v){
+  if(v.verificationStatus==='verified') return 'מאומת';
+  if(v.source==='seed-category-slot') return 'דורש השלמת ספק אמיתי';
+  return 'דורש בדיקה';
+}
+function vendorDirectoryNote(v){
+  const near=vendorDistanceScore(v)<50?'קרוב/רלוונטי למקום האירוע':'רלוונטיות לפי אזור דורשת בדיקה';
+  return `${near} · ${v.city||''}${v.area?' · '+v.area:''}`;
+}
+async function openVendorDirectory(category){
+  activeVendorDirectoryCategory=category||'';
+  const panel=document.getElementById('vendorDirectoryPanel'); if(panel) panel.style.display='block';
+  const title=document.getElementById('vendorDirectoryTitle'); if(title) title.textContent='מאגר ספקים — '+activeVendorDirectoryCategory;
+  const search=document.getElementById('vendorDirectorySearch'); if(search) search.value='';
+  await loadVendorDirectory();
+  renderVendorCatalog();
+  renderVendorDirectoryResults();
+}
+function closeVendorDirectory(){ const panel=document.getElementById('vendorDirectoryPanel'); if(panel) panel.style.display='none'; activeVendorDirectoryCategory=''; renderVendorCatalog(); }
+function renderVendorDirectoryResults(){
+  const box=document.getElementById('vendorDirectoryResults'); if(!box) return;
+  const meta=document.getElementById('vendorDirectoryMeta');
+  const q=String(document.getElementById('vendorDirectorySearch')?.value||'').trim().toLowerCase();
+  const list=vendorDirectory.filter(v=>!activeVendorDirectoryCategory || v.category===activeVendorDirectoryCategory).filter(v=>!q || [v.name,v.city,v.area,v.description,...(v.tags||[])].join(' ').toLowerCase().includes(q)).sort((a,b)=>vendorDistanceScore(a)-vendorDistanceScore(b) || String(a.name||'').localeCompare(String(b.name||''),'he'));
+  if(meta) meta.textContent=`${list.length} רשומות בקטגוריה · ממויין לפי קרבה/התאמה למקום האירוע: ${eventSettings.venue||eventSettings.venueAddress||'לא הוגדר מקום'}`;
+  box.innerHTML=list.length?list.slice(0,120).map(v=>`<div class="vendor-item"><b>${escapeHtml(v.name||'ספק ללא שם')}</b> <span class="pill">${escapeHtml(vendorDirectoryBadge(v))}</span><div class="label">${escapeHtml(v.category||'')} · ${escapeHtml(vendorDirectoryNote(v))}</div><div class="label">${escapeHtml(v.description||'')}</div><div class="toolbar" style="margin:8px 0 0"><button class="secondary" onclick="addVendorFromDirectory('${jsArg(v.id)}')">הוסף לתיק האירוע</button>${v.website?`<a href="${escapeHtml(v.website)}" target="_blank">אתר</a>`:''}</div></div>`).join(''):'<div class="selected-event-empty">לא נמצאו ספקים בקטגוריה הזו. אפשר להוסיף ידנית או להרחיב את המאגר.</div>';
+}
+function addVendorFromDirectory(id){
+  const v=vendorDirectory.find(x=>String(x.id)===String(id)); if(!v) return;
+  vendors.push({name:v.name||'ספק חדש',category:v.category||'אחר',contact:v.contact||'',phone:v.phone||'',email:v.email||'',contractUrl:v.website||'',agreed:0,paid:0,status:'לבירור',dueDate:'',availabilityStatus:'unknown',calendarUrl:'',calendarLastChecked:'',calendarBusySummary:'',contractText:[v.description||'',v.website?'אתר: '+v.website:'',v.notes||''].filter(Boolean).join('\n'),notes:`מקור: מאגר ספקים Orma · ${v.city||''} ${v.area||''}`.trim()});
+  selectedVendorIndex=vendors.length-1; saveVendors(); fillVendorForm(); renderVendors();
+  const msg=document.getElementById('vendorStatusMsg'); if(msg){ msg.textContent='הספק נוסף לתיק האירוע ✅ עכשיו אפשר להשלים פרטים, חוזה וזמינות.'; msg.className='status ok-text'; }
+}
 const VENDOR_CATALOG=[
   {category:'קייטרינג',icon:'🍽️',hint:'תפריט, טעימות, כמות מנות והגשה'},
   {category:'שירותי בר',icon:'🍸',hint:'אלכוהול, ברמנים, תפריט בר ושדרוגים'},
@@ -2950,7 +3018,7 @@ const VENDOR_CATALOG=[
 function renderVendorCatalog(){
   const box=document.getElementById('vendorCatalog'); if(!box) return;
   const existing=new Set(vendors.map(v=>String(v.category||'').trim()).filter(Boolean));
-  box.innerHTML=VENDOR_CATALOG.map(item=>`<button type="button" onclick="addVendorFromCatalog('${jsArg(item.category)}')" style="border:1px solid var(--line);background:#fff;border-radius:16px;padding:12px;min-height:118px;cursor:pointer;text-align:center;box-shadow:0 4px 14px rgba(16,24,40,.04)"><div style="font-size:28px">${item.icon}</div><b>${escapeHtml(item.category)}</b><div class="label" style="font-size:12px;margin-top:4px">${escapeHtml(item.hint)}</div>${existing.has(item.category)?'<span class="pill" style="margin-top:6px">כבר בתיק</span>':''}</button>`).join('');
+  box.innerHTML=VENDOR_CATALOG.map(item=>`<button type="button" onclick="openVendorDirectory('${jsArg(item.category)}')" style="border:1px solid ${activeVendorDirectoryCategory===item.category?'var(--brand)':'var(--line)'};background:${activeVendorDirectoryCategory===item.category?'#ede9fe':'#fff'};border-radius:16px;padding:12px;min-height:118px;cursor:pointer;text-align:center;box-shadow:0 4px 14px rgba(16,24,40,.04)"><div style="font-size:28px">${item.icon}</div><b>${escapeHtml(item.category)}</b><div class="label" style="font-size:12px;margin-top:4px">${escapeHtml(item.hint)}</div>${existing.has(item.category)?'<span class="pill" style="margin-top:6px">כבר בתיק</span>':''}<span class="pill" style="margin-top:6px">פתח מאגר</span></button>`).join('');
 }
 function vendorTemplate(category){
   return {name:'ספק חדש - '+category,category,contact:'',phone:'',email:'',contractUrl:'',agreed:0,paid:0,status:'פתוח',dueDate:'',availabilityStatus:'unknown',calendarUrl:'',calendarLastChecked:'',calendarBusySummary:'',contractText:'',notes:''};
