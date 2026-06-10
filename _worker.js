@@ -9,6 +9,14 @@ function jsonResponse(body, status = 200, extraHeaders = {}) {
   });
 }
 
+function corsJsonResponse(body, status = 200) {
+  return jsonResponse(body, status, {
+    'access-control-allow-origin': '*',
+    'access-control-allow-methods': 'POST, OPTIONS',
+    'access-control-allow-headers': 'content-type',
+  });
+}
+
 const enc = new TextEncoder();
 const EVENTS_KEY = 'admin_events_v2';
 const EVENT_STATE_PREFIX = 'event_state_v1:';
@@ -184,6 +192,78 @@ async function sendResetEmailViaComposioGmail(env, to, link) {
   } catch (err) {
     return { ok: false, error: err.message || 'Gmail send failed' };
   }
+}
+
+async function sendLeadEmail(env, lead) {
+  const to = String(env.AI_CONSULTING_LEAD_EMAIL || env.ADMIN_RESET_EMAIL || env.ADMIN_EMAIL || 'ami@hai.tech').trim();
+  const subject = `ליד חדש לייעוץ AI - ${lead.name || lead.business || 'לקוח חדש'}`;
+  const body = `התקבל ליד חדש מדף הנחיתה לייעוץ AI.
+
+שם: ${lead.name || '-'}
+טלפון: ${lead.phone || '-'}
+מייל: ${lead.email || '-'}
+עסק/חברה: ${lead.business || '-'}
+תחום עניין: ${lead.interest || '-'}
+
+הודעה:
+${lead.message || '-'}
+
+מקור: ${lead.source || '-'}
+תאריך: ${new Date().toISOString()}`;
+
+  if (env.COMPOSIO_API_KEY && env.COMPOSIO_GMAIL_CONNECTED_ACCOUNT_ID) {
+    try {
+      const session = await composioRequest(env, '/api/v3.1/tool_router/session', {
+        user_id: env.COMPOSIO_USER_ID || 'opal-agent',
+        toolkits: { enable: ['gmail'] },
+        connected_accounts: { gmail: [env.COMPOSIO_GMAIL_CONNECTED_ACCOUNT_ID] },
+      });
+      const sent = await composioRequest(env, `/api/v3.1/tool_router/session/${session.session_id}/execute`, {
+        tool_slug: 'GMAIL_SEND_EMAIL',
+        arguments: { recipient_email: to, subject, body },
+      });
+      if (sent?.error) return { ok: false, error: sent.error };
+      return { ok: true };
+    } catch (err) {
+      return { ok: false, error: err.message || 'Gmail send failed' };
+    }
+  }
+
+  if (env.RESEND_API_KEY) {
+    const from = env.RESET_FROM_EMAIL || 'HAI Tech <onboarding@resend.dev>';
+    const upstream = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { authorization: `Bearer ${env.RESEND_API_KEY}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ from, to: [to], subject, text: body }),
+    });
+    const text = await upstream.text();
+    if (!upstream.ok) return { ok: false, error: text || `Email send failed (${upstream.status})` };
+    return { ok: true };
+  }
+  return { ok: false, error: 'Email provider is not configured' };
+}
+
+async function aiConsultingLeadApi(request, env) {
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: {
+    'access-control-allow-origin': '*',
+    'access-control-allow-methods': 'POST, OPTIONS',
+    'access-control-allow-headers': 'content-type',
+  }});
+  if (request.method !== 'POST') return corsJsonResponse({ ok: false, error: 'Method not allowed' }, 405);
+  const body = await request.json().catch(() => ({}));
+  const lead = {
+    name: String(body.name || body['שם'] || '').trim().slice(0, 160),
+    phone: String(body.phone || body['טלפון'] || '').trim().slice(0, 80),
+    email: String(body.email || body['מייל'] || '').trim().slice(0, 160),
+    business: String(body.business || body['עסק'] || '').trim().slice(0, 180),
+    interest: String(body.interest || body['תחום עניין'] || '').trim().slice(0, 220),
+    message: String(body.message || body['הודעה'] || '').trim().slice(0, 2000),
+    source: String(body.source || request.headers.get('origin') || '').trim().slice(0, 300),
+  };
+  if (!lead.name || !lead.phone) return corsJsonResponse({ ok: false, error: 'נא למלא שם וטלפון' }, 400);
+  const sent = await sendLeadEmail(env, lead);
+  if (!sent.ok) return corsJsonResponse({ ok: false, error: sent.error || 'שליחת המייל נכשלה' }, 502);
+  return corsJsonResponse({ ok: true, message: 'הפרטים נשלחו בהצלחה' });
 }
 
 async function requestAdminPasswordReset(request, env) {
@@ -1635,6 +1715,7 @@ export default {
     if (url.pathname === '/api/events') return eventsApi(request, env);
     if (url.pathname === '/api/dream-leads') return dreamLeadsApi(request, env);
     if (url.pathname === '/api/dream-consult-ai') return dreamConsultAiApi(request, env);
+    if (url.pathname === '/api/ai-consulting-lead') return aiConsultingLeadApi(request, env);
     if (url.pathname === '/api/client-login' && request.method === 'POST') return clientLogin(request, env);
     if (url.pathname === '/api/event-assistant' && request.method === 'POST') return eventAssistantApi(request, env);
     if (url.pathname === '/api/event-assistant-history') return eventAssistantHistoryApi(request, env);
