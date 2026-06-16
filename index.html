@@ -318,7 +318,9 @@
     body.client-mode header h1,body.client-auth-locked header h1{font-size:clamp(32px,3.2vw,44px)!important;line-height:1.12!important}
     @media(max-width:800px){h2{font-size:24px!important}h3{font-size:21px!important}header h1{font-size:32px!important}.page-section>h2,.top-actions h2{font-size:26px!important}}
 
-  </style>
+
+.voice-avatar-widget{width:auto!important;left:18px!important;bottom:18px!important}.voice-avatar-toggle{width:68px!important;height:68px!important;padding:0!important;border-radius:50%!important;justify-content:center!important;position:relative;overflow:visible!important}.voice-avatar-toggle img{width:68px!important;height:68px!important;border-radius:50%!important}.voice-avatar-toggle span{position:absolute;right:50%;transform:translateX(50%);bottom:-18px;background:#211914;color:#f7efe6;border:1px solid rgba(216,176,122,.45);border-radius:999px;padding:2px 8px;font-size:11px;line-height:1;white-space:nowrap;box-shadow:0 8px 20px rgba(0,0,0,.25)}.voice-avatar-toggle span br,.voice-avatar-toggle span small{display:none!important}.voice-avatar-toggle:after{content:'';position:absolute;left:50%;top:57%;transform:translate(-50%,-50%) scaleY(.45);width:16px;height:7px;border-radius:50%;background:#3b1f17;border:1px solid rgba(255,225,210,.55);opacity:.92;box-shadow:0 1px 0 rgba(255,255,255,.25) inset}.voice-avatar-widget.speaking .voice-avatar-toggle{box-shadow:0 0 0 5px rgba(216,176,122,.20),0 18px 45px rgba(0,0,0,.32)!important}.voice-avatar-widget.speaking .voice-avatar-toggle:after{animation:ormaLipSync .18s infinite alternate ease-in-out}.voice-avatar-widget.speaking .voice-avatar-head img{animation:ormaTalkPulse .45s infinite alternate ease-in-out}.voice-avatar-panel{width:min(360px,calc(100vw - 28px));position:absolute;left:0;bottom:86px}.voice-avatar-head img{position:relative}@keyframes ormaLipSync{0%{height:4px;width:14px;transform:translate(-50%,-50%) scaleY(.35)}50%{height:13px;width:18px;transform:translate(-50%,-50%) scaleY(1)}100%{height:7px;width:20px;transform:translate(-50%,-50%) scaleY(.7)}}@keyframes ormaTalkPulse{from{transform:scale(1)}to{transform:scale(1.025)}}@media(max-width:700px){.voice-avatar-widget{left:12px!important;right:auto!important;bottom:16px!important;width:auto!important}.voice-avatar-panel{left:0;bottom:86px;width:calc(100vw - 24px)}}
+</style>
 </head>
 <body class="admin-locked">
 <header>
@@ -1014,7 +1016,7 @@ imma, 123456, אמא"></textarea><small>כל משתמש כאן יוכל להיכ
 </div>
 
 <div id="voiceAvatarWidget" class="voice-avatar-widget">
-  <button class="voice-avatar-toggle" onclick="toggleVoiceAvatar()"><img src="assets/orma-payment-agent-avatar.png" alt="סוכן קולי Orma" /><span>סוכן קולי Orma<br><small>לחצו כדי לשאול על כל עמוד</small></span></button>
+  <button class="voice-avatar-toggle" onclick="toggleVoiceAvatar()"><img src="assets/orma-payment-agent-avatar.png" alt="סוכן קולי Orma" /><span>Orma</span></button>
   <div class="voice-avatar-panel">
     <div class="voice-avatar-head"><img src="assets/orma-payment-agent-avatar.png" alt="סוכן קולי Orma" /><div><h3>הסוכן הקולי של האירוע</h3><p>אני מלווה את כל דפי האירוע ומסביר בקול פשוט מה קורה ומה כדאי לעשות.</p></div></div>
     <div id="voiceAvatarLog" class="voice-avatar-log"></div>
@@ -2259,7 +2261,7 @@ const messageTemplates = {
 0 = לא מגיעים
 לא ידוע = כרגע לא ניקח בחשבון, ואם יהיה שינוי אפשר לעדכן
 
-תודה רבה!`, 
+תודה רבה!`,
   rsvpReminder: g => `היי ${guestName(g)}, ${inviterOpening(g)} עם תזכורת קצרה לגבי ${eventSettings.name || 'האירוע'} 😊
 עדיין לא קיבלנו אישור הגעה סופי.
 נשמח שתעדכנו בקישור אם תגיעו, לא ידוע כרגע, או שלא תוכלו להגיע — ואם מגיעים, גם כמה משתתפים:
@@ -2855,8 +2857,12 @@ function voiceAvatarContext(){
 }
 async function playVoiceAvatarAudio(data){
   if(!data?.audio) return false;
+  const widget=document.getElementById('voiceAvatarWidget');
   const audio=new Audio(`data:${data.audioMime||'audio/wav'};base64,${data.audio}`);
-  await audio.play();
+  widget?.classList.add('speaking');
+  audio.onended=()=>widget?.classList.remove('speaking');
+  audio.onerror=()=>widget?.classList.remove('speaking');
+  try{ await audio.play(); }catch(e){ widget?.classList.remove('speaking'); throw e; }
   return true;
 }
 async function askVoiceAvatar(q){
