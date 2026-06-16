@@ -443,6 +443,57 @@ async function dreamConsultAiApi(request, env) {
   return jsonResponse({ ok:true, provider:'openai', ...normalizeDreamAiPlan(plan) });
 }
 
+
+function voiceAvatarReply(input) {
+  const page = String(input.page || '').trim();
+  const question = String(input.message || '').trim();
+  const q = question.toLowerCase();
+  const pageName = ({ overview:'סקירה כללית', guests:'מוזמנים', invitations:'הזמנות והודעות', seating:'סידור שולחנות', payments:'תשלומים וארנק', vendors:'ספקים', team:'צוות האירוע', legal:'פרטיות ואמון', admin:'אדמין' })[page] || 'העמוד הנוכחי';
+  if (/תשלום|אשראי|עמלה|כסף|מתנה|morning/.test(q) || page === 'payments') return `אני אסביר בפשטות. במערכת התשלומים של Orma יוצרים לינק מתנה או בקשת תשלום. האורח נכנס, בוחר סכום ותשלומים, רואה מראש את סכום המתנה, עמלת השירות והסכום הכולל לחיוב, ואז עובר לדף סליקה מאובטח של Morning. פרטי האשראי לא נשמרים אצל Orma. אחרי תשלום מוצלח, הסטטוס מתעדכן והמתנה נכנסת לארנק האירוע.`;
+  if (/מוזמ|אורח|אישור|rsvp/.test(q) || page === 'guests') return `בעמוד המוזמנים אני עוזר להבין מי הוזמן, מי אישר הגעה, מי עדיין לא ענה וכמה אנשים באמת צפויים להגיע. משם אפשר להכין הודעות, תזכורות, שיוך לשולחנות ותמונת מצב מסודרת של האירוע.`;
+  if (/שולחן|הושבה|סידור|מפה/.test(q) || page === 'seating') return `בסידור השולחנות המערכת עוזרת להפוך רשימת מוזמנים למפת אולם. אפשר להגדיר שולחנות וקיבולת, לגרור אורחים לשולחן, לראות עומסים, ולהבין איפה חסרים מקומות או איפה כדאי לשנות שיבוץ.`;
+  if (/ספק|חוזה|צלם|דיג׳יי|אולם|בר/.test(q) || page === 'vendors') return `בעמוד הספקים מרכזים את כל נותני השירות של האירוע: אולם, צילום, מוזיקה, עיצוב, בר, הסעות ועוד. הסוכן עוזר לזכור עם מי דיברנו, מה סוכם, כמה שולם, מה פתוח ומה צריך לבדוק לפני האירוע.`;
+  if (/וואטסאפ|הודעה|הזמנה|תזכורת/.test(q) || page === 'invitations') return `בהזמנות והודעות הסוכן עוזר לנסח הודעות ברורות ומכבדות לאורחים: הזמנה, אישור הגעה, תזכורת או לינק מתנה. חשוב: שליחה אמיתית בוואטסאפ נעשית רק אחרי אישור מפורש של המשתמש.`;
+  if (/מה אתה|מה הסוכן|עוזר|תפקיד|מסביר/.test(q)) return `אני הסוכן הקולי של Orma. התפקיד שלי הוא ללוות את כל דפי האירוע, להסביר מה רואים בכל מסך, להציע מה כדאי לעשות עכשיו, ולעזור לנהל מוזמנים, הודעות, שולחנות, ספקים ותשלומים במקום אחד. אני לא מחליף אתכם — אני עושה סדר ומכין לכם את הפעולה הבאה.`;
+  return `אנחנו נמצאים ב${pageName}. אני כאן כדי להסביר את העמוד בשפה פשוטה, לספר מה המערכת עושה כאן, ומה הסוכן יכול לתרום לתהליך. אפשר לשאול אותי על מוזמנים, הודעות וואטסאפ, סידור שולחנות, ספקים, תשלומים או ארנק האירוע.`;
+}
+function wavFromPcmBase64(base64, sampleRate = 24000) {
+  const pcm = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+  const header = new ArrayBuffer(44);
+  const view = new DataView(header);
+  const write = (offset, str) => { for (let i=0; i<str.length; i++) view.setUint8(offset+i, str.charCodeAt(i)); };
+  write(0, 'RIFF'); view.setUint32(4, 36 + pcm.length, true); write(8, 'WAVE'); write(12, 'fmt ');
+  view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, 1, true); view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true); view.setUint16(32, 2, true); view.setUint16(34, 16, true); write(36, 'data'); view.setUint32(40, pcm.length, true);
+  const out = new Uint8Array(44 + pcm.length); out.set(new Uint8Array(header), 0); out.set(pcm, 44);
+  let bin = ''; out.forEach(b => bin += String.fromCharCode(b));
+  return btoa(bin);
+}
+async function voiceAvatarApi(request, env) {
+  if (request.method !== 'POST') return jsonResponse({ ok:false, error:'Method not allowed' }, 405);
+  const body = await request.json().catch(() => ({}));
+  const reply = voiceAvatarReply(body).slice(0, 1200);
+  if (!env.GEMINI_API_KEY && !env.GOOGLE_AI_API_KEY) return jsonResponse({ ok:true, needsSetup:true, reply, error:'GEMINI_API_KEY is not configured' });
+  const key = env.GEMINI_API_KEY || env.GOOGLE_AI_API_KEY;
+  const model = env.GEMINI_TTS_MODEL || 'gemini-2.5-flash-preview-tts';
+  const voiceName = env.GEMINI_TTS_VOICE || env.ORMA_VOICE_NAME || 'Puck';
+  const prompt = `Say this in Hebrew in a warm, calm, professional event-assistant voice. Keep it natural and clear, with friendly pacing:\n${reply}`;
+  const upstream = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(key)}`, {
+    method: 'POST', headers: { 'content-type':'application/json' },
+    body: JSON.stringify({ contents:[{ parts:[{ text: prompt }] }], generationConfig:{ responseModalities:['AUDIO'], speechConfig:{ voiceConfig:{ prebuiltVoiceConfig:{ voiceName } } } } }),
+  });
+  const text = await upstream.text();
+  if (!upstream.ok) return jsonResponse({ ok:true, reply, audio:null, provider:'gemini', voiceName, ttsError:text.slice(0,500) });
+  let data; try { data = JSON.parse(text); } catch { data = null; }
+  const inline = data?.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData;
+  if (!inline?.data) return jsonResponse({ ok:true, reply, audio:null, provider:'gemini', voiceName, ttsError:'No audio returned' });
+  const mime = inline.mimeType || 'audio/L16;codec=pcm;rate=24000';
+  let audio = inline.data, audioMime = mime;
+  const rate = Number((mime.match(/rate=(\d+)/)||[])[1]) || 24000;
+  if (/audio\/L16|pcm/i.test(mime)) { audio = wavFromPcmBase64(inline.data, rate); audioMime = 'audio/wav'; }
+  return jsonResponse({ ok:true, reply, audio, audioMime, provider:'gemini', model, voiceName });
+}
+
 async function eventsApi(request, env) {
   const admin = await requireAdmin(request, env);
   if (!admin) return jsonResponse({ ok: false, error: 'Unauthorized' }, 401);
@@ -1733,6 +1784,7 @@ export default {
     if (url.pathname === '/api/events') return eventsApi(request, env);
     if (url.pathname === '/api/dream-leads') return dreamLeadsApi(request, env);
     if (url.pathname === '/api/dream-consult-ai') return dreamConsultAiApi(request, env);
+    if (url.pathname === '/api/voice-avatar') return voiceAvatarApi(request, env);
     if (url.pathname === '/api/ai-consulting-lead') return aiConsultingLeadApi(request, env);
     if (url.pathname === '/api/client-login' && request.method === 'POST') return clientLogin(request, env);
     if (url.pathname === '/api/event-assistant' && request.method === 'POST') return eventAssistantApi(request, env);
