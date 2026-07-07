@@ -2155,7 +2155,7 @@ function render(){
   const rows = guests.filter(g => (!rf || g['סטטוס אישור השתתפות']===rf) && (!pf || g['סטטוס תשלום']===pf) && (!sf || g['צד באירוע']===sf || g['קבוצה']===sf) && (!inviterQ || normalizeGuestSearchText(g['גורם מזמין']).includes(inviterQ)) && guestMatchesSearch(g,q) );
   document.getElementById('body').innerHTML = rows.map((g)=>{
     const idx = guests.indexOf(g);
-    return `<tr class="${rsvpRowClass(g)}">${shown.map(h=>cell(idx,h,g[h]??'')).join('')}<td data-col-name="פעולות" style="width:${columnWidth('פעולות')}px;min-width:${columnWidth('פעולות')}px"><button onclick="openGuestWhatsAppModal(${idx})">וואטסאפ</button> <button class="danger" onclick="deleteRow(${idx})">מחק</button></td></tr>`;
+    return `<tr class="${rsvpRowClass(g)}" data-guest-row="${idx}">${shown.map(h=>cell(idx,h,g[h]??'')).join('')}<td data-col-name="פעולות" style="width:${columnWidth('פעולות')}px;min-width:${columnWidth('פעולות')}px"><button onclick="openGuestWhatsAppModal(${idx})">וואטסאפ</button> <button class="danger" onclick="deleteRow(${idx})">מחק</button></td></tr>`;
   }).join('');
   const searchStatus=document.getElementById('guestSearchStatus');
   if(searchStatus){ const active=!!String(q||'').trim()||!!rf||!!pf||!!sf||!!inviterQ; searchStatus.textContent=active?`מוצגות ${rows.length} רשומות מתוך ${guests.length}`:''; }
@@ -2188,16 +2188,20 @@ function renderGuestDatalists(){
 function cell(idx,h,v){
   const cls = h==='מספר'||h==='כמות מוזמנים'||h==='שולחן / אזור'?'small':(h.includes('הערות')||h.includes('רגישויות')||h.includes('לינק')||h==='גורם מזמין'?'wide':'medium');
   const style=`width:${columnWidth(h)}px;min-width:${columnWidth(h)}px`;
-  if(selectOptions[h]) return `<td class="${cls}" data-col-name="${escapeHtml(h)}" style="${style}"><select onchange="setVal(${idx},'${h}',this.value)">${selectOptions[h].map(o=>`<option ${o===v?'selected':''}>${o}</option>`).join('')}</select></td>`;
+  if(selectOptions[h]) return `<td class="${cls}" data-col-name="${escapeHtml(h)}" style="${style}"><select data-guest-input="${idx}" data-guest-field="${escapeHtml(h)}" onchange="setVal(${idx},'${h}',this.value)">${selectOptions[h].map(o=>`<option ${o===v?'selected':''}>${o}</option>`).join('')}</select></td>`;
   const type = h==='סכום לתשלום'||h==='כמות מוזמנים'||h==='מספר'?'number':'text';
   const listAttr = h==='גורם מזמין' ? ' list="guestInviterOptions" placeholder="בחר או הקלד מזמין"' : (h==='קרבה למזמין' ? ' list="guestRelationOptions" placeholder="בחר או הקלד קרבה"' : '');
-  return `<td class="${cls}" data-col-name="${escapeHtml(h)}" style="${style}"><input type="${type}" value="${escapeHtml(v)}"${listAttr} oninput="setVal(${idx},'${h}',this.value)" /></td>`;
+  return `<td class="${cls}" data-col-name="${escapeHtml(h)}" style="${style}"><input data-guest-input="${idx}" data-guest-field="${escapeHtml(h)}" type="${type}" value="${escapeHtml(v)}"${listAttr} oninput="setVal(${idx},'${h}',this.value)" /></td>`;
 }
 function setVal(idx,h,v){ guests[idx][h]=v; save(); if(['סטטוס אישור השתתפות','צד באירוע','גורם מזמין'].includes(h)) render(); if(['כמות מוזמנים','שם מלא / שם לקוח','טלפון וואטסאפ','סטטוס אישור השתתפות','שולחן / אזור','צד באירוע','גורם מזמין','קרבה למזמין','נוסח פנייה'].includes(h)){ renderHall(); renderWhatsAppGuests(); } }
 function guestPartySize(i){ const g=typeof i==='number'?guests[i]:i; return Math.max(1, parseInt(g?.['כמות מוזמנים']) || 1); }
 function tableOccupancy(t){ return (t.guestIndexes||[]).reduce((sum,i)=>sum+guestPartySize(i),0); }
-function addRow(){ guests.push(emptyRow(guests.length+1)); save(); render(); renderHall(); renderWhatsAppGuests(); }
-function deleteRow(idx){ if(confirm('למחוק את הרשומה?')){ hall.tables?.forEach(t=>t.guestIndexes=(t.guestIndexes||[]).filter(i=>i!==idx).map(i=>i>idx?i-1:i)); guests.splice(idx,1); if(selectedWhatsAppIndex===idx) selectedWhatsAppIndex=null; save(); saveHall(); render(); renderHall(); renderWhatsAppGuests(); } }
+function renumberGuests(){ guests.forEach((g,i)=>{ if(g) g['מספר']=i+1; }); }
+function guestEntryIsEmpty(g){ return !String(g?.['שם מלא / שם לקוח']||'').trim() && !String(g?.['טלפון וואטסאפ']||'').trim() && !String(g?.['הערות']||'').trim() && !String(g?.['לינק תשלום/אסמכתא']||'').trim() && !String(g?.['שולחן / אזור']||'').trim(); }
+function clearGuestFiltersForNewRow(){ ['search','rsvpFilter','payFilter','sideFilter','inviterFilter'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; }); }
+function focusGuestRow(idx){ setTimeout(()=>{ const row=document.querySelector(`[data-guest-row="${idx}"]`); const input=document.querySelector(`[data-guest-input="${idx}"][data-guest-field="שם מלא / שם לקוח"]`) || document.querySelector(`[data-guest-input="${idx}"]`); row?.scrollIntoView({behavior:'smooth',block:'center'}); if(row){ row.style.outline='3px solid #f6c85f'; row.style.outlineOffset='-3px'; setTimeout(()=>{ row.style.outline=''; row.style.outlineOffset=''; },2600); } input?.focus(); input?.select?.(); },80); }
+function addRow(){ clearGuestFiltersForNewRow(); let idx=guests.findIndex(guestEntryIsEmpty); if(idx<0){ idx=guests.length; guests.push(emptyRow(idx+1)); } renumberGuests(); save(); render(); renderHall(); renderWhatsAppGuests(); focusGuestRow(idx); const status=document.getElementById('guestSearchStatus'); if(status) status.textContent='פתחתי שורת אורח לעריכה — אפשר להתחיל בשם ובטלפון.'; }
+function deleteRow(idx){ if(confirm('למחוק את הרשומה?')){ hall.tables?.forEach(t=>t.guestIndexes=(t.guestIndexes||[]).filter(i=>i!==idx).map(i=>i>idx?i-1:i)); guests.splice(idx,1); renumberGuests(); if(selectedWhatsAppIndex===idx) selectedWhatsAppIndex=null; else if(selectedWhatsAppIndex>idx) selectedWhatsAppIndex-=1; save(); saveHall(); render(); renderHall(); renderWhatsAppGuests(); } }
 function resetData(){ const count=Number(eventSettings.expected)||100; if(confirm(`לאפס את כל הנתונים ל-${count} שורות ריקות לפי מספר המשתתפים שהוגדר?`)){ guests = Array.from({length:count},(_,i)=>emptyRow(i+1)); hall.tables?.forEach(t=>t.guestIndexes=[]); selectedWhatsAppIndex=null; save(); saveHall(); render(); renderHall(); renderWhatsAppGuests(); } }
 function updateStats(){
   document.getElementById('totalGuests').textContent = guests.filter(g=>g['שם מלא / שם לקוח']).length || guests.length;
