@@ -1,188 +1,644 @@
 {
   "schema": "orma.eventVendors.v2",
-  "updated": "2026-06-06",
-  "sourceNotes": "ספקים אמיתיים מעמודי ספק ציבוריים. אין קישורי Google. כפתור האתר פותח אתר רשמי כאשר זוהה, אחרת עמוד ספק ישיר במקור.",
+  "updated": "2026-07-08",
+  "sourceNotes": "ספקים אמיתיים מעמודי ספק ציבוריים. אין קישורי Google. website הוא אתר רשמי כאשר זוהה, אחרת עמוד ספק ישיר במקור. קטגוריות ללא מקור אמיתי עדיין יושלמו בייבוא הבא. נוסף ייבוא ספקי אטרקציות/עיצוב/DJ מקובץ אולם טוסקה.",
   "vendors": [
     {
-      "id": "hatankala-פלמינגו_ספא",
-      "name": "פלמינגו ספא",
-      "category": "אטרקציות",
-      "city": "חיפה",
-      "area": "צפון",
-      "areas": [
-        "צפון",
-        "חיפה"
-      ],
-      "phone": "052-9126924",
-      "email": "",
-      "website": "https://www.hatankala.co.il/ad/%D7%A4%D7%9C%D7%9E%D7%99%D7%A0%D7%92%D7%95-%D7%A1%D7%A4%D7%90",
-      "profileUrl": "https://www.hatankala.co.il/ad/%D7%A4%D7%9C%D7%9E%D7%99%D7%A0%D7%92%D7%95-%D7%A1%D7%A4%D7%90",
-      "websiteStatus": "direct_profile",
-      "description": "פלמינגו ספא",
-      "tags": [
-        "אטרקציות",
-        "צפון",
-        "חיפה"
-      ],
-      "priceLevel": "לא ידוע",
-      "verificationStatus": "public_profile",
-      "source": "hatankala.co.il",
-      "notes": "ספק אמיתי שיובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
-    },
-    {
-      "id": "hatankala-עומר_שפירא_צילום_omer_shapira",
-      "name": "עומר שפירא צילום omer shapira",
-      "category": "צילום",
-      "city": "פתח תקווה",
-      "area": "מרכז",
-      "areas": [
-        "מרכז",
-        "פתח תקווה"
-      ],
-      "phone": "052-9125639",
-      "email": "",
-      "website": "https://www.hatankala.co.il/ad/%D7%A2%D7%95%D7%9E%D7%A8_%D7%A9%D7%A4%D7%99%D7%A8%D7%90_%D7%A6%D7%99%D7%9C%D7%95%D7%9D_omer_shapira",
-      "profileUrl": "https://www.hatankala.co.il/ad/%D7%A2%D7%95%D7%9E%D7%A8_%D7%A9%D7%A4%D7%99%D7%A8%D7%90_%D7%A6%D7%99%D7%9C%D7%95%D7%9D_omer_shapira",
-      "websiteStatus": "direct_profile",
-      "description": "עומר שפירא צילום omer shapira",
-      "tags": [
-        "צילום",
-        "מרכז",
-        "פתח תקווה"
-      ],
-      "priceLevel": "לא ידוע",
-      "verificationStatus": "public_profile",
-      "source": "hatankala.co.il",
-      "notes": "ספק אמיתי שיובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
-    },
-    {
-      "id": "hatankala-שי_לי_עוזיאל_צלם",
-      "name": "שי-לי עוזיאל צלם",
-      "category": "צילום",
-      "city": "תל אביב",
-      "area": "מרכז",
-      "areas": [
-        "מרכז",
-        "תל אביב"
-      ],
-      "phone": "0529124790",
-      "email": "",
-      "website": "https://www.hatankala.co.il/ad/%D7%A9%D7%99-%D7%9C%D7%99-%D7%A2%D7%95%D7%96%D7%99%D7%90%D7%9C-%D7%A6%D7%9C%D7%9D",
-      "profileUrl": "https://www.hatankala.co.il/ad/%D7%A9%D7%99-%D7%9C%D7%99-%D7%A2%D7%95%D7%96%D7%99%D7%90%D7%9C-%D7%A6%D7%9C%D7%9D",
-      "websiteStatus": "direct_profile",
-      "description": "שי-לי עוזיאל צלם",
-      "tags": [
-        "צילום",
-        "מרכז",
-        "תל אביב"
-      ],
-      "priceLevel": "לא ידוע",
-      "verificationStatus": "public_profile",
-      "source": "hatankala.co.il",
-      "notes": "ספק אמיתי שיובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
-    },
-    {
-      "id": "hatankala-דני_מזרחי",
-      "name": "דני מזרחי שמלות כלה מגדולי המעצבים בישראל",
+      "id": "hatankala-כרמית_המפיקה",
+      "name": "כרמית המפיקה",
       "category": "שמלות כלה וערב",
-      "city": "תל אביב",
-      "area": "מרכז",
-      "areas": [
-        "מרכז",
-        "תל אביב"
-      ],
-      "phone": "052-9172963",
-      "email": "",
-      "website": "https://www.hatankala.co.il/ad/%D7%93%D7%A0%D7%99_%D7%9E%D7%96%D7%A8%D7%97%D7%99",
-      "profileUrl": "https://www.hatankala.co.il/ad/%D7%93%D7%A0%D7%99_%D7%9E%D7%96%D7%A8%D7%97%D7%99",
-      "websiteStatus": "direct_profile",
-      "description": "דני מזרחי מעצב השמלות כלה ברמה עילית בינלאומית מציג בפורטל החתונות חתן כלה קולקציה 2014 ייחודית עכשווית בהדגשה אישית כוללת תמונות של דגמים חדשים ומידע נרחב, הירשמו עוד היום באתר כדי ליהנות מהנחות, טיפים והצעות ישירות מדני מזרחי",
-      "tags": [
-        "שמלות כלה וערב",
-        "מרכז",
-        "תל אביב"
-      ],
-      "priceLevel": "לא ידוע",
-      "verificationStatus": "public_profile",
-      "source": "hatankala.co.il",
-      "notes": "ספק אמיתי שיובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
-    },
-    {
-      "id": "hatankala-ליזי_עזרא_מייק_אפ",
-      "name": "ליזי עזרא מייק אפ",
-      "category": "איפור ועיצוב שיער",
-      "city": "חולון",
-      "area": "מרכז",
-      "areas": [
-        "מרכז",
-        "חולון"
-      ],
-      "phone": "052-9708731",
-      "email": "",
-      "website": "https://www.hatankala.co.il/ad/%D7%9C%D7%99%D7%96%D7%99-%D7%A2%D7%96%D7%A8%D7%90-%D7%9E%D7%99%D7%99%D7%A7-%D7%90%D7%A4",
-      "profileUrl": "https://www.hatankala.co.il/ad/%D7%9C%D7%99%D7%96%D7%99-%D7%A2%D7%96%D7%A8%D7%90-%D7%9E%D7%99%D7%99%D7%A7-%D7%90%D7%A4",
-      "websiteStatus": "direct_profile",
-      "description": "ליזי עזרא מייק אפ",
-      "tags": [
-        "איפור ועיצוב שיער",
-        "מרכז",
-        "חולון"
-      ],
-      "priceLevel": "לא ידוע",
-      "verificationStatus": "public_profile",
-      "source": "hatankala.co.il",
-      "notes": "ספק אמיתי שיובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
-    },
-    {
-      "id": "hatankala-לי_קודו",
-      "name": "לי קודו",
-      "category": "שמלות כלה וערב",
-      "city": "תל אביב",
-      "area": "מרכז",
-      "areas": [
-        "מרכז",
-        "תל אביב"
-      ],
-      "phone": "052-9787174",
-      "email": "",
-      "website": "https://www.hatankala.co.il/ad/%D7%9C%D7%99-%D7%A7%D7%95%D7%93%D7%95",
-      "profileUrl": "https://www.hatankala.co.il/ad/%D7%9C%D7%99-%D7%A7%D7%95%D7%93%D7%95",
-      "websiteStatus": "direct_profile",
-      "description": "לי קודו",
-      "tags": [
-        "שמלות כלה וערב",
-        "מרכז",
-        "תל אביב"
-      ],
-      "priceLevel": "לא ידוע",
-      "verificationStatus": "public_profile",
-      "source": "hatankala.co.il",
-      "notes": "ספק אמיתי שיובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
-    },
-    {
-      "id": "hatankala-אופנת_בונו",
-      "name": "אופנת בונו",
-      "category": "אחר",
       "city": "",
       "area": "ארצי",
       "areas": [
         "ארצי"
       ],
-      "phone": "052-9128677",
+      "phone": "052-9122369",
       "email": "",
-      "website": "https://www.hatankala.co.il/ad/%D7%90%D7%95%D7%A4%D7%A0%D7%AA-%D7%91%D7%95%D7%A0%D7%95",
-      "profileUrl": "https://www.hatankala.co.il/ad/%D7%90%D7%95%D7%A4%D7%A0%D7%AA-%D7%91%D7%95%D7%A0%D7%95",
-      "websiteStatus": "direct_profile",
-      "description": "אופנת בונו",
+      "website": "http://www.carmiteventop.com/",
+      "profileUrl": "https://www.hatankala.co.il/ad/%D7%9B%D7%A8%D7%9E%D7%99%D7%AA-%D7%94%D7%9E%D7%A4%D7%99%D7%A7%D7%94",
+      "websiteStatus": "direct_official_or_external",
+      "description": "כרמית המפיקה",
       "tags": [
-        "אחר",
+        "שמלות כלה וערב",
         "ארצי",
         ""
       ],
       "priceLevel": "לא ידוע",
       "verificationStatus": "public_profile",
       "source": "hatankala.co.il",
-      "notes": "ספק אמיתי שיובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+      "notes": "יובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+    },
+    {
+      "id": "hatankala-אריק_משעלי_ולהקת_אוריינטל",
+      "name": "אריק משעלי ולהקת אוריינטל",
+      "category": "מוזיקה / DJ",
+      "city": "תל אביב",
+      "area": "מרכז",
+      "areas": [
+        "מרכז",
+        "תל אביב"
+      ],
+      "phone": "052-9124770",
+      "email": "",
+      "website": "https://www.hatankala.co.il/ad/%D7%90%D7%A8%D7%99%D7%A7_%D7%9E%D7%A9%D7%A2%D7%9C%D7%99_%D7%95%D7%9C%D7%94%D7%A7%D7%AA_%D7%90%D7%95%D7%A8%D7%99%D7%99%D7%A0%D7%98%D7%9C",
+      "profileUrl": "https://www.hatankala.co.il/ad/%D7%90%D7%A8%D7%99%D7%A7_%D7%9E%D7%A9%D7%A2%D7%9C%D7%99_%D7%95%D7%9C%D7%94%D7%A7%D7%AA_%D7%90%D7%95%D7%A8%D7%99%D7%99%D7%A0%D7%98%D7%9C",
+      "websiteStatus": "direct_profile",
+      "description": "אריק משעלי ולהקת אוריינטל",
+      "tags": [
+        "מוזיקה / DJ",
+        "מרכז",
+        "תל אביב"
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "public_profile",
+      "source": "hatankala.co.il",
+      "notes": "יובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+    },
+    {
+      "id": "hatankala-לאו_אולם_אירועים",
+      "name": "לאו אירועים",
+      "category": "שמלות כלה וערב",
+      "city": "ראשון לציון",
+      "area": "מרכז",
+      "areas": [
+        "מרכז",
+        "ראשון לציון"
+      ],
+      "phone": "052-9129873",
+      "email": "",
+      "website": "https://www.hatankala.co.il/ad/%D7%9C%D7%90%D7%95_%D7%90%D7%95%D7%9C%D7%9D_%D7%90%D7%99%D7%A8%D7%95%D7%A2%D7%99%D7%9D",
+      "profileUrl": "https://www.hatankala.co.il/ad/%D7%9C%D7%90%D7%95_%D7%90%D7%95%D7%9C%D7%9D_%D7%90%D7%99%D7%A8%D7%95%D7%A2%D7%99%D7%9D",
+      "websiteStatus": "direct_profile",
+      "description": "לאו הוא מתחם אירועים בראשל\"צ בעל עיצוב אורבני ואווירה חמימה, ביתית ונעימה. בלאו מטבח עדכני בניצוחו של השף גיא צרפתי.",
+      "tags": [
+        "שמלות כלה וערב",
+        "מרכז",
+        "ראשון לציון"
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "public_profile",
+      "source": "hatankala.co.il",
+      "notes": "יובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+    },
+    {
+      "id": "hatankala-ריקי_דלאל",
+      "name": "ריקי דלאל שמלות כלה וערב",
+      "category": "איפור ועיצוב שיער",
+      "city": "אשדוד",
+      "area": "דרום",
+      "areas": [
+        "דרום",
+        "אשדוד"
+      ],
+      "phone": "052-9171841",
+      "email": "",
+      "website": "https://www.hatankala.co.il/ad/%D7%A8%D7%99%D7%A7%D7%99_%D7%93%D7%9C%D7%90%D7%9C",
+      "profileUrl": "https://www.hatankala.co.il/ad/%D7%A8%D7%99%D7%A7%D7%99_%D7%93%D7%9C%D7%90%D7%9C",
+      "websiteStatus": "direct_profile",
+      "description": "חתן כלה פורטל האירועים מציג את מעצבת שמלות הכלה ריקי דלל עיצוב שמלות כלה וערב מקוריות, איפור לכלה עיצוב שיער ועוד, תמונות של דגמים חדשים ומידע נרחב, הירשמו באתר כדי ליהנות מהנחות, טיפים והצעות שיוכלו להקל עליכם, לחצו לכניסה לאתר",
+      "tags": [
+        "איפור ועיצוב שיער",
+        "דרום",
+        "אשדוד"
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "public_profile",
+      "source": "hatankala.co.il",
+      "notes": "יובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+    },
+    {
+      "id": "hatankala-חוויה_בקופסא",
+      "name": "חוויה בקופסא - חוויה למסיבת רווקות",
+      "category": "שמלות כלה וערב",
+      "city": "",
+      "area": "ארצי",
+      "areas": [
+        "ארצי"
+      ],
+      "phone": "0723304767",
+      "email": "",
+      "website": "http://www.hbox.co.il/product/6",
+      "profileUrl": "https://www.hatankala.co.il/ad/%D7%97%D7%95%D7%95%D7%99%D7%94-%D7%91%D7%A7%D7%95%D7%A4%D7%A1%D7%90",
+      "websiteStatus": "direct_official_or_external",
+      "description": "מחפשות את המתנה המושלמת או את ההפעלה האידיאלית למסיבת הרווקות הקרובה? זה הזמן להכיר את חוויה בקופסא שמציעה לכם את אחת הקופסאות השוות ביותר - קופסא למסיבת רווקות. כנסו לפרטים כעת",
+      "tags": [
+        "שמלות כלה וערב",
+        "ארצי",
+        ""
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "public_profile",
+      "source": "hatankala.co.il",
+      "notes": "יובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+    },
+    {
+      "id": "hatankala-פיקסל_אירועים",
+      "name": "פיקסל אירועים מגנטים ואטרקציות",
+      "category": "צילום מגנטים",
+      "city": "",
+      "area": "ארצי",
+      "areas": [
+        "ארצי"
+      ],
+      "phone": "052-9121276",
+      "email": "",
+      "website": "https://www.hatankala.co.il/ad/%D7%A4%D7%99%D7%A7%D7%A1%D7%9C_%D7%90%D7%99%D7%A8%D7%95%D7%A2%D7%99%D7%9D",
+      "profileUrl": "https://www.hatankala.co.il/ad/%D7%A4%D7%99%D7%A7%D7%A1%D7%9C_%D7%90%D7%99%D7%A8%D7%95%D7%A2%D7%99%D7%9D",
+      "websiteStatus": "direct_profile",
+      "description": "חתן כלה פורטל אירועים מציג את פיקסל אירועים שידליקו לכם את האירוע בזיקוקים עשן כבר ובועות, הירשמו באתר כדי ליהנות מהנחות, טיפים והצעות שיוכלו להקל עליכם, לחצו לכניסה לאתר",
+      "tags": [
+        "צילום מגנטים",
+        "ארצי",
+        ""
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "public_profile",
+      "source": "hatankala.co.il",
+      "notes": "יובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+    },
+    {
+      "id": "hatankala-DJ_Ronix",
+      "name": "DJ Ronix - דיג'יי לחתונות ואירועים",
+      "category": "מוזיקה / DJ",
+      "city": "",
+      "area": "ארצי",
+      "areas": [
+        "ארצי"
+      ],
+      "phone": "052-9707890",
+      "email": "",
+      "website": "https://www.hatankala.co.il/ad/DJ-Ronix",
+      "profileUrl": "https://www.hatankala.co.il/ad/DJ-Ronix",
+      "websiteStatus": "direct_profile",
+      "description": "DJ Ronix - הדיג'יי שלכם לחתונה בלתי נשכחת. מתמחה בכל סגנונות המוזיקה, התאמה אישית לכל לקוח, מעל 15 שנות ניסיון, זמין 24/7. האורחים פשוט לא יפסיקו לרקוד כל הערב!",
+      "tags": [
+        "מוזיקה / DJ",
+        "ארצי",
+        ""
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "public_profile",
+      "source": "hatankala.co.il",
+      "notes": "יובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+    },
+    {
+      "id": "hatankala-אודל_אירועים",
+      "name": "אודל אירועים",
+      "category": "שמלות כלה וערב",
+      "city": "פתח תקווה",
+      "area": "מרכז",
+      "areas": [
+        "מרכז",
+        "פתח תקווה"
+      ],
+      "phone": "052-9126927",
+      "email": "",
+      "website": "https://www.hatankala.co.il/ad/%D7%90%D7%95%D7%93%D7%9C-%D7%90%D7%99%D7%A8%D7%95%D7%A2%D7%99%D7%9D",
+      "profileUrl": "https://www.hatankala.co.il/ad/%D7%90%D7%95%D7%93%D7%9C-%D7%90%D7%99%D7%A8%D7%95%D7%A2%D7%99%D7%9D",
+      "websiteStatus": "direct_profile",
+      "description": "אודל אירועים",
+      "tags": [
+        "שמלות כלה וערב",
+        "מרכז",
+        "פתח תקווה"
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "public_profile",
+      "source": "hatankala.co.il",
+      "notes": "יובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+    },
+    {
+      "id": "hatankala-מרסי_אירועים",
+      "name": "גן אירועים שאפו",
+      "category": "שמלות כלה וערב",
+      "city": "נתניה",
+      "area": "שרון",
+      "areas": [
+        "שרון",
+        "נתניה"
+      ],
+      "phone": "052-9126158",
+      "email": "",
+      "website": "https://www.hatankala.co.il/ad/%D7%9E%D7%A8%D7%A1%D7%99_%D7%90%D7%99%D7%A8%D7%95%D7%A2%D7%99%D7%9D",
+      "profileUrl": "https://www.hatankala.co.il/ad/%D7%9E%D7%A8%D7%A1%D7%99_%D7%90%D7%99%D7%A8%D7%95%D7%A2%D7%99%D7%9D",
+      "websiteStatus": "direct_profile",
+      "description": "חתן כלה פורטל האירועים מציג את גן האירועים שאפו, בשרון עוצב ותוכנן ע&quot;י האדריכלים המובילים בתחום, להעניק לכם אירוע עם נוכחות ולהגשים את חלומכם. חופה ובר קבלת הפנים תחת כיפת השמיים, לחצו לכניסה לאתר",
+      "tags": [
+        "שמלות כלה וערב",
+        "שרון",
+        "נתניה"
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "public_profile",
+      "source": "hatankala.co.il",
+      "notes": "יובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+    },
+    {
+      "id": "hatankala-סטודיו_אודליה_שושני",
+      "name": "סטודיו אודליה שושני שמלות כלה",
+      "category": "איפור ועיצוב שיער",
+      "city": "",
+      "area": "ארצי",
+      "areas": [
+        "ארצי"
+      ],
+      "phone": "052-9172873",
+      "email": "",
+      "website": "https://www.hatankala.co.il/ad/%D7%A1%D7%98%D7%95%D7%93%D7%99%D7%95_%D7%90%D7%95%D7%93%D7%9C%D7%99%D7%94_%D7%A9%D7%95%D7%A9%D7%A0%D7%99",
+      "profileUrl": "https://www.hatankala.co.il/ad/%D7%A1%D7%98%D7%95%D7%93%D7%99%D7%95_%D7%90%D7%95%D7%93%D7%9C%D7%99%D7%94_%D7%A9%D7%95%D7%A9%D7%A0%D7%99",
+      "websiteStatus": "direct_profile",
+      "description": "חתן כלה פורטל האירועים מציג סטודיו לשמלות כלה אודליה שושני, בו תוכלי למצוא מעצבת אישית לשמלות, עיצוב שיער ואיפור לכלה וטיפוח ליום המיוחל, אל תפספסי ביקור באתר",
+      "tags": [
+        "איפור ועיצוב שיער",
+        "ארצי",
+        ""
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "public_profile",
+      "source": "hatankala.co.il",
+      "notes": "יובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+    },
+    {
+      "id": "hatankala-ליאור_אלמליח",
+      "name": "ליאור אלמליח",
+      "category": "שמלות כלה וערב",
+      "city": "",
+      "area": "ארצי",
+      "areas": [
+        "ארצי"
+      ],
+      "phone": "052-9121197",
+      "email": "",
+      "website": "https://www.hatankala.co.il/ad/%D7%9C%D7%99%D7%90%D7%95%D7%A8_%D7%90%D7%9C%D7%9E%D7%9C%D7%99%D7%97",
+      "profileUrl": "https://www.hatankala.co.il/ad/%D7%9C%D7%99%D7%90%D7%95%D7%A8_%D7%90%D7%9C%D7%9E%D7%9C%D7%99%D7%97",
+      "websiteStatus": "direct_profile",
+      "description": "ליאור אלמליח",
+      "tags": [
+        "שמלות כלה וערב",
+        "ארצי",
+        ""
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "public_profile",
+      "source": "hatankala.co.il",
+      "notes": "יובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+    },
+    {
+      "id": "hatankala-שיפודים_גריל_בר_ישראלי",
+      "name": "שיפודים גריל בר ישראלי",
+      "category": "שמלות כלה וערב",
+      "city": "אשדוד",
+      "area": "דרום",
+      "areas": [
+        "דרום",
+        "אשדוד"
+      ],
+      "phone": "052-9129542",
+      "email": "",
+      "website": "https://www.hatankala.co.il/ad/%D7%A9%D7%99%D7%A4%D7%95%D7%93%D7%99%D7%9D-%D7%92%D7%A8%D7%99%D7%9C-%D7%91%D7%A8-%D7%99%D7%A9%D7%A8%D7%90%D7%9C%D7%99",
+      "profileUrl": "https://www.hatankala.co.il/ad/%D7%A9%D7%99%D7%A4%D7%95%D7%93%D7%99%D7%9D-%D7%92%D7%A8%D7%99%D7%9C-%D7%91%D7%A8-%D7%99%D7%A9%D7%A8%D7%90%D7%9C%D7%99",
+      "websiteStatus": "direct_profile",
+      "description": "שיפודים גריל בר ישראלי - אם אתם מחפשים מקום לערוך בו אירוע מכל סוג שהוא, פרטי או עסקי, ושיהיה באווירה מיוחדת ונעימה, שיפודים גריל בר ישראלי הוא המקום בשבילכם! בשיפודים גריל בר ישראלי תוכלו לבחור חלל לאירוע שלכם מתוך חמישה חללים שונים.",
+      "tags": [
+        "שמלות כלה וערב",
+        "דרום",
+        "אשדוד"
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "public_profile",
+      "source": "hatankala.co.il",
+      "notes": "יובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+    },
+    {
+      "id": "hatankala-טל_סולומון_עורך_טקס_חתונה",
+      "name": "טל סולומון - עורך טקס חתונה",
+      "category": "שמלות כלה וערב",
+      "city": "",
+      "area": "ארצי",
+      "areas": [
+        "ארצי"
+      ],
+      "phone": "052-9125845",
+      "email": "",
+      "website": "https://www.hatankala.co.il/ad/%D7%98%D7%9C-%D7%A1%D7%95%D7%9C%D7%95%D7%9E%D7%95%D7%9F--%D7%A2%D7%95%D7%A8%D7%9A-%D7%98%D7%A7%D7%A1-%D7%97%D7%AA%D7%95%D7%A0%D7%94",
+      "profileUrl": "https://www.hatankala.co.il/ad/%D7%98%D7%9C-%D7%A1%D7%95%D7%9C%D7%95%D7%9E%D7%95%D7%9F--%D7%A2%D7%95%D7%A8%D7%9A-%D7%98%D7%A7%D7%A1-%D7%97%D7%AA%D7%95%D7%A0%D7%94",
+      "websiteStatus": "direct_profile",
+      "description": "טל סולומון - עורך טקס חתונה",
+      "tags": [
+        "שמלות כלה וערב",
+        "ארצי",
+        ""
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "public_profile",
+      "source": "hatankala.co.il",
+      "notes": "יובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+    },
+    {
+      "id": "hatankala-כרמית_הכנרית",
+      "name": "כרמית הכנרית",
+      "category": "מוזיקה / DJ",
+      "city": "",
+      "area": "ארצי",
+      "areas": [
+        "ארצי"
+      ],
+      "phone": "052-9124989",
+      "email": "",
+      "website": "http://www.carmiteventop.com/About.html",
+      "profileUrl": "https://www.hatankala.co.il/ad/%D7%9B%D7%A8%D7%9E%D7%99%D7%AA-%D7%94%D7%9B%D7%A0%D7%A8%D7%99%D7%AA",
+      "websiteStatus": "direct_official_or_external",
+      "description": "כרמית הכנרית",
+      "tags": [
+        "מוזיקה / DJ",
+        "ארצי",
+        ""
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "public_profile",
+      "source": "hatankala.co.il",
+      "notes": "יובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+    },
+    {
+      "id": "hatankala-ביט_יוסי_מגנזי_BIT",
+      "name": "ביט יוסי מגנזי תקליטנים",
+      "category": "מוזיקה / DJ",
+      "city": "ראשון לציון",
+      "area": "מרכז",
+      "areas": [
+        "מרכז",
+        "ראשון לציון"
+      ],
+      "phone": "052-9171830",
+      "email": "",
+      "website": "https://www.hatankala.co.il/ad/%D7%91%D7%99%D7%98-%D7%99%D7%95%D7%A1%D7%99_%D7%9E%D7%92%D7%A0%D7%96%D7%99-BIT",
+      "profileUrl": "https://www.hatankala.co.il/ad/%D7%91%D7%99%D7%98-%D7%99%D7%95%D7%A1%D7%99_%D7%9E%D7%92%D7%A0%D7%96%D7%99-BIT",
+      "websiteStatus": "direct_profile",
+      "description": "חתן כלה פורטל האירועים מציג יוסי מגנזי תקליטן מופלא שלא ישאיר אף אחד באירוע אדיש, הירשמו באתר כדי ליהנות מהנחות, טיפים והצעות שיוכלו להקל עליכם, לחצו לכניסה לאתר",
+      "tags": [
+        "מוזיקה / DJ",
+        "מרכז",
+        "ראשון לציון"
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "public_profile",
+      "source": "hatankala.co.il",
+      "notes": "יובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+    },
+    {
+      "id": "hatankala-הגר_דגן",
+      "name": "הגר דגן הרכבים מוסיקליים",
+      "category": "מוזיקה / DJ",
+      "city": "מבשרת ציון",
+      "area": "ירושלים",
+      "areas": [
+        "ירושלים",
+        "מבשרת ציון"
+      ],
+      "phone": "052-9120257",
+      "email": "",
+      "website": "https://www.hatankala.co.il/ad/%D7%94%D7%92%D7%A8_%D7%93%D7%92%D7%9F",
+      "profileUrl": "https://www.hatankala.co.il/ad/%D7%94%D7%92%D7%A8_%D7%93%D7%92%D7%9F",
+      "websiteStatus": "direct_profile",
+      "description": "חתן כלה פורטל האירועים מציג את הגן דגן שתלווה אתכם במוסיקת רקע נעימה ואיכותית שתוסיף ייחודי וצבע לאירוע שלכם, הירשמו באתר כדי ליהנות מהנחות, טיפים והצעות שיוכלו להקל עליכם, לחצו לכניסה לאתר",
+      "tags": [
+        "מוזיקה / DJ",
+        "ירושלים",
+        "מבשרת ציון"
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "public_profile",
+      "source": "hatankala.co.il",
+      "notes": "יובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+    },
+    {
+      "id": "hatankala-רון_תורגמן",
+      "name": "רון תורג'מן",
+      "category": "צילום",
+      "city": "",
+      "area": "ארצי",
+      "areas": [
+        "ארצי"
+      ],
+      "phone": "052-9098292",
+      "email": "",
+      "website": "https://www.hatankala.co.il/ad/%D7%A8%D7%95%D7%9F_%D7%AA%D7%95%D7%A8%D7%92%D7%9E%D7%9F",
+      "profileUrl": "https://www.hatankala.co.il/ad/%D7%A8%D7%95%D7%9F_%D7%AA%D7%95%D7%A8%D7%92%D7%9E%D7%9F",
+      "websiteStatus": "direct_profile",
+      "description": "רון תורג&#039;מן",
+      "tags": [
+        "צילום",
+        "ארצי",
+        ""
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "public_profile",
+      "source": "hatankala.co.il",
+      "notes": "יובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+    },
+    {
+      "id": "hatankala-נתנאל_הממגנט",
+      "name": "נתנאל הממגנט",
+      "category": "צילום מגנטים",
+      "city": "",
+      "area": "ארצי",
+      "areas": [
+        "ארצי"
+      ],
+      "phone": "052-9170024",
+      "email": "",
+      "website": "https://www.hatankala.co.il/ad/%D7%A0%D7%AA%D7%A0%D7%90%D7%9C_%D7%94%D7%9E%D7%9E%D7%92%D7%A0%D7%98",
+      "profileUrl": "https://www.hatankala.co.il/ad/%D7%A0%D7%AA%D7%A0%D7%90%D7%9C_%D7%94%D7%9E%D7%9E%D7%92%D7%A0%D7%98",
+      "websiteStatus": "direct_profile",
+      "description": "נתנאל הממגנט",
+      "tags": [
+        "צילום מגנטים",
+        "ארצי",
+        ""
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "public_profile",
+      "source": "hatankala.co.il",
+      "notes": "יובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+    },
+    {
+      "id": "hatankala-צז_מגנטים",
+      "name": "צ'יז מגנטים",
+      "category": "צילום מגנטים",
+      "city": "פתח תקווה",
+      "area": "מרכז",
+      "areas": [
+        "מרכז",
+        "פתח תקווה"
+      ],
+      "phone": "052-9171293",
+      "email": "",
+      "website": "https://www.hatankala.co.il/ad/%D7%A6%D7%96_%D7%9E%D7%92%D7%A0%D7%98%D7%99%D7%9D",
+      "profileUrl": "https://www.hatankala.co.il/ad/%D7%A6%D7%96_%D7%9E%D7%92%D7%A0%D7%98%D7%99%D7%9D",
+      "websiteStatus": "direct_profile",
+      "description": "צ&#039;יז מגנטים",
+      "tags": [
+        "צילום מגנטים",
+        "מרכז",
+        "פתח תקווה"
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "public_profile",
+      "source": "hatankala.co.il",
+      "notes": "יובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+    },
+    {
+      "id": "hatankala-שילה_הממגנט",
+      "name": "שילה הממגנט מגנטים לאירועים",
+      "category": "צילום מגנטים",
+      "city": "",
+      "area": "ארצי",
+      "areas": [
+        "ארצי"
+      ],
+      "phone": "052-9170410",
+      "email": "",
+      "website": "https://www.hatankala.co.il/ad/%D7%A9%D7%99%D7%9C%D7%94_%D7%94%D7%9E%D7%9E%D7%92%D7%A0%D7%98",
+      "profileUrl": "https://www.hatankala.co.il/ad/%D7%A9%D7%99%D7%9C%D7%94_%D7%94%D7%9E%D7%9E%D7%92%D7%A0%D7%98",
+      "websiteStatus": "direct_profile",
+      "description": "פורטל חתן כלה מציג את שילה הממגנט - מגנטים לאירועים. מבטיחים לכם איכות שירות ואדיבות אז שיהיה במזל-טוב.",
+      "tags": [
+        "צילום מגנטים",
+        "ארצי",
+        ""
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "public_profile",
+      "source": "hatankala.co.il",
+      "notes": "יובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+    },
+    {
+      "id": "hatankala-פוטו_מגנט_Vip",
+      "name": "פוטו מגנט Vip מגנטים לאירועים",
+      "category": "צילום מגנטים",
+      "city": "פתח תקווה",
+      "area": "מרכז",
+      "areas": [
+        "מרכז",
+        "פתח תקווה"
+      ],
+      "phone": "052-9787570",
+      "email": "",
+      "website": "https://www.hatankala.co.il/ad/%D7%A4%D7%95%D7%98%D7%95_%D7%9E%D7%92%D7%A0%D7%98_Vip",
+      "profileUrl": "https://www.hatankala.co.il/ad/%D7%A4%D7%95%D7%98%D7%95_%D7%9E%D7%92%D7%A0%D7%98_Vip",
+      "websiteStatus": "direct_profile",
+      "description": "מזכרת מושלמת לכל אירוע ולכל אורח!!! תמונות מקצועיות על מגנטים באיכות ובאחריות.",
+      "tags": [
+        "צילום מגנטים",
+        "מרכז",
+        "פתח תקווה"
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "public_profile",
+      "source": "hatankala.co.il",
+      "notes": "יובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+    },
+    {
+      "id": "hatankala-הממגנט",
+      "name": "הממגנט",
+      "category": "צילום מגנטים",
+      "city": "חולון",
+      "area": "מרכז",
+      "areas": [
+        "מרכז",
+        "חולון"
+      ],
+      "phone": "052-9124431",
+      "email": "",
+      "website": "https://www.hatankala.co.il/ad/%D7%94%D7%9E%D7%9E%D7%92%D7%A0%D7%98",
+      "profileUrl": "https://www.hatankala.co.il/ad/%D7%94%D7%9E%D7%9E%D7%92%D7%A0%D7%98",
+      "websiteStatus": "direct_profile",
+      "description": "הממגנט",
+      "tags": [
+        "צילום מגנטים",
+        "מרכז",
+        "חולון"
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "public_profile",
+      "source": "hatankala.co.il",
+      "notes": "יובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+    },
+    {
+      "id": "hatankala-צוק_מגנטים",
+      "name": "צוק מגנטים אטרקציות לאירוע",
+      "category": "צילום מגנטים",
+      "city": "",
+      "area": "ארצי",
+      "areas": [
+        "ארצי"
+      ],
+      "phone": "052-9706455",
+      "email": "",
+      "website": "https://www.hatankala.co.il/ad/%D7%A6%D7%95%D7%A7_%D7%9E%D7%92%D7%A0%D7%98%D7%99%D7%9D",
+      "profileUrl": "https://www.hatankala.co.il/ad/%D7%A6%D7%95%D7%A7_%D7%9E%D7%92%D7%A0%D7%98%D7%99%D7%9D",
+      "websiteStatus": "direct_profile",
+      "description": "חתן כלה פורטל האירועים מציג את צוק מגנטים, צילום והפקת מגנטים שתהפוך את האירוע שלך למיוחד וייחודי, הירשמו באתר כדי ליהנות מהנחות, טיפים והצעות שיוכלו להקל עליכם, לחצו לכניסה לאתר",
+      "tags": [
+        "צילום מגנטים",
+        "ארצי",
+        ""
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "public_profile",
+      "source": "hatankala.co.il",
+      "notes": "יובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+    },
+    {
+      "id": "hatankala-שביט_מגנטים_ואטרקציות_לאירועים",
+      "name": "שביט מגנטים ואטרקציות לאירועים",
+      "category": "צילום מגנטים",
+      "city": "",
+      "area": "ארצי",
+      "areas": [
+        "ארצי"
+      ],
+      "phone": "052-9129453",
+      "email": "",
+      "website": "https://www.hatankala.co.il/ad/%D7%A9%D7%91%D7%99%D7%98_%D7%9E%D7%92%D7%A0%D7%98%D7%99%D7%9D_%D7%95%D7%90%D7%98%D7%A8%D7%A7%D7%A6%D7%99%D7%95%D7%AA_%D7%9C%D7%90%D7%99%D7%A8%D7%95%D7%A2%D7%99%D7%9D",
+      "profileUrl": "https://www.hatankala.co.il/ad/%D7%A9%D7%91%D7%99%D7%98_%D7%9E%D7%92%D7%A0%D7%98%D7%99%D7%9D_%D7%95%D7%90%D7%98%D7%A8%D7%A7%D7%A6%D7%99%D7%95%D7%AA_%D7%9C%D7%90%D7%99%D7%A8%D7%95%D7%A2%D7%99%D7%9D",
+      "websiteStatus": "direct_profile",
+      "description": "חתן כלה פורטל האירועים מציג את שביט מגנטים ואטרקציות לאירועים אטרקציה ייחודית לאירוע שלכם, אל תפספו ביקור באתר",
+      "tags": [
+        "צילום מגנטים",
+        "ארצי",
+        ""
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "public_profile",
+      "source": "hatankala.co.il",
+      "notes": "יובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+    },
+    {
+      "id": "hatankala-photobox_תא_צילום_לאירועים",
+      "name": "פוטובוקס",
+      "category": "צילום",
+      "city": "תל אביב",
+      "area": "מרכז",
+      "areas": [
+        "מרכז",
+        "תל אביב"
+      ],
+      "phone": "052-9171292",
+      "email": "",
+      "website": "https://www.hatankala.co.il/ad/photobox_%D7%AA%D7%90_%D7%A6%D7%99%D7%9C%D7%95%D7%9D_%D7%9C%D7%90%D7%99%D7%A8%D7%95%D7%A2%D7%99%D7%9D",
+      "profileUrl": "https://www.hatankala.co.il/ad/photobox_%D7%AA%D7%90_%D7%A6%D7%99%D7%9C%D7%95%D7%9D_%D7%9C%D7%90%D7%99%D7%A8%D7%95%D7%A2%D7%99%D7%9D",
+      "websiteStatus": "direct_profile",
+      "description": "פוטובוקס | photobox תא צילום לאירועים",
+      "tags": [
+        "צילום",
+        "מרכז",
+        "תל אביב"
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "public_profile",
+      "source": "hatankala.co.il",
+      "notes": "יובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
     },
     {
       "id": "hatankala-דינמיקה_סטודיו_לצילום_אירועים",
@@ -208,86 +664,10 @@
       "priceLevel": "לא ידוע",
       "verificationStatus": "public_profile",
       "source": "hatankala.co.il",
-      "notes": "ספק אמיתי שיובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+      "notes": "יובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
     },
     {
-      "id": "hatankala-אגם_לימוזין",
-      "name": "אגם לימוזין",
-      "category": "הסעות לאורחים",
-      "city": "ראשון לציון",
-      "area": "מרכז",
-      "areas": [
-        "מרכז",
-        "ראשון לציון"
-      ],
-      "phone": "052-9123425",
-      "email": "",
-      "website": "https://www.hatankala.co.il/ad/%D7%90%D7%92%D7%9D-%D7%9C%D7%99%D7%9E%D7%95%D7%96%D7%99%D7%9F",
-      "profileUrl": "https://www.hatankala.co.il/ad/%D7%90%D7%92%D7%9D-%D7%9C%D7%99%D7%9E%D7%95%D7%96%D7%99%D7%9F",
-      "websiteStatus": "direct_profile",
-      "description": "אגם לימוזין",
-      "tags": [
-        "הסעות לאורחים",
-        "מרכז",
-        "ראשון לציון"
-      ],
-      "priceLevel": "לא ידוע",
-      "verificationStatus": "public_profile",
-      "source": "hatankala.co.il",
-      "notes": "ספק אמיתי שיובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
-    },
-    {
-      "id": "hatankala-טל_סולומון",
-      "name": "טל סולומון",
-      "category": "רב / חופה",
-      "city": "",
-      "area": "ארצי",
-      "areas": [
-        "ארצי"
-      ],
-      "phone": "052-9125845",
-      "email": "",
-      "website": "https://www.hatankala.co.il/ad/%D7%98%D7%9C-%D7%A1%D7%95%D7%9C%D7%95%D7%9E%D7%95%D7%9F",
-      "profileUrl": "https://www.hatankala.co.il/ad/%D7%98%D7%9C-%D7%A1%D7%95%D7%9C%D7%95%D7%9E%D7%95%D7%9F",
-      "websiteStatus": "direct_profile",
-      "description": "טל סולומון",
-      "tags": [
-        "רב / חופה",
-        "ארצי",
-        ""
-      ],
-      "priceLevel": "לא ידוע",
-      "verificationStatus": "public_profile",
-      "source": "hatankala.co.il",
-      "notes": "ספק אמיתי שיובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
-    },
-    {
-      "id": "hatankala-DJ_Ronix",
-      "name": "DJ Ronix - דיג'יי לחתונות ואירועים",
-      "category": "מוזיקה / DJ",
-      "city": "",
-      "area": "ארצי",
-      "areas": [
-        "ארצי"
-      ],
-      "phone": "052-9707890",
-      "email": "",
-      "website": "https://www.hatankala.co.il/ad/DJ-Ronix",
-      "profileUrl": "https://www.hatankala.co.il/ad/DJ-Ronix",
-      "websiteStatus": "direct_profile",
-      "description": "DJ Ronix - הדיג'יי שלכם לחתונה בלתי נשכחת. מתמחה בכל סגנונות המוזיקה, התאמה אישית לכל לקוח, מעל 15 שנות ניסיון, זמין 24/7. האורחים פשוט לא יפסיקו לרקוד כל הערב!",
-      "tags": [
-        "מוזיקה / DJ",
-        "ארצי",
-        ""
-      ],
-      "priceLevel": "לא ידוע",
-      "verificationStatus": "public_profile",
-      "source": "hatankala.co.il",
-      "notes": "ספק אמיתי שיובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
-    },
-    {
-      "id": "hatankala-ציק_צאק_צילום_אירועים",
+      "id": "hatankala-ציק_צאק___צילום_אירועים",
       "name": "צ'יק צ'אק צילום אירועים",
       "category": "צילום",
       "city": "ראשון לציון",
@@ -310,366 +690,108 @@
       "priceLevel": "לא ידוע",
       "verificationStatus": "public_profile",
       "source": "hatankala.co.il",
-      "notes": "ספק אמיתי שיובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+      "notes": "יובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
     },
     {
-      "id": "hatankala-מוקד_עורב_שמירה_ואבטחה",
-      "name": "מוקד עורב שמירה ואבטחה בע\"מ",
-      "category": "אחר",
+      "id": "hatankala-ויקטוריה_הפקות_צילום",
+      "name": "פוטו ויקטוריה צילום אירועים",
+      "category": "צילום",
       "city": "תל אביב",
       "area": "מרכז",
       "areas": [
         "מרכז",
         "תל אביב"
       ],
-      "phone": "052-9098992",
+      "phone": "052-9127748",
       "email": "",
-      "website": "https://www.hatankala.co.il/ad/%D7%9E%D7%95%D7%A7%D7%93_%D7%A2%D7%95%D7%A8%D7%91_%D7%A9%D7%9E%D7%99%D7%A8%D7%94_%D7%95%D7%90%D7%91%D7%98%D7%97%D7%94",
-      "profileUrl": "https://www.hatankala.co.il/ad/%D7%9E%D7%95%D7%A7%D7%93_%D7%A2%D7%95%D7%A8%D7%91_%D7%A9%D7%9E%D7%99%D7%A8%D7%94_%D7%95%D7%90%D7%91%D7%98%D7%97%D7%94",
+      "website": "https://www.hatankala.co.il/ad/%D7%95%D7%99%D7%A7%D7%98%D7%95%D7%A8%D7%99%D7%94_%D7%94%D7%A4%D7%A7%D7%95%D7%AA_%D7%A6%D7%99%D7%9C%D7%95%D7%9D",
+      "profileUrl": "https://www.hatankala.co.il/ad/%D7%95%D7%99%D7%A7%D7%98%D7%95%D7%A8%D7%99%D7%94_%D7%94%D7%A4%D7%A7%D7%95%D7%AA_%D7%A6%D7%99%D7%9C%D7%95%D7%9D",
       "websiteStatus": "direct_profile",
-      "description": "מוקד עורב שמירה ואבטחה בע&quot;מ",
+      "description": "חתן כלה פורטל האירועים מציג סטודיו לצילום אירועים פוטו ויקטוריה המוטו שלהם הוא שימת דגש בכול הנוגע לאיכות, אמינות ושירות ללקוחות וההתחייבות לתת ללקוחות את הטוב ביותר. אל תחמיצו ביקור באתר",
       "tags": [
-        "אחר",
+        "צילום",
         "מרכז",
         "תל אביב"
       ],
       "priceLevel": "לא ידוע",
       "verificationStatus": "public_profile",
       "source": "hatankala.co.il",
-      "notes": "ספק אמיתי שיובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+      "notes": "יובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
     },
     {
-      "id": "hatankala-איתן_סוכנויות",
-      "name": "איתן סוכנויות בדים",
-      "category": "אחר",
-      "city": "חיפה",
-      "area": "צפון",
-      "areas": [
-        "צפון",
-        "חיפה"
-      ],
-      "phone": "052-9127264",
-      "email": "",
-      "website": "https://www.hatankala.co.il/ad/%D7%90%D7%99%D7%AA%D7%9F_%D7%A1%D7%95%D7%9B%D7%A0%D7%95%D7%99%D7%95%D7%AA",
-      "profileUrl": "https://www.hatankala.co.il/ad/%D7%90%D7%99%D7%AA%D7%9F_%D7%A1%D7%95%D7%9B%D7%A0%D7%95%D7%99%D7%95%D7%AA",
-      "websiteStatus": "direct_profile",
-      "description": "איתן סוכנויות, חתן כלה פורטל האירועים מציג את איתן סוכנויות מייבואי בדי המעצבים בארץ לצורכי תפירה ואביזרי אופנה, הירשמו באתר כדי ליהנות מהנחות, טיפים והצעות שיוכלו להקל עליכם, לחצו לכניסה לאתר",
-      "tags": [
-        "אחר",
-        "צפון",
-        "חיפה"
-      ],
-      "priceLevel": "לא ידוע",
-      "verificationStatus": "public_profile",
-      "source": "hatankala.co.il",
-      "notes": "ספק אמיתי שיובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
-    },
-    {
-      "id": "hatankala-ליאור_אלמליח",
-      "name": "ליאור אלמליח",
-      "category": "אחר",
+      "id": "hatankala-דוד_ויזמן_צילום",
+      "name": "דוד ויזמן צילום",
+      "category": "צילום",
       "city": "",
       "area": "ארצי",
       "areas": [
         "ארצי"
       ],
-      "phone": "052-9121197",
+      "phone": "052-9124306",
       "email": "",
-      "website": "https://www.hatankala.co.il/ad/%D7%9C%D7%99%D7%90%D7%95%D7%A8_%D7%90%D7%9C%D7%9E%D7%9C%D7%99%D7%97",
-      "profileUrl": "https://www.hatankala.co.il/ad/%D7%9C%D7%99%D7%90%D7%95%D7%A8_%D7%90%D7%9C%D7%9E%D7%9C%D7%99%D7%97",
+      "website": "https://www.hatankala.co.il/ad/%D7%93%D7%95%D7%93_%D7%95%D7%99%D7%96%D7%9E%D7%9F_%D7%A6%D7%99%D7%9C%D7%95%D7%9D",
+      "profileUrl": "https://www.hatankala.co.il/ad/%D7%93%D7%95%D7%93_%D7%95%D7%99%D7%96%D7%9E%D7%9F_%D7%A6%D7%99%D7%9C%D7%95%D7%9D",
       "websiteStatus": "direct_profile",
-      "description": "ליאור אלמליח",
+      "description": "דוד ויזמן צילום",
       "tags": [
-        "אחר",
+        "צילום",
         "ארצי",
         ""
       ],
       "priceLevel": "לא ידוע",
       "verificationStatus": "public_profile",
       "source": "hatankala.co.il",
-      "notes": "ספק אמיתי שיובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+      "notes": "יובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
     },
     {
-      "id": "hatankala-ירון_אילן",
-      "name": "ירון אילן תקליטן לאירועים",
-      "category": "מוזיקה / DJ",
+      "id": "hatankala-רד_צילום",
+      "name": "רד צילום",
+      "category": "צילום",
       "city": "",
       "area": "ארצי",
       "areas": [
         "ארצי"
       ],
-      "phone": "052-9170834",
+      "phone": "052-9787063",
       "email": "",
-      "website": "https://www.hatankala.co.il/ad/%D7%99%D7%A8%D7%95%D7%9F_%D7%90%D7%99%D7%9C%D7%9F",
-      "profileUrl": "https://www.hatankala.co.il/ad/%D7%99%D7%A8%D7%95%D7%9F_%D7%90%D7%99%D7%9C%D7%9F",
+      "website": "https://www.hatankala.co.il/ad/%D7%A8%D7%93_%D7%A6%D7%99%D7%9C%D7%95%D7%9D",
+      "profileUrl": "https://www.hatankala.co.il/ad/%D7%A8%D7%93_%D7%A6%D7%99%D7%9C%D7%95%D7%9D",
       "websiteStatus": "direct_profile",
-      "description": "חתן כלה פורטל האירועים מציג את המנחה המיתולוגי של תכנית המוסיקה בערוץ 24 ירון אילן כתקליטן לאירוע שלכם, הירשמו באתר כדי ליהנות מהנחות, טיפים והצעות שיוכלו להקל עליכם, לחצו לכניסה לאתר",
+      "description": "רד צילום",
       "tags": [
-        "מוזיקה / DJ",
+        "צילום",
         "ארצי",
         ""
       ],
       "priceLevel": "לא ידוע",
       "verificationStatus": "public_profile",
       "source": "hatankala.co.il",
-      "notes": "ספק אמיתי שיובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+      "notes": "יובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
     },
     {
-      "id": "hatankala-julie_vino_גולי_וינו",
-      "name": "julie vino ג'ולי וינו שמלות כלה",
-      "category": "שמלות כלה וערב",
+      "id": "hatankala-אריאל_קריידרמן___צלם",
+      "name": "אריאל קריידרמן צלם",
+      "category": "צילום",
       "city": "",
       "area": "ארצי",
       "areas": [
         "ארצי"
       ],
-      "phone": "052-9125390",
+      "phone": "052-9127418",
       "email": "",
-      "website": "https://www.hatankala.co.il/ad/julie_vino-%D7%92%D7%95%D7%9C%D7%99_%D7%95%D7%99%D7%A0%D7%95",
-      "profileUrl": "https://www.hatankala.co.il/ad/julie_vino-%D7%92%D7%95%D7%9C%D7%99_%D7%95%D7%99%D7%A0%D7%95",
+      "website": "https://www.hatankala.co.il/ad/%D7%90%D7%A8%D7%99%D7%90%D7%9C_%D7%A7%D7%A8%D7%99%D7%99%D7%93%D7%A8%D7%9E%D7%9F_-_%D7%A6%D7%9C%D7%9D",
+      "profileUrl": "https://www.hatankala.co.il/ad/%D7%90%D7%A8%D7%99%D7%90%D7%9C_%D7%A7%D7%A8%D7%99%D7%99%D7%93%D7%A8%D7%9E%D7%9F_-_%D7%A6%D7%9C%D7%9D",
       "websiteStatus": "direct_profile",
-      "description": "חתן כלה מציג את מעצבת השמלות בעיצוב אישי ג&#039;ולי וינו מעצבת שמלות כלה מהמוכשות בתחום, תמונות של דגמים חדשים ומידע נרחב, הירשמו באתר כדי ליהנות מהנחות, טיפים, והצעות שיוכלו להקל עליכם, לחצו לכניסה לאתר",
+      "description": "אריאל קריידרמן צלם, צלם ברמה גבוהה ובמחירים מפתיעים, היכנסו לצפייה בתמונות להמחשה, ובמגוון ההטבות שחתן כלה מיציע לכם, לחצו לכניסה",
       "tags": [
-        "שמלות כלה וערב",
+        "צילום",
         "ארצי",
         ""
       ],
       "priceLevel": "לא ידוע",
       "verificationStatus": "public_profile",
       "source": "hatankala.co.il",
-      "notes": "ספק אמיתי שיובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
-    },
-    {
-      "id": "hatankala-ריקי_דלאל",
-      "name": "ריקי דלאל שמלות כלה וערב",
-      "category": "שמלות כלה וערב",
-      "city": "אשדוד",
-      "area": "דרום",
-      "areas": [
-        "דרום",
-        "אשדוד"
-      ],
-      "phone": "052-9171841",
-      "email": "",
-      "website": "https://www.hatankala.co.il/ad/%D7%A8%D7%99%D7%A7%D7%99_%D7%93%D7%9C%D7%90%D7%9C",
-      "profileUrl": "https://www.hatankala.co.il/ad/%D7%A8%D7%99%D7%A7%D7%99_%D7%93%D7%9C%D7%90%D7%9C",
-      "websiteStatus": "direct_profile",
-      "description": "חתן כלה פורטל האירועים מציג את מעצבת שמלות הכלה ריקי דלל עיצוב שמלות כלה וערב מקוריות, איפור לכלה עיצוב שיער ועוד, תמונות של דגמים חדשים ומידע נרחב, הירשמו באתר כדי ליהנות מהנחות, טיפים והצעות שיוכלו להקל עליכם, לחצו לכניסה לאתר",
-      "tags": [
-        "שמלות כלה וערב",
-        "דרום",
-        "אשדוד"
-      ],
-      "priceLevel": "לא ידוע",
-      "verificationStatus": "public_profile",
-      "source": "hatankala.co.il",
-      "notes": "ספק אמיתי שיובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
-    },
-    {
-      "id": "hatankala-בואי_כלה_אשדוד",
-      "name": "בואי כלה אשדוד שמלות כלה",
-      "category": "שמלות כלה וערב",
-      "city": "אשדוד",
-      "area": "דרום",
-      "areas": [
-        "דרום",
-        "אשדוד"
-      ],
-      "phone": "052-9126819",
-      "email": "",
-      "website": "https://www.hatankala.co.il/ad/%D7%91%D7%95%D7%90%D7%99_%D7%9B%D7%9C%D7%94-%D7%90%D7%A9%D7%93%D7%95%D7%93",
-      "profileUrl": "https://www.hatankala.co.il/ad/%D7%91%D7%95%D7%90%D7%99_%D7%9B%D7%9C%D7%94-%D7%90%D7%A9%D7%93%D7%95%D7%93",
-      "websiteStatus": "direct_profile",
-      "description": "פורטל החתונות והאינטרנט חתן כלה, מציג את הקולקציה המגוונת של המעצבת שמלות כלה העילית בואי כלה אשדוד כולל תמונות של דגמים חדשים מרהיבים ובהתאמה אישית לאופי הכלה כולל ומידע נרחב, הירשמו באתר כדי ליהנות מהנחות, טיפים,והצעות שיוכלו להקל עליכם,לחצו לכניסה לאתר",
-      "tags": [
-        "שמלות כלה וערב",
-        "דרום",
-        "אשדוד"
-      ],
-      "priceLevel": "לא ידוע",
-      "verificationStatus": "public_profile",
-      "source": "hatankala.co.il",
-      "notes": "ספק אמיתי שיובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
-    },
-    {
-      "id": "hatankala-דניאל_קליין_איפור",
-      "name": "דניאל קליין MU",
-      "category": "איפור ועיצוב שיער",
-      "city": "כרמיאל",
-      "area": "צפון",
-      "areas": [
-        "צפון",
-        "כרמיאל"
-      ],
-      "phone": "052-9171851",
-      "email": "",
-      "website": "https://www.hatankala.co.il/ad/%D7%93%D7%A0%D7%99%D7%90%D7%9C-%D7%A7%D7%9C%D7%99%D7%99%D7%9F-%D7%90%D7%99%D7%A4%D7%95%D7%A8",
-      "profileUrl": "https://www.hatankala.co.il/ad/%D7%93%D7%A0%D7%99%D7%90%D7%9C-%D7%A7%D7%9C%D7%99%D7%99%D7%9F-%D7%90%D7%99%D7%A4%D7%95%D7%A8",
-      "websiteStatus": "direct_profile",
-      "description": "דניאל קליין איפור",
-      "tags": [
-        "איפור ועיצוב שיער",
-        "צפון",
-        "כרמיאל"
-      ],
-      "priceLevel": "לא ידוע",
-      "verificationStatus": "public_profile",
-      "source": "hatankala.co.il",
-      "notes": "ספק אמיתי שיובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
-    },
-    {
-      "id": "hatankala-יאיר_אריש_תסרוקתן",
-      "name": "יאיר אריש תסרוקתן איפור כלות ועיצוב שיער",
-      "category": "איפור ועיצוב שיער",
-      "city": "תל אביב",
-      "area": "מרכז",
-      "areas": [
-        "מרכז",
-        "תל אביב"
-      ],
-      "phone": "052-9171788",
-      "email": "",
-      "website": "https://www.hatankala.co.il/ad/%D7%99%D7%90%D7%99%D7%A8_%D7%90%D7%A8%D7%99%D7%A9_%D7%AA%D7%A1%D7%A8%D7%95%D7%A7%D7%AA%D7%9F",
-      "profileUrl": "https://www.hatankala.co.il/ad/%D7%99%D7%90%D7%99%D7%A8_%D7%90%D7%A8%D7%99%D7%A9_%D7%AA%D7%A1%D7%A8%D7%95%D7%A7%D7%AA%D7%9F",
-      "websiteStatus": "direct_profile",
-      "description": "חתן כלה פורטל האירועים מציג את יאיר אריש תסרוקתן, תמונות של דגמים חדשים ומידע נרחב, הירשמו באתר כדי ליהנות מהנחות, טיפים והצעות שיוכלו להקל עליכם,לחצו לכניסה לאתר",
-      "tags": [
-        "איפור ועיצוב שיער",
-        "מרכז",
-        "תל אביב"
-      ],
-      "priceLevel": "לא ידוע",
-      "verificationStatus": "public_profile",
-      "source": "hatankala.co.il",
-      "notes": "ספק אמיתי שיובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
-    },
-    {
-      "id": "hatankala-כרמלה_בדים",
-      "name": "כרמלה בדים לשמלות כלה",
-      "category": "שמלות כלה וערב",
-      "city": "תל אביב",
-      "area": "מרכז",
-      "areas": [
-        "מרכז",
-        "תל אביב"
-      ],
-      "phone": "052-9129977",
-      "email": "",
-      "website": "https://www.hatankala.co.il/ad/%D7%9B%D7%A8%D7%9E%D7%9C%D7%94_%D7%91%D7%93%D7%99%D7%9D",
-      "profileUrl": "https://www.hatankala.co.il/ad/%D7%9B%D7%A8%D7%9E%D7%9C%D7%94_%D7%91%D7%93%D7%99%D7%9D",
-      "websiteStatus": "direct_profile",
-      "description": "פורטל החתונות והאינטרנט חתן כלה מציג את כרמלה בדים מבחר בדים במבחר צבעים לעיצובים של שמלות כלה תמונות של בדים חדשים ומרהיבים כולל ומידע נרחב, הירשמו עוד היום באתר כדי ליהנות מהנחות, טיפים והצעות שיוכלו להקל עליכם, לחצו לצפייה במבחר בדים",
-      "tags": [
-        "שמלות כלה וערב",
-        "מרכז",
-        "תל אביב"
-      ],
-      "priceLevel": "לא ידוע",
-      "verificationStatus": "public_profile",
-      "source": "hatankala.co.il",
-      "notes": "ספק אמיתי שיובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
-    },
-    {
-      "id": "hatankala-באגי_BAGGI_חליפות_חתן",
-      "name": "באג'י - BAGGI MEN חליפות חתן , חליפות חתן תל אביב",
-      "category": "אחר",
-      "city": "תל אביב",
-      "area": "מרכז",
-      "areas": [
-        "מרכז",
-        "תל אביב"
-      ],
-      "phone": "",
-      "email": "",
-      "website": "https://www.hatankala.co.il/ad/%D7%91%D7%90%D7%92%D7%99_-_BAGGI_%D7%97%D7%9C%D7%99%D7%A4%D7%95%D7%AA_%D7%97%D7%AA%D7%9F",
-      "profileUrl": "https://www.hatankala.co.il/ad/%D7%91%D7%90%D7%92%D7%99_-_BAGGI_%D7%97%D7%9C%D7%99%D7%A4%D7%95%D7%AA_%D7%97%D7%AA%D7%9F",
-      "websiteStatus": "direct_profile",
-      "description": "BAGGI MEN- הינה חברה שמפתחת, מייצרת, ומעצבת אופנה לגברים. חברת האופנה BAGGI MEN הינו מותג החליפות חתן וחליפות ערב מעוצבות במיוחד וקלאסיות הגדול בישראל ובעולם.",
-      "tags": [
-        "אחר",
-        "מרכז",
-        "תל אביב"
-      ],
-      "priceLevel": "לא ידוע",
-      "verificationStatus": "public_profile",
-      "source": "hatankala.co.il",
-      "notes": "ספק אמיתי שיובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
-    },
-    {
-      "id": "hatankala-פיקסל_אירועים",
-      "name": "פיקסל אירועים מגנטים ואטרקציות",
-      "category": "צילום מגנטים",
-      "city": "",
-      "area": "ארצי",
-      "areas": [
-        "ארצי"
-      ],
-      "phone": "052-9121276",
-      "email": "",
-      "website": "https://www.hatankala.co.il/ad/%D7%A4%D7%99%D7%A7%D7%A1%D7%9C_%D7%90%D7%99%D7%A8%D7%95%D7%A2%D7%99%D7%9D",
-      "profileUrl": "https://www.hatankala.co.il/ad/%D7%A4%D7%99%D7%A7%D7%A1%D7%9C_%D7%90%D7%99%D7%A8%D7%95%D7%A2%D7%99%D7%9D",
-      "websiteStatus": "direct_profile",
-      "description": "חתן כלה פורטל אירועים מציג את פיקסל אירועים שידליקו לכם את האירוע בזיקוקים עשן כבר ובועות, הירשמו באתר כדי ליהנות מהנחות, טיפים והצעות שיוכלו להקל עליכם, לחצו לכניסה לאתר",
-      "tags": [
-        "צילום מגנטים",
-        "ארצי",
-        ""
-      ],
-      "priceLevel": "לא ידוע",
-      "verificationStatus": "public_profile",
-      "source": "hatankala.co.il",
-      "notes": "ספק אמיתי שיובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
-    },
-    {
-      "id": "hatankala-דוד_ישראלי",
-      "name": "דוד ישראלי - dj color תקליטנים",
-      "category": "מוזיקה / DJ",
-      "city": "",
-      "area": "ארצי",
-      "areas": [
-        "ארצי"
-      ],
-      "phone": "052-9120784",
-      "email": "",
-      "website": "https://www.hatankala.co.il/ad/%D7%93%D7%95%D7%93_%D7%99%D7%A9%D7%A8%D7%90%D7%9C%D7%99",
-      "profileUrl": "https://www.hatankala.co.il/ad/%D7%93%D7%95%D7%93_%D7%99%D7%A9%D7%A8%D7%90%D7%9C%D7%99",
-      "websiteStatus": "direct_profile",
-      "description": "דוד ישראלי dj color תקליטנים פורטל חתון כלה מציג מבחר של תקליטנים לאירועים לחצו לקבלת פרטים על דוד ישראלי.",
-      "tags": [
-        "מוזיקה / DJ",
-        "ארצי",
-        ""
-      ],
-      "priceLevel": "לא ידוע",
-      "verificationStatus": "public_profile",
-      "source": "hatankala.co.il",
-      "notes": "ספק אמיתי שיובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
-    },
-    {
-      "id": "hatankala-יקיר_בן_זקן_עיצוב_שיער_ואיפור_לכלות_וערב",
-      "name": "יקיר בן זקן עיצוב שיער ואיפור לכלות וערב",
-      "category": "איפור ועיצוב שיער",
-      "city": "תל אביב",
-      "area": "מרכז",
-      "areas": [
-        "מרכז",
-        "תל אביב"
-      ],
-      "phone": "052-9170616",
-      "email": "",
-      "website": "https://www.hatankala.co.il/ad/%D7%99%D7%A7%D7%99%D7%A8_%D7%91%D7%9F_%D7%96%D7%A7%D7%9F_%D7%A2%D7%99%D7%A6%D7%95%D7%91_%D7%A9%D7%99%D7%A2%D7%A8_%D7%95%D7%90%D7%99%D7%A4%D7%95%D7%A8_%D7%9C%D7%9B%D7%9C%D7%95%D7%AA_%D7%95%D7%A2%D7%A8%D7%91",
-      "profileUrl": "https://www.hatankala.co.il/ad/%D7%99%D7%A7%D7%99%D7%A8_%D7%91%D7%9F_%D7%96%D7%A7%D7%9F_%D7%A2%D7%99%D7%A6%D7%95%D7%91_%D7%A9%D7%99%D7%A2%D7%A8_%D7%95%D7%90%D7%99%D7%A4%D7%95%D7%A8_%D7%9C%D7%9B%D7%9C%D7%95%D7%AA_%D7%95%D7%A2%D7%A8%D7%91",
-      "websiteStatus": "direct_profile",
-      "description": "פורטל חתן כלה מציג יקיר בן זקן עיצוב שיער ואיפור כלות",
-      "tags": [
-        "איפור ועיצוב שיער",
-        "מרכז",
-        "תל אביב"
-      ],
-      "priceLevel": "לא ידוע",
-      "verificationStatus": "public_profile",
-      "source": "hatankala.co.il",
-      "notes": "ספק אמיתי שיובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+      "notes": "יובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
     },
     {
       "id": "hatankala-dj_רועי_מינס_Dj_Roi_Mines",
@@ -695,257 +817,1040 @@
       "priceLevel": "לא ידוע",
       "verificationStatus": "public_profile",
       "source": "hatankala.co.il",
-      "notes": "ספק אמיתי שיובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+      "notes": "יובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
     },
     {
-      "id": "hatankala-סטודיו_אודליה_שושני",
-      "name": "סטודיו אודליה שושני שמלות כלה",
-      "category": "שמלות כלה וערב",
+      "id": "hatankala-dj_ישראל",
+      "name": "d.j ישראל תקליטנים לאירועים",
+      "category": "מוזיקה / DJ",
       "city": "",
       "area": "ארצי",
       "areas": [
         "ארצי"
       ],
-      "phone": "052-9172873",
+      "phone": "052-9129055",
       "email": "",
-      "website": "https://www.hatankala.co.il/ad/%D7%A1%D7%98%D7%95%D7%93%D7%99%D7%95_%D7%90%D7%95%D7%93%D7%9C%D7%99%D7%94_%D7%A9%D7%95%D7%A9%D7%A0%D7%99",
-      "profileUrl": "https://www.hatankala.co.il/ad/%D7%A1%D7%98%D7%95%D7%93%D7%99%D7%95_%D7%90%D7%95%D7%93%D7%9C%D7%99%D7%94_%D7%A9%D7%95%D7%A9%D7%A0%D7%99",
+      "website": "https://www.hatankala.co.il/ad/dj_%D7%99%D7%A9%D7%A8%D7%90%D7%9C",
+      "profileUrl": "https://www.hatankala.co.il/ad/dj_%D7%99%D7%A9%D7%A8%D7%90%D7%9C",
       "websiteStatus": "direct_profile",
-      "description": "חתן כלה פורטל האירועים מציג סטודיו לשמלות כלה אודליה שושני, בו תוכלי למצוא מעצבת אישית לשמלות, עיצוב שיער ואיפור לכלה וטיפוח ליום המיוחל, אל תפספסי ביקור באתר",
+      "description": "חתן כלה פורטל האירועים מציג בלי יותר מדי הקדמות וסיפורי מעשיות כאלה או אחרים, המטרה שלנו כתקליטנים באירוע שלכם היא להעיף את הקהל שלכם באוויר ולגרום לו להשתולל ולהנות בטירוף, אל תפספסו ביקור באתרינו",
       "tags": [
-        "שמלות כלה וערב",
+        "מוזיקה / DJ",
         "ארצי",
         ""
       ],
       "priceLevel": "לא ידוע",
       "verificationStatus": "public_profile",
       "source": "hatankala.co.il",
-      "notes": "ספק אמיתי שיובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+      "notes": "יובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
     },
     {
-      "id": "hatankala-תהילה_אפק",
-      "name": "תהילה אפק",
-      "category": "שמלות כלה וערב",
+      "id": "hatankala-דיגי_יניב_עובדיה_מוסיקה_לאירועים",
+      "name": "דיג'י יניב עובדיה תקליטם לאירועים",
+      "category": "מוזיקה / DJ",
+      "city": "חיפה",
+      "area": "צפון",
+      "areas": [
+        "צפון",
+        "חיפה"
+      ],
+      "phone": "052-9128018",
+      "email": "",
+      "website": "https://www.hatankala.co.il/ad/%D7%93%D7%99%D7%92%D7%99_%D7%99%D7%A0%D7%99%D7%91_%D7%A2%D7%95%D7%91%D7%93%D7%99%D7%94_%D7%9E%D7%95%D7%A1%D7%99%D7%A7%D7%94_%D7%9C%D7%90%D7%99%D7%A8%D7%95%D7%A2%D7%99%D7%9D",
+      "profileUrl": "https://www.hatankala.co.il/ad/%D7%93%D7%99%D7%92%D7%99_%D7%99%D7%A0%D7%99%D7%91_%D7%A2%D7%95%D7%91%D7%93%D7%99%D7%94_%D7%9E%D7%95%D7%A1%D7%99%D7%A7%D7%94_%D7%9C%D7%90%D7%99%D7%A8%D7%95%D7%A2%D7%99%D7%9D",
+      "websiteStatus": "direct_profile",
+      "description": "חתן כלה פורטל האירועים מציג מתי פעם אחרונה הייתם בחתונה? תמיד המוסיקה היא אותה מוסיקה, עד שנדמה שכל התקליטנים הם אותו האדם, יניב עובדיה הוא תקליטן בגוון אחר, מיוחד ואיכותי.אל תפספסו ביקור באתר",
+      "tags": [
+        "מוזיקה / DJ",
+        "צפון",
+        "חיפה"
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "public_profile",
+      "source": "hatankala.co.il",
+      "notes": "יובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+    },
+    {
+      "id": "hatankala-סימונה_אנגלברג_מאפרת_ומעצבת_שיער",
+      "name": "סימונה אנגלברג מאפרת ומעצבת שיער - פורטל \"חתן כלה\"",
+      "category": "איפור ועיצוב שיער",
+      "city": "אשקלון",
+      "area": "דרום",
+      "areas": [
+        "דרום",
+        "אשקלון"
+      ],
+      "phone": "052-9171776",
+      "email": "",
+      "website": "https://www.hatankala.co.il/ad/%D7%A1%D7%99%D7%9E%D7%95%D7%A0%D7%94_%D7%90%D7%A0%D7%92%D7%9C%D7%91%D7%A8%D7%92_%D7%9E%D7%90%D7%A4%D7%A8%D7%AA_%D7%95%D7%9E%D7%A2%D7%A6%D7%91%D7%AA_%D7%A9%D7%99%D7%A2%D7%A8",
+      "profileUrl": "https://www.hatankala.co.il/ad/%D7%A1%D7%99%D7%9E%D7%95%D7%A0%D7%94_%D7%90%D7%A0%D7%92%D7%9C%D7%91%D7%A8%D7%92_%D7%9E%D7%90%D7%A4%D7%A8%D7%AA_%D7%95%D7%9E%D7%A2%D7%A6%D7%91%D7%AA_%D7%A9%D7%99%D7%A2%D7%A8",
+      "websiteStatus": "direct_profile",
+      "description": "פורטל חתן כלה מציג את סימונה אנגלברג סגל מאפרת כלות מביאה עימה ניסיון מקצועי של מעל 10 שנים בתחום האיפור את התמחותה בתחום איפור הכלות סיימה סימונה בהצטיינות באנגליה",
+      "tags": [
+        "איפור ועיצוב שיער",
+        "דרום",
+        "אשקלון"
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "public_profile",
+      "source": "hatankala.co.il",
+      "notes": "יובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+    },
+    {
+      "id": "hatankala-יקיר_בן_זקן_עיצוב_שיער_ואיפור_לכלות_וערב",
+      "name": "יקיר בן זקן עיצוב שיער ואיפור לכלות וערב",
+      "category": "איפור ועיצוב שיער",
+      "city": "תל אביב",
+      "area": "מרכז",
+      "areas": [
+        "מרכז",
+        "תל אביב"
+      ],
+      "phone": "052-9170616",
+      "email": "",
+      "website": "https://www.hatankala.co.il/ad/%D7%99%D7%A7%D7%99%D7%A8_%D7%91%D7%9F_%D7%96%D7%A7%D7%9F_%D7%A2%D7%99%D7%A6%D7%95%D7%91_%D7%A9%D7%99%D7%A2%D7%A8_%D7%95%D7%90%D7%99%D7%A4%D7%95%D7%A8_%D7%9C%D7%9B%D7%9C%D7%95%D7%AA_%D7%95%D7%A2%D7%A8%D7%91",
+      "profileUrl": "https://www.hatankala.co.il/ad/%D7%99%D7%A7%D7%99%D7%A8_%D7%91%D7%9F_%D7%96%D7%A7%D7%9F_%D7%A2%D7%99%D7%A6%D7%95%D7%91_%D7%A9%D7%99%D7%A2%D7%A8_%D7%95%D7%90%D7%99%D7%A4%D7%95%D7%A8_%D7%9C%D7%9B%D7%9C%D7%95%D7%AA_%D7%95%D7%A2%D7%A8%D7%91",
+      "websiteStatus": "direct_profile",
+      "description": "פורטל חתן כלה מציג יקיר בן זקן עיצוב שיער ואיפור כלות",
+      "tags": [
+        "איפור ועיצוב שיער",
+        "מרכז",
+        "תל אביב"
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "public_profile",
+      "source": "hatankala.co.il",
+      "notes": "יובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+    },
+    {
+      "id": "hatankala-אוריטל_בר_איפור_ושיער_מקצועי",
+      "name": "אוריטל איפור ושיער מקצועי",
+      "category": "איפור ועיצוב שיער",
+      "city": "תל אביב",
+      "area": "מרכז",
+      "areas": [
+        "מרכז",
+        "תל אביב"
+      ],
+      "phone": "052-9170087",
+      "email": "",
+      "website": "https://www.hatankala.co.il/ad/%D7%90%D7%95%D7%A8%D7%99%D7%98%D7%9C_%D7%91%D7%A8_%D7%90%D7%99%D7%A4%D7%95%D7%A8_%D7%95%D7%A9%D7%99%D7%A2%D7%A8_%D7%9E%D7%A7%D7%A6%D7%95%D7%A2%D7%99",
+      "profileUrl": "https://www.hatankala.co.il/ad/%D7%90%D7%95%D7%A8%D7%99%D7%98%D7%9C_%D7%91%D7%A8_%D7%90%D7%99%D7%A4%D7%95%D7%A8_%D7%95%D7%A9%D7%99%D7%A2%D7%A8_%D7%9E%D7%A7%D7%A6%D7%95%D7%A2%D7%99",
+      "websiteStatus": "direct_profile",
+      "description": "חתן כלה פורטל האירועים מציג מאפרת ומעצבת שיער מקצועית עם מגע מלאכי וסבלנות בלי קץ אוריטל בר, אל תחמיצו ביקור באתר",
+      "tags": [
+        "איפור ועיצוב שיער",
+        "מרכז",
+        "תל אביב"
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "public_profile",
+      "source": "hatankala.co.il",
+      "notes": "יובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+    },
+    {
+      "id": "hatankala-עירן_ויצמן_עיצוב_שיער_ואיפור",
+      "name": "עירן ויצמן עיצוב שיער",
+      "category": "איפור ועיצוב שיער",
       "city": "",
       "area": "ארצי",
       "areas": [
         "ארצי"
       ],
-      "phone": "052-9129240",
+      "phone": "052-9129113",
       "email": "",
-      "website": "https://www.hatankala.co.il/ad/%D7%AA%D7%94%D7%99%D7%9C%D7%94_%D7%90%D7%A4%D7%A7",
-      "profileUrl": "https://www.hatankala.co.il/ad/%D7%AA%D7%94%D7%99%D7%9C%D7%94_%D7%90%D7%A4%D7%A7",
+      "website": "https://www.hatankala.co.il/ad/%D7%A2%D7%99%D7%A8%D7%9F_%D7%95%D7%99%D7%A6%D7%9E%D7%9F_%D7%A2%D7%99%D7%A6%D7%95%D7%91_%D7%A9%D7%99%D7%A2%D7%A8_%D7%95%D7%90%D7%99%D7%A4%D7%95%D7%A8",
+      "profileUrl": "https://www.hatankala.co.il/ad/%D7%A2%D7%99%D7%A8%D7%9F_%D7%95%D7%99%D7%A6%D7%9E%D7%9F_%D7%A2%D7%99%D7%A6%D7%95%D7%91_%D7%A9%D7%99%D7%A2%D7%A8_%D7%95%D7%90%D7%99%D7%A4%D7%95%D7%A8",
       "websiteStatus": "direct_profile",
-      "description": "תהילה אפק יש אהבה גדולה עיצוב שמלות כלה משלב הרעיונות ועד ללבישתן ביום החתונה. תהילה אפק מתמקדת בעיקר בתהליך העיצוב של כל שמלה ומציעה לכל כלה שמלה ייחודית משלה בעיצוב אישי לפי טעמה, לפי גזרתה ולפי אופי האירוע המתוכנן.",
+      "description": "חתן כלה פורטל האירועים מציג מעצב שיער מקצועי,בעל ניסיון רב של שנים עירן ויצמן עם השנים זכה להצלחה רבה בענף, וכיום נחשב לבין מעצבי השיער המובילים בתעשייה, אל תחמיצו ביקור באתר",
       "tags": [
-        "שמלות כלה וערב",
+        "איפור ועיצוב שיער",
         "ארצי",
         ""
       ],
       "priceLevel": "לא ידוע",
       "verificationStatus": "public_profile",
       "source": "hatankala.co.il",
-      "notes": "ספק אמיתי שיובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+      "notes": "יובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
     },
     {
-      "id": "hatankala-MDVD_צילום_אירועים",
-      "name": "MDVD צילום חתונות אירועים",
+      "id": "hatankala-אנגלה_לדייב_אומנית_איפור",
+      "name": "אנג'לה לדייב איפור כלות",
+      "category": "איפור ועיצוב שיער",
+      "city": "תל אביב",
+      "area": "מרכז",
+      "areas": [
+        "מרכז",
+        "תל אביב"
+      ],
+      "phone": "052-9170151",
+      "email": "",
+      "website": "https://www.hatankala.co.il/ad/%D7%90%D7%A0%D7%92%D7%9C%D7%94_%D7%9C%D7%93%D7%99%D7%99%D7%91-%D7%90%D7%95%D7%9E%D7%A0%D7%99%D7%AA_%D7%90%D7%99%D7%A4%D7%95%D7%A8",
+      "profileUrl": "https://www.hatankala.co.il/ad/%D7%90%D7%A0%D7%92%D7%9C%D7%94_%D7%9C%D7%93%D7%99%D7%99%D7%91-%D7%90%D7%95%D7%9E%D7%A0%D7%99%D7%AA_%D7%90%D7%99%D7%A4%D7%95%D7%A8",
+      "websiteStatus": "direct_profile",
+      "description": "חתן כלה פורטל האירועים מציג אנג&#039;לה לדייב מאפרת מקצועים לכלות ולאירועים מפיקה כמו כן סדנאות איפור לשיפור יכולת איפור עצמי, הירשמו באתר כדי ליהנות מהנחות, טיפים והצעות שיוכלו להקל עליכם, לחצו לכניסה לאתר",
+      "tags": [
+        "איפור ועיצוב שיער",
+        "מרכז",
+        "תל אביב"
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "public_profile",
+      "source": "hatankala.co.il",
+      "notes": "יובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+    },
+    {
+      "id": "hatankala-חגית_הרן_איפור_מקצועי_ותסרוקות",
+      "name": "חגית הרן איפור ועיצוב שיער",
+      "category": "איפור ועיצוב שיער",
+      "city": "",
+      "area": "ארצי",
+      "areas": [
+        "ארצי"
+      ],
+      "phone": "052-9123635",
+      "email": "",
+      "website": "https://www.hatankala.co.il/ad/%D7%97%D7%92%D7%99%D7%AA_%D7%94%D7%A8%D7%9F_%D7%90%D7%99%D7%A4%D7%95%D7%A8_%D7%9E%D7%A7%D7%A6%D7%95%D7%A2%D7%99_%D7%95%D7%AA%D7%A1%D7%A8%D7%95%D7%A7%D7%95%D7%AA",
+      "profileUrl": "https://www.hatankala.co.il/ad/%D7%97%D7%92%D7%99%D7%AA_%D7%94%D7%A8%D7%9F_%D7%90%D7%99%D7%A4%D7%95%D7%A8_%D7%9E%D7%A7%D7%A6%D7%95%D7%A2%D7%99_%D7%95%D7%AA%D7%A1%D7%A8%D7%95%D7%A7%D7%95%D7%AA",
+      "websiteStatus": "direct_profile",
+      "description": "חתן כלה פורטל אירועים מציג ברגישות ובטכניקה אומנותית בשיתוף וברוגע תאפר ותעצב לך את השיער חגית הרן שואפת להוציא אותך הכי יפה ומאושרת, הירשמו באתר כדי ליהנות מהנחות, טיפים והצעות שיוכלו להקל עליכם, לחצו לכניסה לאתר",
+      "tags": [
+        "איפור ועיצוב שיער",
+        "ארצי",
+        ""
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "public_profile",
+      "source": "hatankala.co.il",
+      "notes": "יובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+    },
+    {
+      "id": "tosca-ליאור_לב__אינסטה_בלו",
+      "name": "ליאור לב — אינסטה בלו",
+      "category": "צילום מגנטים",
+      "city": "",
+      "area": "טוסקה",
+      "areas": [
+        "טוסקה",
+        "מרכז",
+        "ארצי"
+      ],
+      "phone": "054-5446775",
+      "email": "",
+      "website": "",
+      "profileUrl": "",
+      "websiteStatus": "not_provided",
+      "description": "סטילס + מגנטים, אינסטה בלוק",
+      "services": [
+        "סטילס + מגנטים",
+        "אינסטה בלוק"
+      ],
+      "tags": [
+        "צילום מגנטים",
+        "טוסקה",
+        "אטרקציות אולם טוסקה",
+        "ליאור לב"
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "venue_partner_pdf",
+      "source": "Tosca attractions PDF",
+      "notes": "יובא מקובץ תפריט האטרקציות של אולם טוסקה. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני סגירה."
+    },
+    {
+      "id": "tosca-אלעד_נבון_סטילס",
+      "name": "אלעד נבון סטילס",
       "category": "צילום",
       "city": "",
-      "area": "ארצי",
+      "area": "טוסקה",
       "areas": [
+        "טוסקה",
+        "מרכז",
         "ארצי"
       ],
-      "phone": "052-9127446",
+      "phone": "052-8704027",
       "email": "",
-      "website": "https://www.hatankala.co.il/ad/MDVD_%D7%A6%D7%99%D7%9C%D7%95%D7%9D_%D7%90%D7%99%D7%A8%D7%95%D7%A2%D7%99%D7%9D",
-      "profileUrl": "https://www.hatankala.co.il/ad/MDVD_%D7%A6%D7%99%D7%9C%D7%95%D7%9D_%D7%90%D7%99%D7%A8%D7%95%D7%A2%D7%99%D7%9D",
-      "websiteStatus": "direct_profile",
-      "description": "17 שנות ניסיון בצילום כל סוגי האירועים, צילום סטילס, צילום וידאו, מגנטים ואלבומי חתונה. מאות לקוחות מרוצים והמלצות חמות. מחירים אטרקטיביים, מבצעים וחבילות מותאמות אישית.",
+      "website": "https://eladnavon1.com",
+      "profileUrl": "",
+      "websiteStatus": "direct_official_or_external",
+      "description": "צילום סטילס לאירועים",
+      "services": [
+        "צילום סטילס לאירועים"
+      ],
       "tags": [
         "צילום",
-        "ארצי",
-        ""
+        "טוסקה",
+        "אטרקציות אולם טוסקה",
+        "אלעד נבון"
       ],
       "priceLevel": "לא ידוע",
-      "verificationStatus": "public_profile",
-      "source": "hatankala.co.il",
-      "notes": "ספק אמיתי שיובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+      "verificationStatus": "venue_partner_pdf",
+      "source": "Tosca attractions PDF",
+      "notes": "יובא מקובץ תפריט האטרקציות של אולם טוסקה. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני סגירה."
     },
     {
-      "id": "hatankala-נתנאל_הממגנט",
-      "name": "נתנאל הממגנט",
+      "id": "tosca-Dr_Fun__עמדות_צילום_ואטרקציות",
+      "name": "Dr. Fun — עמדות צילום ואטרקציות",
       "category": "צילום מגנטים",
       "city": "",
-      "area": "ארצי",
+      "area": "טוסקה",
       "areas": [
+        "טוסקה",
+        "מרכז",
         "ארצי"
       ],
-      "phone": "052-9170024",
+      "phone": "054-5446425",
       "email": "",
-      "website": "https://www.hatankala.co.il/ad/%D7%A0%D7%AA%D7%A0%D7%90%D7%9C_%D7%94%D7%9E%D7%9E%D7%92%D7%A0%D7%98",
-      "profileUrl": "https://www.hatankala.co.il/ad/%D7%A0%D7%AA%D7%A0%D7%90%D7%9C_%D7%94%D7%9E%D7%9E%D7%92%D7%A0%D7%98",
-      "websiteStatus": "direct_profile",
-      "description": "נתנאל הממגנט",
+      "website": "https://dr-fun.co.il",
+      "profileUrl": "",
+      "websiteStatus": "direct_official_or_external",
+      "description": "עמדת צילום AI, מגנטים, בלוקים, עמדת סלפי, צילום רטרו, קיר צילום, עמדת 360, מולטימדיה, סימולטורים ושולחנות קזינו מתקדמים",
+      "services": [
+        "עמדת צילום AI",
+        "מגנטים",
+        "בלוקים",
+        "עמדת סלפי",
+        "צילום רטרו",
+        "קיר צילום",
+        "עמדת 360",
+        "מולטימדיה",
+        "סימולטורים ושולחנות קזינו מתקדמים"
+      ],
       "tags": [
         "צילום מגנטים",
-        "ארצי",
-        ""
+        "טוסקה",
+        "אטרקציות אולם טוסקה",
+        "ואדים"
       ],
       "priceLevel": "לא ידוע",
-      "verificationStatus": "public_profile",
-      "source": "hatankala.co.il",
-      "notes": "ספק אמיתי שיובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+      "verificationStatus": "venue_partner_pdf",
+      "source": "Tosca attractions PDF",
+      "notes": "יובא מקובץ תפריט האטרקציות של אולם טוסקה. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני סגירה."
     },
     {
-      "id": "hatankala-צז_מגנטים",
-      "name": "צ'יז מגנטים",
+      "id": "tosca-פולה__צילום_פולארויד_מקורי",
+      "name": "פולה — צילום פולארויד מקורי",
       "category": "צילום מגנטים",
       "city": "",
-      "area": "ארצי",
+      "area": "טוסקה",
       "areas": [
+        "טוסקה",
+        "מרכז",
         "ארצי"
       ],
-      "phone": "052-9171293",
+      "phone": "054-9419954",
       "email": "",
-      "website": "https://www.hatankala.co.il/ad/%D7%A6%D7%96_%D7%9E%D7%92%D7%A0%D7%98%D7%99%D7%9D",
-      "profileUrl": "https://www.hatankala.co.il/ad/%D7%A6%D7%96_%D7%9E%D7%92%D7%A0%D7%98%D7%99%D7%9D",
-      "websiteStatus": "direct_profile",
-      "description": "צ&#039;יז מגנטים",
+      "website": "",
+      "profileUrl": "",
+      "websiteStatus": "not_provided",
+      "description": "צילום פולארויד מקורי ומיוחד",
+      "services": [
+        "צילום פולארויד מקורי ומיוחד"
+      ],
       "tags": [
         "צילום מגנטים",
-        "ארצי",
-        ""
+        "טוסקה",
+        "אטרקציות אולם טוסקה",
+        "פולה"
       ],
       "priceLevel": "לא ידוע",
-      "verificationStatus": "public_profile",
-      "source": "hatankala.co.il",
-      "notes": "ספק אמיתי שיובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+      "verificationStatus": "venue_partner_pdf",
+      "source": "Tosca attractions PDF",
+      "notes": "יובא מקובץ תפריט האטרקציות של אולם טוסקה. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני סגירה."
     },
     {
-      "id": "hatankala-שילה_הממגנט",
-      "name": "שילה הממגנט מגנטים לאירועים",
-      "category": "צילום מגנטים",
+      "id": "tosca-רמי_זוניס__צלם",
+      "name": "רמי זוניס — צלם",
+      "category": "צילום",
       "city": "",
-      "area": "ארצי",
+      "area": "טוסקה",
       "areas": [
+        "טוסקה",
+        "מרכז",
         "ארצי"
       ],
-      "phone": "052-9170410",
+      "phone": "050-7467720",
       "email": "",
-      "website": "https://www.hatankala.co.il/ad/%D7%A9%D7%99%D7%9C%D7%94_%D7%94%D7%9E%D7%9E%D7%92%D7%A0%D7%98",
-      "profileUrl": "https://www.hatankala.co.il/ad/%D7%A9%D7%99%D7%9C%D7%94_%D7%94%D7%9E%D7%9E%D7%92%D7%A0%D7%98",
-      "websiteStatus": "direct_profile",
-      "description": "פורטל חתן כלה מציג את שילה הממגנט - מגנטים לאירועים. מבטיחים לכם איכות שירות ואדיבות אז שיהיה במזל-טוב.",
+      "website": "https://ramizonis.com",
+      "profileUrl": "",
+      "websiteStatus": "direct_official_or_external",
+      "description": "סטילס + מגנטים, וידאו, עריכת מצגות לאירועים",
+      "services": [
+        "סטילס + מגנטים",
+        "וידאו",
+        "עריכת מצגות לאירועים"
+      ],
       "tags": [
-        "צילום מגנטים",
-        "ארצי",
-        ""
+        "צילום",
+        "טוסקה",
+        "אטרקציות אולם טוסקה",
+        "רמי זוניס"
       ],
       "priceLevel": "לא ידוע",
-      "verificationStatus": "public_profile",
-      "source": "hatankala.co.il",
-      "notes": "ספק אמיתי שיובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+      "verificationStatus": "venue_partner_pdf",
+      "source": "Tosca attractions PDF",
+      "notes": "יובא מקובץ תפריט האטרקציות של אולם טוסקה. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני סגירה."
     },
     {
-      "id": "hatankala-פוטו_מגנט_Vip",
-      "name": "פוטו מגנט Vip מגנטים לאירועים",
-      "category": "צילום מגנטים",
+      "id": "tosca-Flashback__מצגות_לאירועים",
+      "name": "Flashback — מצגות לאירועים",
+      "category": "צילום",
       "city": "",
-      "area": "ארצי",
+      "area": "טוסקה",
       "areas": [
+        "טוסקה",
+        "מרכז",
         "ארצי"
       ],
-      "phone": "052-9787570",
+      "phone": "052-2295517",
       "email": "",
-      "website": "https://www.hatankala.co.il/ad/%D7%A4%D7%95%D7%98%D7%95_%D7%9E%D7%92%D7%A0%D7%98_Vip",
-      "profileUrl": "https://www.hatankala.co.il/ad/%D7%A4%D7%95%D7%98%D7%95_%D7%9E%D7%92%D7%A0%D7%98_Vip",
-      "websiteStatus": "direct_profile",
-      "description": "מזכרת מושלמת לכל אירוע ולכל אורח!!! תמונות מקצועיות על מגנטים באיכות ובאחריות.",
+      "website": "https://www.flashback.co.il/he",
+      "profileUrl": "",
+      "websiteStatus": "direct_official_or_external",
+      "description": "עריכת מצגות לאירועים",
+      "services": [
+        "עריכת מצגות לאירועים"
+      ],
       "tags": [
-        "צילום מגנטים",
-        "ארצי",
-        ""
+        "צילום",
+        "טוסקה",
+        "אטרקציות אולם טוסקה",
+        "פלאשבק"
       ],
       "priceLevel": "לא ידוע",
-      "verificationStatus": "public_profile",
-      "source": "hatankala.co.il",
-      "notes": "ספק אמיתי שיובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+      "verificationStatus": "venue_partner_pdf",
+      "source": "Tosca attractions PDF",
+      "notes": "יובא מקובץ תפריט האטרקציות של אולם טוסקה. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני סגירה."
     },
     {
-      "id": "hatankala-הממגנט",
-      "name": "הממגנט",
-      "category": "צילום מגנטים",
+      "id": "tosca-Double_Shot__צילום_אירועים",
+      "name": "Double Shot — צילום אירועים",
+      "category": "צילום",
       "city": "",
-      "area": "ארצי",
+      "area": "טוסקה",
       "areas": [
+        "טוסקה",
+        "מרכז",
         "ארצי"
       ],
-      "phone": "052-9124431",
+      "phone": "052-4232683",
       "email": "",
-      "website": "https://www.hatankala.co.il/ad/%D7%94%D7%9E%D7%9E%D7%92%D7%A0%D7%98",
-      "profileUrl": "https://www.hatankala.co.il/ad/%D7%94%D7%9E%D7%9E%D7%92%D7%A0%D7%98",
-      "websiteStatus": "direct_profile",
-      "description": "הממגנט",
+      "website": "https://doubleshot.co.il",
+      "profileUrl": "",
+      "websiteStatus": "direct_official_or_external",
+      "description": "צילום וידאו, מצגות לאירועים, בוקים לבר/בת מצווה, צילום עלייה לתורה, עמדת צילום רטרו",
+      "services": [
+        "צילום וידאו",
+        "מצגות לאירועים",
+        "בוקים לבר/בת מצווה",
+        "צילום עלייה לתורה",
+        "עמדת צילום רטרו"
+      ],
       "tags": [
-        "צילום מגנטים",
-        "ארצי",
-        ""
+        "צילום",
+        "טוסקה",
+        "אטרקציות אולם טוסקה",
+        "דינס"
       ],
       "priceLevel": "לא ידוע",
-      "verificationStatus": "public_profile",
-      "source": "hatankala.co.il",
-      "notes": "ספק אמיתי שיובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+      "verificationStatus": "venue_partner_pdf",
+      "source": "Tosca attractions PDF",
+      "notes": "יובא מקובץ תפריט האטרקציות של אולם טוסקה. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני סגירה."
     },
     {
-      "id": "hatankala-צוק_מגנטים",
-      "name": "צוק מגנטים אטרקציות לאירוע",
-      "category": "צילום מגנטים",
+      "id": "tosca-Nok__Roll__שולחנות_משחק",
+      "name": "Nok & Roll — שולחנות משחק",
+      "category": "אטרקציות",
       "city": "",
-      "area": "ארצי",
+      "area": "טוסקה",
       "areas": [
+        "טוסקה",
+        "מרכז",
         "ארצי"
       ],
-      "phone": "052-9706455",
+      "phone": "051-244800",
       "email": "",
-      "website": "https://www.hatankala.co.il/ad/%D7%A6%D7%95%D7%A7_%D7%9E%D7%92%D7%A0%D7%98%D7%99%D7%9D",
-      "profileUrl": "https://www.hatankala.co.il/ad/%D7%A6%D7%95%D7%A7_%D7%9E%D7%92%D7%A0%D7%98%D7%99%D7%9D",
-      "websiteStatus": "direct_profile",
-      "description": "חתן כלה פורטל האירועים מציג את צוק מגנטים, צילום והפקת מגנטים שתהפוך את האירוע שלך למיוחד וייחודי, הירשמו באתר כדי ליהנות מהנחות, טיפים והצעות שיוכלו להקל עליכם, לחצו לכניסה לאתר",
+      "website": "https://nok-rol.co.il",
+      "profileUrl": "",
+      "websiteStatus": "direct_official_or_external",
+      "description": "שולחנות משחק מיוחדים מעץ",
+      "services": [
+        "שולחנות משחק מיוחדים מעץ"
+      ],
       "tags": [
-        "צילום מגנטים",
-        "ארצי",
-        ""
+        "אטרקציות",
+        "טוסקה",
+        "אטרקציות אולם טוסקה",
+        "Nok & Roll"
       ],
       "priceLevel": "לא ידוע",
-      "verificationStatus": "public_profile",
-      "source": "hatankala.co.il",
-      "notes": "ספק אמיתי שיובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+      "verificationStatus": "venue_partner_pdf",
+      "source": "Tosca attractions PDF",
+      "notes": "יובא מקובץ תפריט האטרקציות של אולם טוסקה. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני סגירה."
     },
     {
-      "id": "hatankala-שביט_מגנטים_ואטרקציות_לאירועים",
-      "name": "שביט מגנטים ואטרקציות לאירועים",
-      "category": "צילום מגנטים",
+      "id": "tosca-אורי_ארבל__מתחם_קרקס_ופעילויות",
+      "name": "אורי ארבל — מתחם קרקס ופעילויות",
+      "category": "אטרקציות",
       "city": "",
-      "area": "ארצי",
+      "area": "טוסקה",
       "areas": [
+        "טוסקה",
+        "מרכז",
         "ארצי"
       ],
-      "phone": "052-9129453",
+      "phone": "052-8331527",
       "email": "",
-      "website": "https://www.hatankala.co.il/ad/%D7%A9%D7%91%D7%99%D7%98_%D7%9E%D7%92%D7%A0%D7%98%D7%99%D7%9D_%D7%95%D7%90%D7%98%D7%A8%D7%A7%D7%A6%D7%99%D7%95%D7%AA_%D7%9C%D7%90%D7%99%D7%A8%D7%95%D7%A2%D7%99%D7%9D",
-      "profileUrl": "https://www.hatankala.co.il/ad/%D7%A9%D7%91%D7%99%D7%98_%D7%9E%D7%92%D7%A0%D7%98%D7%99%D7%9D_%D7%95%D7%90%D7%98%D7%A8%D7%A7%D7%A6%D7%99%D7%95%D7%AA_%D7%9C%D7%90%D7%99%D7%A8%D7%95%D7%A2%D7%99%D7%9D",
-      "websiteStatus": "direct_profile",
-      "description": "חתן כלה פורטל האירועים מציג את שביט מגנטים ואטרקציות לאירועים אטרקציה ייחודית לאירוע שלכם, אל תפספו ביקור באתר",
+      "website": "https://star-marketing.co.il/arbeluri",
+      "profileUrl": "",
+      "websiteStatus": "direct_official_or_external",
+      "description": "מתחם קרקס הכולל מגוון פעילויות לילדים, וגם שעשועון טריוויה כולל הנחיה",
+      "services": [
+        "מתחם קרקס הכולל מגוון פעילויות לילדים",
+        "וגם שעשועון טריוויה כולל הנחיה"
+      ],
       "tags": [
-        "צילום מגנטים",
-        "ארצי",
-        ""
+        "אטרקציות",
+        "טוסקה",
+        "אטרקציות אולם טוסקה",
+        "אורי ארבל"
       ],
       "priceLevel": "לא ידוע",
-      "verificationStatus": "public_profile",
-      "source": "hatankala.co.il",
-      "notes": "ספק אמיתי שיובא מעמוד ספק ציבורי. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני המלצה סופית."
+      "verificationStatus": "venue_partner_pdf",
+      "source": "Tosca attractions PDF",
+      "notes": "יובא מקובץ תפריט האטרקציות של אולם טוסקה. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני סגירה."
+    },
+    {
+      "id": "tosca-חוויה_קריקטורות",
+      "name": "חוויה קריקטורות",
+      "category": "אטרקציות",
+      "city": "",
+      "area": "טוסקה",
+      "areas": [
+        "טוסקה",
+        "מרכז",
+        "ארצי"
+      ],
+      "phone": "052-7462343",
+      "email": "",
+      "website": "",
+      "profileUrl": "",
+      "websiteStatus": "not_provided",
+      "description": "קריקטורות על בריסטול/קנבס/כובעים/כוסות",
+      "services": [
+        "קריקטורות על בריסטול/קנבס/כובעים/כוסות"
+      ],
+      "tags": [
+        "אטרקציות",
+        "טוסקה",
+        "אטרקציות אולם טוסקה",
+        "חוויה קריקטורות"
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "venue_partner_pdf",
+      "source": "Tosca attractions PDF",
+      "notes": "יובא מקובץ תפריט האטרקציות של אולם טוסקה. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני סגירה."
+    },
+    {
+      "id": "tosca-קיריל_קריקטורות",
+      "name": "קיריל קריקטורות",
+      "category": "אטרקציות",
+      "city": "",
+      "area": "טוסקה",
+      "areas": [
+        "טוסקה",
+        "מרכז",
+        "ארצי"
+      ],
+      "phone": "052-6630620",
+      "email": "",
+      "website": "",
+      "profileUrl": "",
+      "websiteStatus": "not_provided",
+      "description": "קריקטורות על בריסטול/קנבס/כובעים/כוסות/קפה",
+      "services": [
+        "קריקטורות על בריסטול/קנבס/כובעים/כוסות/קפה"
+      ],
+      "tags": [
+        "אטרקציות",
+        "טוסקה",
+        "אטרקציות אולם טוסקה",
+        "קיריל"
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "venue_partner_pdf",
+      "source": "Tosca attractions PDF",
+      "notes": "יובא מקובץ תפריט האטרקציות של אולם טוסקה. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני סגירה."
+    },
+    {
+      "id": "tosca-בן_קריקטורות",
+      "name": "בן קריקטורות",
+      "category": "אטרקציות",
+      "city": "",
+      "area": "טוסקה",
+      "areas": [
+        "טוסקה",
+        "מרכז",
+        "ארצי"
+      ],
+      "phone": "050-8453671",
+      "email": "",
+      "website": "",
+      "profileUrl": "",
+      "websiteStatus": "not_provided",
+      "description": "קריקטורות על בריסטול/קנבס/קפה",
+      "services": [
+        "קריקטורות על בריסטול/קנבס/קפה"
+      ],
+      "tags": [
+        "אטרקציות",
+        "טוסקה",
+        "אטרקציות אולם טוסקה",
+        "בן"
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "venue_partner_pdf",
+      "source": "Tosca attractions PDF",
+      "notes": "יובא מקובץ תפריט האטרקציות של אולם טוסקה. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני סגירה."
+    },
+    {
+      "id": "tosca-Speak_Up__תא_טלפון_לונדון",
+      "name": "Speak Up — תא טלפון לונדון",
+      "category": "אטרקציות",
+      "city": "",
+      "area": "טוסקה",
+      "areas": [
+        "טוסקה",
+        "מרכז",
+        "ארצי"
+      ],
+      "phone": "052-7345641",
+      "email": "",
+      "website": "",
+      "profileUrl": "",
+      "websiteStatus": "not_provided",
+      "description": "תא טלפון מעוצב בסגנון לונדון; הנצחה ייחודית ומצחיקה של ברכות מצולמות",
+      "services": [
+        "תא טלפון מעוצב בסגנון לונדון; הנצחה ייחודית ומצחיקה של ברכות מצולמות"
+      ],
+      "tags": [
+        "אטרקציות",
+        "טוסקה",
+        "אטרקציות אולם טוסקה",
+        "Speak Up"
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "venue_partner_pdf",
+      "source": "Tosca attractions PDF",
+      "notes": "יובא מקובץ תפריט האטרקציות של אולם טוסקה. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני סגירה."
+    },
+    {
+      "id": "tosca-רון__שולחנות_משחק",
+      "name": "רון — שולחנות משחק",
+      "category": "אטרקציות",
+      "city": "",
+      "area": "טוסקה",
+      "areas": [
+        "טוסקה",
+        "מרכז",
+        "ארצי"
+      ],
+      "phone": "050-6550434",
+      "email": "",
+      "website": "",
+      "profileUrl": "",
+      "websiteStatus": "not_provided",
+      "description": "שולחנות משחק. לפי המקור: לא עובד בשבת",
+      "services": [
+        "שולחנות משחק. לפי המקור: לא עובד בשבת"
+      ],
+      "tags": [
+        "אטרקציות",
+        "טוסקה",
+        "אטרקציות אולם טוסקה",
+        "רון"
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "venue_partner_pdf",
+      "source": "Tosca attractions PDF",
+      "notes": "יובא מקובץ תפריט האטרקציות של אולם טוסקה. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני סגירה."
+    },
+    {
+      "id": "tosca-יולנדה__עיצוב_ושזירת_פרחים",
+      "name": "יולנדה — עיצוב ושזירת פרחים",
+      "category": "עיצוב",
+      "city": "",
+      "area": "טוסקה",
+      "areas": [
+        "טוסקה",
+        "מרכז",
+        "ארצי"
+      ],
+      "phone": "052-6646671",
+      "email": "",
+      "website": "",
+      "profileUrl": "",
+      "websiteStatus": "not_provided",
+      "description": "עמדת שזירת פרחים, עיצובי בלונים, עיצובי פרחים, מארזים ומתנות",
+      "services": [
+        "עמדת שזירת פרחים",
+        "עיצובי בלונים",
+        "עיצובי פרחים",
+        "מארזים ומתנות"
+      ],
+      "tags": [
+        "עיצוב",
+        "טוסקה",
+        "אטרקציות אולם טוסקה",
+        "יולנדה"
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "venue_partner_pdf",
+      "source": "Tosca attractions PDF",
+      "notes": "יובא מקובץ תפריט האטרקציות של אולם טוסקה. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני סגירה."
+    },
+    {
+      "id": "tosca-רז_סעדון__קיר_פייטים_ואותיות_ענק",
+      "name": "רז סעדון — קיר פייטים ואותיות ענק",
+      "category": "עיצוב",
+      "city": "",
+      "area": "טוסקה",
+      "areas": [
+        "טוסקה",
+        "מרכז",
+        "ארצי"
+      ],
+      "phone": "053-432-110",
+      "email": "",
+      "website": "",
+      "profileUrl": "",
+      "websiteStatus": "not_provided",
+      "description": "קיר פייטים, אותיות ענק, השכרת היכל לעלייה לתורה",
+      "services": [
+        "קיר פייטים",
+        "אותיות ענק",
+        "השכרת היכל לעלייה לתורה"
+      ],
+      "tags": [
+        "עיצוב",
+        "טוסקה",
+        "אטרקציות אולם טוסקה",
+        "רז סעדון"
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "venue_partner_pdf",
+      "source": "Tosca attractions PDF",
+      "notes": "יובא מקובץ תפריט האטרקציות של אולם טוסקה. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני סגירה."
+    },
+    {
+      "id": "tosca-אלכסנדרה__עיצובי_בלונים",
+      "name": "אלכסנדרה — עיצובי בלונים",
+      "category": "עיצוב",
+      "city": "",
+      "area": "טוסקה",
+      "areas": [
+        "טוסקה",
+        "מרכז",
+        "ארצי"
+      ],
+      "phone": "052-8895397",
+      "email": "",
+      "website": "",
+      "profileUrl": "",
+      "websiteStatus": "not_provided",
+      "description": "עיצובי בלונים",
+      "services": [
+        "עיצובי בלונים"
+      ],
+      "tags": [
+        "עיצוב",
+        "טוסקה",
+        "אטרקציות אולם טוסקה",
+        "אלכסנדרה"
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "venue_partner_pdf",
+      "source": "Tosca attractions PDF",
+      "notes": "יובא מקובץ תפריט האטרקציות של אולם טוסקה. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני סגירה."
+    },
+    {
+      "id": "tosca-מיטל_שבת__עיצובי_בלונים",
+      "name": "מיטל שבת — עיצובי בלונים",
+      "category": "עיצוב",
+      "city": "",
+      "area": "טוסקה",
+      "areas": [
+        "טוסקה",
+        "מרכז",
+        "ארצי"
+      ],
+      "phone": "050-8314464",
+      "email": "",
+      "website": "",
+      "profileUrl": "",
+      "websiteStatus": "not_provided",
+      "description": "עיצובי בלונים",
+      "services": [
+        "עיצובי בלונים"
+      ],
+      "tags": [
+        "עיצוב",
+        "טוסקה",
+        "אטרקציות אולם טוסקה",
+        "מיטל שבת"
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "venue_partner_pdf",
+      "source": "Tosca attractions PDF",
+      "notes": "יובא מקובץ תפריט האטרקציות של אולם טוסקה. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני סגירה."
+    },
+    {
+      "id": "tosca-יונתן_וולף__מופע_חושי_לקטנים",
+      "name": "יונתן וולף — מופע חושי לקטנים",
+      "category": "אטרקציות",
+      "city": "",
+      "area": "טוסקה",
+      "areas": [
+        "טוסקה",
+        "מרכז",
+        "ארצי"
+      ],
+      "phone": "054-3971189",
+      "email": "",
+      "website": "https://yonatanwolf.com",
+      "profileUrl": "",
+      "websiteStatus": "direct_official_or_external",
+      "description": "מופע חושי לקטנים, גילאי 4–9",
+      "services": [
+        "מופע חושי לקטנים",
+        "גילאי 4–9"
+      ],
+      "tags": [
+        "אטרקציות",
+        "טוסקה",
+        "אטרקציות אולם טוסקה",
+        "יונתן וולף"
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "venue_partner_pdf",
+      "source": "Tosca attractions PDF",
+      "notes": "יובא מקובץ תפריט האטרקציות של אולם טוסקה. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני סגירה."
+    },
+    {
+      "id": "tosca-מור_זייתוני__הפעלות_ילדים_וברבת_מצווה",
+      "name": "מור זייתוני — הפעלות ילדים ובר/בת מצווה",
+      "category": "אטרקציות",
+      "city": "",
+      "area": "טוסקה",
+      "areas": [
+        "טוסקה",
+        "מרכז",
+        "ארצי"
+      ],
+      "phone": "052-8315134",
+      "email": "",
+      "website": "",
+      "profileUrl": "",
+      "websiteStatus": "not_provided",
+      "description": "הפעלות לילדים בגילאי 3–10 והפעלה מגניבה לבר/בת מצווה",
+      "services": [
+        "הפעלות לילדים בגילאי 3–10 והפעלה מגניבה לבר/בת מצווה"
+      ],
+      "tags": [
+        "אטרקציות",
+        "טוסקה",
+        "אטרקציות אולם טוסקה",
+        "מור זייתוני"
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "venue_partner_pdf",
+      "source": "Tosca attractions PDF",
+      "notes": "יובא מקובץ תפריט האטרקציות של אולם טוסקה. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני סגירה."
+    },
+    {
+      "id": "tosca-ניגונים__טקס_ברבת_מצווה",
+      "name": "ניגונים — טקס בר/בת מצווה",
+      "category": "רב / חופה",
+      "city": "",
+      "area": "טוסקה",
+      "areas": [
+        "טוסקה",
+        "מרכז",
+        "ארצי"
+      ],
+      "phone": "054-3160998",
+      "email": "",
+      "website": "https://nigunim-tekes.co.il/barmitzvah",
+      "profileUrl": "",
+      "websiteStatus": "direct_official_or_external",
+      "description": "יצירה והנחיית טקס בר/בת מצווה ישראלי מיוחד ואלטרנטיבי",
+      "services": [
+        "יצירה והנחיית טקס בר/בת מצווה ישראלי מיוחד ואלטרנטיבי"
+      ],
+      "tags": [
+        "רב / חופה",
+        "טוסקה",
+        "אטרקציות אולם טוסקה",
+        "ניגונים"
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "venue_partner_pdf",
+      "source": "Tosca attractions PDF",
+      "notes": "יובא מקובץ תפריט האטרקציות של אולם טוסקה. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני סגירה."
+    },
+    {
+      "id": "tosca-אלדור__הפעלה_לברבת_מצווה",
+      "name": "אלדור — הפעלה לבר/בת מצווה",
+      "category": "אטרקציות",
+      "city": "",
+      "area": "טוסקה",
+      "areas": [
+        "טוסקה",
+        "מרכז",
+        "ארצי"
+      ],
+      "phone": "052-8338341",
+      "email": "",
+      "website": "https://www.v-kids.co.il",
+      "profileUrl": "",
+      "websiteStatus": "direct_official_or_external",
+      "description": "הפעלה מגניבה לבר/בת מצווה ולכל המשפחה",
+      "services": [
+        "הפעלה מגניבה לבר/בת מצווה ולכל המשפחה"
+      ],
+      "tags": [
+        "אטרקציות",
+        "טוסקה",
+        "אטרקציות אולם טוסקה",
+        "אלדור"
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "venue_partner_pdf",
+      "source": "Tosca attractions PDF",
+      "notes": "יובא מקובץ תפריט האטרקציות של אולם טוסקה. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני סגירה."
+    },
+    {
+      "id": "tosca-ערן_קומבס__Art_Music",
+      "name": "ערן קומבס — Art Music",
+      "category": "מוזיקה / DJ",
+      "city": "",
+      "area": "טוסקה",
+      "areas": [
+        "טוסקה",
+        "מרכז",
+        "ארצי"
+      ],
+      "phone": "052-3772813",
+      "email": "",
+      "website": "",
+      "profileUrl": "",
+      "websiteStatus": "not_provided",
+      "description": "DJ לאירועים",
+      "services": [
+        "DJ לאירועים"
+      ],
+      "tags": [
+        "מוזיקה / DJ",
+        "טוסקה",
+        "אטרקציות אולם טוסקה",
+        "ערן קומבס"
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "venue_partner_pdf",
+      "source": "Tosca attractions PDF",
+      "notes": "יובא מקובץ תפריט האטרקציות של אולם טוסקה. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני סגירה."
+    },
+    {
+      "id": "tosca-קיקה_סמואל__DJ",
+      "name": "קיקה סמואל — DJ",
+      "category": "מוזיקה / DJ",
+      "city": "",
+      "area": "טוסקה",
+      "areas": [
+        "טוסקה",
+        "מרכז",
+        "ארצי"
+      ],
+      "phone": "054-4280006",
+      "email": "",
+      "website": "",
+      "profileUrl": "",
+      "websiteStatus": "not_provided",
+      "description": "DJ לאירועים",
+      "services": [
+        "DJ לאירועים"
+      ],
+      "tags": [
+        "מוזיקה / DJ",
+        "טוסקה",
+        "אטרקציות אולם טוסקה",
+        "קיקה סמואל"
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "venue_partner_pdf",
+      "source": "Tosca attractions PDF",
+      "notes": "יובא מקובץ תפריט האטרקציות של אולם טוסקה. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני סגירה."
+    },
+    {
+      "id": "tosca-עידו_יוסף__DJ",
+      "name": "עידו יוסף — DJ",
+      "category": "מוזיקה / DJ",
+      "city": "",
+      "area": "טוסקה",
+      "areas": [
+        "טוסקה",
+        "מרכז",
+        "ארצי"
+      ],
+      "phone": "054-929-1696",
+      "email": "",
+      "website": "",
+      "profileUrl": "",
+      "websiteStatus": "not_provided",
+      "description": "DJ לאירועים",
+      "services": [
+        "DJ לאירועים"
+      ],
+      "tags": [
+        "מוזיקה / DJ",
+        "טוסקה",
+        "אטרקציות אולם טוסקה",
+        "עידו יוסף"
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "venue_partner_pdf",
+      "source": "Tosca attractions PDF",
+      "notes": "יובא מקובץ תפריט האטרקציות של אולם טוסקה. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני סגירה."
+    },
+    {
+      "id": "tosca-אלמוג_כהן__DJ",
+      "name": "אלמוג כהן — DJ",
+      "category": "מוזיקה / DJ",
+      "city": "",
+      "area": "טוסקה",
+      "areas": [
+        "טוסקה",
+        "מרכז",
+        "ארצי"
+      ],
+      "phone": "050-2427616",
+      "email": "",
+      "website": "",
+      "profileUrl": "",
+      "websiteStatus": "not_provided",
+      "description": "DJ לאירועים. לפי המקור: לא עובד בשבת",
+      "services": [
+        "DJ לאירועים. לפי המקור: לא עובד בשבת"
+      ],
+      "tags": [
+        "מוזיקה / DJ",
+        "טוסקה",
+        "אטרקציות אולם טוסקה",
+        "אלמוג כהן"
+      ],
+      "priceLevel": "לא ידוע",
+      "verificationStatus": "venue_partner_pdf",
+      "source": "Tosca attractions PDF",
+      "notes": "יובא מקובץ תפריט האטרקציות של אולם טוסקה. יש לוודא זמינות, מחיר ועדכניות מול הספק לפני סגירה."
     }
   ]
 }
