@@ -1522,6 +1522,12 @@ async function greenApiWebhook(request, env) {
 
 const OPAL_GREEN_API_AGENT_ID = 'agent-mp6tgr93';
 const OPAL_GREEN_API_ALLOWED_CHAT_ID = '972524486208@c.us';
+const OPAL_GREEN_API_SARCASM_REPLIES = [
+  'אה, שוב הגענו לפרק שבו הכול מתחיל ב״אני״ ונגמר בך 😄',
+  'ברור, כי אם אין במשפט ״אני״ אז בשביל מה בכלל לדבר 😏',
+  'יפה, עוד משפט שבו היקום קיבל תזכורת שאת המרכז שלו 😄',
+  'רגע, אמרת ״אני״? כמעט שכחנו על מי השיחה באמת 😏'
+];
 
 function containsStandaloneHebrewAni(text) {
   return /(^|[^\p{L}\p{N}_])אני(?=$|[^\p{L}\p{N}_])/u.test(String(text || ''));
@@ -1556,20 +1562,17 @@ async function opalGreenApiFilteredWebhook(request, env) {
     await env.EVENTS_KV.put(processedKey, JSON.stringify({ receivedAt: new Date().toISOString(), chatId }), { expirationTtl: 60 * 60 * 24 * 14 });
   }
 
-  const upstreamUrl = String(env.OPAL_GREEN_API_INBOUND_URL || `https://opal.hai.tech/api/inbound/green-api/${OPAL_GREEN_API_AGENT_ID}`).trim();
-  const upstream = await fetch(upstreamUrl, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  const upstreamText = await upstream.text().catch(() => '');
+  const replyIndex = Math.abs(Array.from(String(idMessage || text)).reduce((sum, char) => sum + char.charCodeAt(0), 0)) % OPAL_GREEN_API_SARCASM_REPLIES.length;
+  const reply = OPAL_GREEN_API_SARCASM_REPLIES[replyIndex];
+  const sent = await sendGreenApiMessage(env, chatId, reply);
   return jsonResponse({
-    ok: upstream.ok,
-    forwarded: true,
+    ok: sent.ok,
+    forwarded: false,
+    handledByFilter: true,
     chatId,
-    upstreamStatus: upstream.status,
-    upstreamText: upstreamText.slice(0, 300),
-  }, upstream.ok ? 200 : 502);
+    replySent: sent.ok,
+    replyError: sent.ok ? undefined : sent.error || sent.result,
+  }, sent.ok ? 200 : 502);
 }
 
 function morningBaseUrl(env) {
