@@ -1520,6 +1520,58 @@ async function greenApiWebhook(request, env) {
   return jsonResponse({ ok: true, eventId: found.eventId, guestIndex: found.index, status: guest['סטטוס אישור השתתפות'], count: guest['כמות מוזמנים'], inferred, replySent: !!sent.ok, replyError: sent.ok ? undefined : sent.error || sent.result });
 }
 
+const OPAL_GREEN_API_AGENT_ID = 'agent-mp6tgr93';
+const OPAL_GREEN_API_ALLOWED_CHAT_ID = '972524486208@c.us';
+
+function containsStandaloneHebrewAni(text) {
+  return /(^|[^\p{L}\p{N}_])אני(?=$|[^\p{L}\p{N}_])/u.test(String(text || ''));
+}
+
+async function opalGreenApiFilteredWebhook(request, env) {
+  const body = await request.json().catch(() => ({}));
+  if (body?.typeWebhook !== 'incomingMessageReceived') {
+    return jsonResponse({ ok: true, ignored: true, reason: 'not_incoming_message' });
+  }
+
+  const chatId = String(body?.senderData?.chatId || body?.senderData?.sender || '').trim();
+  const text = extractGreenApiIncomingText(body);
+  const isPrivateChat = chatId.endsWith('@c.us');
+
+  if (!isPrivateChat) {
+    return jsonResponse({ ok: true, ignored: true, reason: 'not_private_chat', chatId });
+  }
+  if (chatId !== OPAL_GREEN_API_ALLOWED_CHAT_ID) {
+    return jsonResponse({ ok: true, ignored: true, reason: 'not_allowed_chat', chatId });
+  }
+  if (!containsStandaloneHebrewAni(text)) {
+    return jsonResponse({ ok: true, ignored: true, reason: 'missing_trigger_word', chatId });
+  }
+
+  const idMessage = String(body?.idMessage || '').trim();
+  const processedKey = idMessage && env.EVENTS_KV ? `${GREENAPI_WEBHOOK_PREFIX}opal_filter:${idMessage}` : '';
+  if (processedKey && await env.EVENTS_KV.get(processedKey)) {
+    return jsonResponse({ ok: true, duplicate: true, forwarded: false });
+  }
+  if (processedKey) {
+    await env.EVENTS_KV.put(processedKey, JSON.stringify({ receivedAt: new Date().toISOString(), chatId }), { expirationTtl: 60 * 60 * 24 * 14 });
+  }
+
+  const upstreamUrl = String(env.OPAL_GREEN_API_INBOUND_URL || `https://opal.hai.tech/api/inbound/green-api/${OPAL_GREEN_API_AGENT_ID}`).trim();
+  const upstream = await fetch(upstreamUrl, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const upstreamText = await upstream.text().catch(() => '');
+  return jsonResponse({
+    ok: upstream.ok,
+    forwarded: true,
+    chatId,
+    upstreamStatus: upstream.status,
+    upstreamText: upstreamText.slice(0, 300),
+  }, upstream.ok ? 200 : 502);
+}
+
 function morningBaseUrl(env) {
   const explicit = String(env.MORNING_BASE_URL || '').trim();
   if (explicit) return explicit.replace(/\/+$/, '');
@@ -1813,6 +1865,10 @@ export default {
     if (url.pathname === '/api/greenapi/webhook') {
       if (request.method !== 'POST') return jsonResponse({ ok: false, error: 'Method not allowed' }, 405);
       return greenApiWebhook(request, env);
+    }
+    if (url.pathname === '/api/opal-greenapi-filter') {
+      if (request.method !== 'POST') return jsonResponse({ ok: false, error: 'Method not allowed' }, 405);
+      return opalGreenApiFilteredWebhook(request, env);
     }
     if (url.pathname === '/api/morning/create-payment-link') {
       if (request.method !== 'POST') return jsonResponse({ ok: false, error: 'Method not allowed' }, 405);
